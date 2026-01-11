@@ -602,11 +602,56 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] ProductApp - Authentication shell with navigation
 - [x] ViewRenderer - Parses YAML view configs, renders layout
 
-### Phase 2.6: Production (Next)
-1. Permission system (role-based access control)
-2. Audit log UI (query event store)
-3. Deployment configuration
-4. Performance optimization
+### Phase 2.6: E2E Demo 🟢 IN PROGRESS
+
+#### Client Entry Point (In Progress)
+
+Created minimal web app to run PLM demo:
+
+**Files:**
+- `packages/client/index.html` - HTML shell
+- `packages/client/src/main.tsx` - React entry with hardcoded PLM config
+- `packages/client/vite.config.ts` - Dev server + API proxy
+
+**Run:**
+```bash
+# Terminal 1: Server
+cd packages/server
+DATABASE_URL=postgres://postgres:trellis@localhost:5432/trellis \
+  pnpm cli serve ../../products/plm-demo/product.yaml
+
+# Terminal 2: Client
+cd packages/client
+pnpm dev
+
+# Browser
+http://localhost:5173
+```
+
+**PLM Config Structure:**
+```typescript
+{
+  name: 'PLM Demo',
+  api: { baseUrl: 'http://localhost:3000' },
+  navigation: {
+    items: [
+      { id: 'products', label: 'Products', view: 'products' },
+      { id: 'categories', label: 'Categories', view: 'categories' }
+    ]
+  },
+  views: {
+    products: { blocks: [{ type: 'table', config: { entityType: 'product' } }] },
+    categories: { blocks: [{ type: 'table', config: { entityType: 'category' } }] }
+  }
+}
+```
+
+#### Remaining Work
+- [ ] Fix Query API SQL syntax error
+- [ ] Wire ProductApp to real views from YAML
+- [ ] Permission system (role-based access control)
+- [ ] Audit log UI (query event store)
+- [ ] Deployment configuration
 
 ### Future Phases
 - Multi-region support

@@ -109,6 +109,46 @@ Two distinct expression systems (Expression Engine vs Data Binding) were not exp
 
 ---
 
+## ERROR-003: E2E Demo - Multiple Issues Found
+
+**Date**: 2026-01-11
+**Category**: Implementation
+**Severity**: Medium
+**Status**: Resolved
+
+### Description
+
+During the E2E demo run (Phase 2.6), several issues were discovered that prevented the full Trellis stack from running.
+
+### Issues Found and Resolutions
+
+| Issue | Location | Root Cause | Resolution |
+|-------|----------|------------|------------|
+| Missing CLI entry point | `packages/server/` | No main.ts wiring up CLI commands | Created [main.ts](../packages/server/src/main.ts) with database adapter and block registry setup |
+| Null pointer in validator | `packages/server/src/config/validator.ts:733` | Blocks without `props` caused `Object.entries(block.props)` to fail | Added null check: `block.props ?? {}` |
+| Route validation too strict | `packages/server/src/config/validator.ts:566` | Regex `/^\/[a-z0-9:_-]*$/` rejected uppercase params and `?` | Updated to `/^\/[a-zA-Z0-9/:_?-]*$/` |
+| Missing pino-pretty | `packages/server/` | Logger transport not installed | Added `pino-pretty` as dev dependency |
+| Missing MockTrellisClient export | `packages/client/src/test-utils/mock-client.ts` | Stories imported name that wasn't exported | Added alias export |
+| Missing DATABASE_URL | CLI startup | Server requires PG connection string | Set `DATABASE_URL=postgres://postgres:trellis@localhost:5432/trellis` |
+| EISDIR on directory | CLI load command | Given directory path instead of file | Point to `product.yaml` directly: `../../products/plm-demo/product.yaml` |
+| EADDRINUSE port 3000 | Server startup | Previous server process still running | `lsof -ti:3000 \| xargs kill -9` |
+| MockTrellisClient not a constructor | Client tests | Export was object not class | Changed to `export class MockTrellisClient` |
+| options.entities not iterable | MockClient constructor | Constructor not handling undefined | Added `options?.entities ?? []` |
+| Route GET /api/entities not found | API requests | Wrong API path used | Check actual routes in server (use `/entities` not `/api/entities`) |
+
+### Open Issues (Not Yet Fixed)
+
+1. **Query API SQL Syntax Error**: The `/query` endpoint returns a syntax error "42601 - syntax error at or near $1". This is in the query builder implementation and needs investigation.
+
+### Prevention
+
+1. Run E2E demo early in development cycle
+2. Add integration tests for CLI commands
+3. Add test cases for edge cases (null props, unusual route patterns)
+4. Document all required dependencies
+
+---
+
 ## Template for New Entries
 
 ```markdown
