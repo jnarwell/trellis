@@ -96,8 +96,12 @@ function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
 }
 
 export interface MockClientOptions {
-  /** Initial entities to populate the mock with */
-  entities?: MockEntity[];
+  /** Initial entities by ID (Record<id, entity>) */
+  entities?: Record<string, MockEntity>;
+  /** Query results by type (Record<type, entities[]>) */
+  queryResults?: Record<string, MockEntity[]>;
+  /** Simulate loading state */
+  loading?: boolean;
 }
 
 /**
@@ -106,13 +110,38 @@ export interface MockClientOptions {
  * Provides a mock implementation that can be instantiated with options.
  */
 export class MockTrellisClient implements MockClient {
-  private entities: MockEntity[];
+  private entitiesById: Map<string, MockEntity>;
+  private queryResultsByType: Map<string, MockEntity[]>;
+  private loading: boolean;
 
   constructor(options?: MockClientOptions) {
-    this.entities = options?.entities ? [...options.entities] : [...mockEntities];
+    // Handle entities as Record<id, entity>
+    if (options?.entities && typeof options.entities === 'object') {
+      this.entitiesById = new Map(Object.entries(options.entities));
+    } else {
+      this.entitiesById = new Map(mockEntities.map((e) => [e.id, e]));
+    }
+
+    // Handle query results by type
+    if (options?.queryResults) {
+      this.queryResultsByType = new Map(Object.entries(options.queryResults));
+    } else {
+      this.queryResultsByType = new Map();
+    }
+
+    this.loading = options?.loading ?? false;
+  }
+
+  private get entities(): MockEntity[] {
+    return Array.from(this.entitiesById.values());
   }
 
   query(type?: string): QueryBuilder {
+    // If we have specific query results for this type, use them
+    if (type && this.queryResultsByType.has(type)) {
+      return createQueryBuilder(this.queryResultsByType.get(type)!);
+    }
+    // Otherwise filter from all entities
     const filtered = type
       ? this.entities.filter((e) => e.type === type)
       : this.entities;
@@ -120,7 +149,7 @@ export class MockTrellisClient implements MockClient {
   }
 
   async getEntity(id: string): Promise<MockEntity | undefined> {
-    return this.entities.find((e) => e.id === id);
+    return this.entitiesById.get(id);
   }
 
   async createEntity(type: string, properties: Record<string, unknown>): Promise<MockEntity> {
@@ -134,16 +163,15 @@ export class MockTrellisClient implements MockClient {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    this.entities.push(newEntity);
+    this.entitiesById.set(newEntity.id, newEntity);
     return newEntity;
   }
 
   async updateEntity(id: string, properties: Record<string, unknown>): Promise<MockEntity> {
-    const index = this.entities.findIndex((e) => e.id === id);
-    if (index === -1) {
+    const entity = this.entitiesById.get(id);
+    if (!entity) {
       throw new Error(`Entity ${id} not found`);
     }
-    const entity = this.entities[index]!;
     const updated: MockEntity = {
       id: entity.id,
       type: entity.type,
@@ -157,16 +185,15 @@ export class MockTrellisClient implements MockClient {
       createdAt: entity.createdAt,
       updatedAt: new Date().toISOString(),
     };
-    this.entities[index] = updated;
+    this.entitiesById.set(id, updated);
     return updated;
   }
 
   async deleteEntity(id: string): Promise<void> {
-    const index = this.entities.findIndex((e) => e.id === id);
-    if (index === -1) {
+    if (!this.entitiesById.has(id)) {
       throw new Error(`Entity ${id} not found`);
     }
-    this.entities.splice(index, 1);
+    this.entitiesById.delete(id);
   }
 }
 
