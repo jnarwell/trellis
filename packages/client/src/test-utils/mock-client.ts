@@ -64,12 +64,28 @@ export interface QueryBuilder {
   execute: () => Promise<{ items: MockEntity[]; total: number }>;
 }
 
+export interface MockAuthState {
+  readonly isAuthenticated: boolean;
+  readonly tenantId: string | null;
+  readonly actorId: string | null;
+  readonly expiresAt: number | null;
+}
+
+export type MockConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'authenticating'
+  | 'connected'
+  | 'reconnecting';
+
 export interface MockClient {
   query: (type?: string) => QueryBuilder;
   getEntity: (id: string) => Promise<MockEntity | undefined>;
   createEntity: (type: string, properties: Record<string, unknown>) => Promise<MockEntity>;
   updateEntity: (id: string, properties: Record<string, unknown>) => Promise<MockEntity>;
   deleteEntity: (id: string) => Promise<void>;
+  getAuthState: () => MockAuthState;
+  getConnectionState: () => MockConnectionState;
 }
 
 function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
@@ -194,6 +210,19 @@ export class MockTrellisClient implements MockClient {
       throw new Error(`Entity ${id} not found`);
     }
     this.entitiesById.delete(id);
+  }
+
+  getAuthState(): MockAuthState {
+    return {
+      isAuthenticated: true,
+      tenantId: 'demo-tenant',
+      actorId: 'demo-user',
+      expiresAt: Date.now() + 3600000, // 1 hour from now
+    };
+  }
+
+  getConnectionState(): MockConnectionState {
+    return this.loading ? 'connecting' : 'connected';
   }
 }
 
