@@ -48,6 +48,8 @@ A universal enterprise data platform for product and process data. Event-sourced
 3. **Always cross-reference ADRs when writing specs** - prevents documentation drift
 4. **Check [docs/GLOSSARY.md](docs/GLOSSARY.md) for term definitions** - terminology is precise
 5. **Check [specs/EXPRESSION-SYSTEMS.md](specs/EXPRESSION-SYSTEMS.md)** before writing any expression syntax
+6. **Follow orchestration methodology** for complex multi-file work (see Orchestration section below)
+7. **Run discovery phase before implementation** - read `skills/discovery-protocol.md`
 
 ## CRITICAL: Things You Must NOT Do
 
@@ -77,6 +79,46 @@ A universal enterprise data platform for product and process data. Event-sourced
 7. **Do NOT use `self.x`** - always use `@self.x` or `#x` in kernel contexts
 
 8. **Do NOT use lowercase functions** - always `SUM()`, `COUNT()`, `AVG()`, `IF()` (uppercase)
+
+## Orchestration Methodology
+
+This project uses multi-instance orchestration for complex work. The full methodology is documented in `.claude-plugins/orchestration/`.
+
+### Quick Reference
+
+| Resource | Path | Use When |
+|----------|------|----------|
+| Full Guide | `skills/orchestration-guide.md` | Starting a new phase |
+| Discovery Protocol | `skills/discovery-protocol.md` | Before any implementation |
+| Spawn Templates | `skills/spawn-templates.md` | Creating new instances |
+| Scratchpad Format | `skills/scratchpad-format.md` | Documenting work in progress |
+
+### Instance Types
+
+- **Persistent:** Documenter (always active)
+- **Periodic:** Codebase Auditor (after milestones)
+- **On-demand:** Git Tracker (at commits)
+- **Temporary:** Domain experts, reviewers (single task)
+
+### Core Protocols
+
+1. **Discovery First:** Read specs → Create scratchpad → Report → Get approval → Implement
+2. **Cross-Review:** When outputs integrate, instances review each other
+3. **Audit Before Commit:** Codebase Auditor verifies spec compliance before Git Tracker commits
+
+### Commands (Manual Invocation)
+
+To use orchestration commands, ask Claude to read and follow:
+- "Follow the spawn command for a new domain expert"
+- "Run the audit command for Phase 2.3"
+- "Execute the status command"
+
+### Key Files
+
+When starting complex work, read these first:
+1. `skills/orchestration-guide.md` - Full methodology
+2. `skills/discovery-protocol.md` - How to do discovery phase
+3. `agents/documenter.md` - Documenter responsibilities
 
 ## When Confused
 

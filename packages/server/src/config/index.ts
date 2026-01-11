@@ -1,10 +1,18 @@
 /**
- * Trellis Product Configuration - Public Exports
+ * Trellis Server Configuration - Public Exports
  *
- * Re-exports all configuration types, loader, and validator.
+ * Re-exports all configuration types, loaders, and validators.
  */
 
-// Types
+// Database configuration
+export type { DatabaseConfig } from './database.js';
+export { loadDatabaseConfig } from './database.js';
+
+// Server configuration
+export type { ServerConfig } from './server.js';
+export { loadServerConfig } from './server.js';
+
+// Product configuration types
 export type {
   // Branded types
   ProductId,
