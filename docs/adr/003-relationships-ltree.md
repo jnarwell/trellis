@@ -121,6 +121,14 @@ WHERE path <@ 'old_parent';
 - Check that target is not an ancestor of source before creating relationship
 - Enforce in application layer with transaction
 
+## Authoritative Implementation
+
+The kernel specification has evolved from this ADR. For the authoritative relationship structure:
+- Types: [specs/kernel/01-types.ts](../../specs/kernel/01-types.ts) - `Relationship`, `RelationshipSchema`
+- Schema: [specs/kernel/02-schema.sql](../../specs/kernel/02-schema.sql) - `relationships` table
+
+Key naming differences: The spec uses `from_entity`/`to_entity` (not `source_entity_id`/`target_entity_id`), `type` as TEXT (not `relationship_type_id`), and references `actors` (not `users`).
+
 ## References
 
 - [ADR-002: Entity Properties via JSONB](./002-entity-properties-jsonb.md)

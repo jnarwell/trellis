@@ -1,7 +1,7 @@
 # Trellis - Current State
 
-**Last Updated:** 2026-01-10
-**Status:** Project Inception
+**Last Updated:** 2025-01-10
+**Status:** Phase 1 Complete - Specification
 
 ---
 
@@ -20,15 +20,18 @@ Instead of building separate applications for each use case, Trellis provides:
 
 ## Project Phase
 
-**Phase 0: Documentation & Architecture** (Current)
+**Phase 1: Specification** ✅ Complete
 
-We are establishing:
-- Core architectural decisions (ADRs)
+Completed:
+- Core architectural decisions (10 ADRs)
 - Terminology and glossary
-- Interface contracts
-- Documentation structure
+- Kernel specifications (types, schema, API, events, queries, expressions)
+- Block system design specification
+- Product configuration specification
+- Expression systems reconciliation (two-systems model)
+- CLAUDE.md for Claude Code instance onboarding
 
-No implementation code has been written yet.
+**Total Output:** ~12,700+ lines across 32+ files
 
 ---
 
@@ -51,59 +54,108 @@ No implementation code has been written yet.
 
 ## What Exists
 
+### Kernel Specifications (Authoritative)
+```
+specs/kernel/
+├── 00-overview.md              # Kernel design overview
+├── 01-types.ts                 # TypeScript type definitions
+├── 02-schema.sql               # PostgreSQL schema with RLS
+├── 03-api.md                   # API contract specification
+├── 04-events.md                # Event system specification
+├── 05-queries.md               # Query patterns and indexes
+├── 06-expressions.md           # Expression engine specification
+└── 06-expressions-addendum.md  # Filter syntax decisions
+```
+
+### Block System Specifications
+```
+specs/blocks/
+└── block-system-design.md      # Block runtime and spec system
+```
+
+### Product Configuration Specifications
+```
+specs/config/
+├── product-config-spec.md      # Full product YAML specification
+├── EXPRESSION-QUICK-REF.md     # Expression syntax cheat sheet
+├── EXPRESSION-GAPS.md          # Gap analysis (all resolved)
+└── EXPRESSION-NEEDS-SCRATCHPAD.md
+```
+
+### Expression Systems Reference
+```
+specs/
+└── EXPRESSION-SYSTEMS.md       # Authoritative two-systems reference
+```
+
 ### Documentation
 ```
 docs/
-├── adr/
-│   ├── 000-template.md
-│   ├── 001-tech-stack.md
-│   ├── 002-entity-properties-jsonb.md
-│   ├── 003-relationships-ltree.md
-│   ├── 004-dimensional-properties.md
-│   ├── 005-expressions-staleness.md
-│   ├── 006-immutable-events.md
-│   ├── 007-blocks-specs.md
-│   ├── 008-products-yaml.md
-│   ├── 009-multi-tenancy.md
-│   └── 010-optimistic-locking.md
-├── contracts/
-│   └── 000-template.md
-├── api/
-│   └── (empty - to be created)
-├── guides/
-│   └── (empty - to be created)
-├── GLOSSARY.md
-├── CURRENT_STATE.md (this file)
-└── OPEN_QUESTIONS.md
+├── adr/                 # 11 architecture decision records
+├── contracts/           # Interface contract templates
+├── GLOSSARY.md          # Term definitions (synced with specs)
+├── CURRENT_STATE.md     # This file
+├── OPEN_QUESTIONS.md    # Unresolved decisions
+├── ERRORS.md            # Error log and lessons learned
+└── CLAUDE-SCRATCHPAD.md # CLAUDE.md development notes
 ```
 
-### Code
-None yet.
+### Root Files
+```
+/
+├── CLAUDE.md            # Project context for Claude Code instances
+└── README.md            # Project overview
+```
+
+### Implementation Code
+None yet - specs are complete and ready for implementation.
+
+---
+
+## Key Decisions This Phase
+
+### Two Expression Systems
+
+| System | Purpose | Syntax | Used In |
+|--------|---------|--------|---------|
+| Expression Engine | Entity computations | `@self.x`, `#x`, `SUM()`, `IF()` | Computed props, lifecycle `when`, entity filters |
+| Data Binding | UI scope access | `$scope.x`, `$can()`, `${template}` | Block props, `showWhen`, wiring transforms |
+
+**Core Principle:**
+- Entity data → Expression Engine (deterministic, dependency-tracked)
+- UI display → Data Binding (runtime context, reactive)
+
+See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authoritative reference.
 
 ---
 
 ## What's Next
 
-### Immediate (Phase 1: Foundation)
-1. Initialize TypeScript monorepo structure
-2. Set up Prisma with PostgreSQL schema
-3. Implement core entity CRUD
-4. Implement property system with JSONB
-5. Add tenant isolation
+### Phase 2: Implementation
 
-### Near-Term (Phase 2: Kernel)
-1. Expression parser and evaluator
-2. Dependency tracking and staleness
-3. Relationship management with ltree
-4. Event system foundation
-5. Basic API endpoints
+#### Immediate
+1. Initialize TypeScript monorepo structure (see OQ-010)
+2. Implement kernel from specs (`specs/kernel/`)
+3. Set up PostgreSQL with schema from `02-schema.sql`
+4. Implement API from `03-api.md`
+5. Add tests for all kernel operations
 
-### Future (Phase 3+)
-1. Block system and specs
-2. Product configuration loading
-3. Frontend foundation
-4. Real-time updates
-5. Webhook delivery
+#### Expression Engine
+1. Expression parser (TEL - Trellis Expression Language)
+2. Dependency extraction from expressions
+3. Staleness propagation implementation
+4. Computed cache management
+
+#### Block Runtime
+1. Block spec loading and validation
+2. Data Binding evaluator
+3. Block wiring system
+4. Event/receiver communication
+
+#### Product Layer
+1. YAML config loading and validation
+2. Frontend foundation
+3. Real-time updates via SSE/WebSocket
 
 ---
 
@@ -115,10 +167,10 @@ The architecture is inspired by the **Drip Team Portal** codebase at:
 ```
 
 Key patterns borrowed:
-- Value node concept (literal/expression/reference)
-- Computation status tracking
+- Property sources (literal/inherited/computed/measured)
+- Computation status tracking (pending/valid/stale/error/circular)
 - SI dimensional analysis for units
-- Property source lookups
+- Value types with dimension support
 
 ---
 
@@ -145,7 +197,12 @@ Each instance can read this document to understand the current state.
 
 ## Quick Links
 
+- [CLAUDE.md](../CLAUDE.md) - Start here for new Claude Code instances
+- [Expression Systems](../specs/EXPRESSION-SYSTEMS.md) - Two-systems reference
+- [Kernel Types](../specs/kernel/01-types.ts) - Authoritative type definitions
+- [Kernel Schema](../specs/kernel/02-schema.sql) - PostgreSQL schema
+- [Kernel API](../specs/kernel/03-api.md) - API contract
 - [Glossary](./GLOSSARY.md) - Term definitions
 - [Open Questions](./OPEN_QUESTIONS.md) - Unresolved decisions
+- [Errors Log](./ERRORS.md) - Past mistakes and lessons
 - [ADR Template](./adr/000-template.md) - For new decisions
-- [Contract Template](./contracts/000-template.md) - For new interfaces

@@ -199,6 +199,17 @@ export type PropertySource =
   | 'computed'    // Calculated from expression
   | 'measured';   // From measurement with uncertainty
 
+/**
+ * Computation status for computed and inherited properties.
+ * See ADR-005 for staleness propagation algorithm.
+ */
+export type ComputationStatus =
+  | 'pending'   // Never calculated
+  | 'valid'     // Calculated and up-to-date
+  | 'stale'     // Dependencies changed, needs recalculation
+  | 'error'     // Last calculation failed
+  | 'circular'; // Circular dependency detected
+
 /** Literal property - value directly set */
 export interface LiteralProperty {
   source: 'literal';
@@ -206,7 +217,10 @@ export interface LiteralProperty {
   value: Value;
 }
 
-/** Inherited property - value from parent or template */
+/**
+ * Inherited property - value from parent or template.
+ * Can become stale if the source property changes.
+ */
 export interface InheritedProperty {
   source: 'inherited';
   name: PropertyName;
@@ -218,9 +232,16 @@ export interface InheritedProperty {
   override?: Value;
   /** Resolved value (computed at read time) */
   resolved_value?: Value;
+  /** Status of the resolved value */
+  computation_status: ComputationStatus;
+  /** Error message if status is 'error' */
+  computation_error?: string;
 }
 
-/** Computed property - value from expression */
+/**
+ * Computed property - value from expression.
+ * See ADR-005 for expression syntax and staleness propagation.
+ */
 export interface ComputedProperty {
   source: 'computed';
   name: PropertyName;
@@ -228,10 +249,14 @@ export interface ComputedProperty {
   expression: string;
   /** Dependencies (property paths this expression references) */
   dependencies: string[];
-  /** Cached computed value */
+  /** Cached computed value (null if pending/error/circular) */
   cached_value?: Value;
   /** When the cached value was computed */
   cached_at?: string;
+  /** Status of the computed value */
+  computation_status: ComputationStatus;
+  /** Error message if status is 'error' or 'circular' */
+  computation_error?: string;
 }
 
 /** Measured property - value with uncertainty from measurement */
@@ -307,6 +332,7 @@ export type Cardinality =
 
 /**
  * A typed connection between two entities.
+ * See ADR-003 for ltree path usage in hierarchical relationships.
  */
 export interface Relationship {
   /** Unique identifier for this relationship instance */
@@ -323,6 +349,13 @@ export interface Relationship {
 
   /** Target entity */
   to_entity: EntityId;
+
+  /**
+   * Materialized path for hierarchical relationships (null for flat relationships).
+   * Format: "root_id.parent_id.child_id" - enables efficient tree queries via ltree.
+   * See ADR-003 for path convention and query patterns.
+   */
+  path?: string;
 
   /** Optional metadata on the relationship */
   metadata?: Record<string, Value>;
@@ -530,14 +563,27 @@ export interface EntityQuery {
 // =============================================================================
 
 /**
+ * Input for setting a property. Name comes from the key in the Record.
+ * The API transforms this to a full Property by adding:
+ * - name: from the Record key
+ * - computation_status: 'pending' (for computed/inherited)
+ * - dependencies: parsed from expression (for computed)
+ */
+export type PropertyInput =
+  | { source: 'literal'; value: Value }
+  | { source: 'inherited'; from_entity: EntityId; from_property?: PropertyName; override?: Value }
+  | { source: 'computed'; expression: string }
+  | { source: 'measured'; value: NumberValue; uncertainty?: number; measured_at?: string };
+
+/**
  * Input for creating an entity.
  */
 export interface CreateEntityInput {
   /** Entity type */
   type: TypePath;
 
-  /** Initial properties */
-  properties: Record<PropertyName, Omit<Property, 'name'>>;
+  /** Initial properties (name comes from key, transformed to full Property) */
+  properties: Record<PropertyName, PropertyInput>;
 
   /** Initial relationships to create */
   relationships?: Array<{
@@ -558,7 +604,7 @@ export interface UpdateEntityInput {
   expected_version: number;
 
   /** Properties to set (merge with existing) */
-  set_properties?: Record<PropertyName, Omit<Property, 'name'>>;
+  set_properties?: Record<PropertyName, PropertyInput>;
 
   /** Properties to remove */
   remove_properties?: PropertyName[];
@@ -571,6 +617,8 @@ export interface CreateRelationshipInput {
   type: RelationshipType;
   from_entity: EntityId;
   to_entity: EntityId;
+  /** Optional path for hierarchical relationships (see ADR-003) */
+  path?: string;
   metadata?: Record<string, Value>;
 }
 

@@ -48,13 +48,49 @@ interface CreateEntityInput {
   properties: Record<PropertyName, PropertyInput>;
   relationships?: RelationshipInput[];
 }
+```
 
-// Property without name (name comes from the key)
+### PropertyInput Type
+
+Properties are submitted without the `name` field - the name comes from the key in the `properties` Record.
+The API layer adds the `name` field before storing/emitting events.
+
+For computed and inherited properties, the API layer initializes `computation_status` to `'pending'`.
+
+```typescript
+/**
+ * Input for setting a property. Name comes from the key in the Record.
+ * The API transforms this to a full Property by adding the name field.
+ */
 type PropertyInput =
   | { source: 'literal'; value: Value }
   | { source: 'inherited'; from_entity: EntityId; from_property?: PropertyName; override?: Value }
   | { source: 'computed'; expression: string }
   | { source: 'measured'; value: NumberValue; uncertainty?: number; measured_at?: string };
+```
+
+**Transformation Example:**
+
+```typescript
+// API Input:
+{
+  properties: {
+    margin: { source: 'computed', expression: 'price * 0.3' }
+  }
+}
+
+// Stored/Event Property (after API transformation):
+{
+  margin: {
+    source: 'computed',
+    name: 'margin',  // Added by API
+    expression: 'price * 0.3',
+    dependencies: ['price'],  // Parsed from expression by API
+    computation_status: 'pending',  // Initialized by API
+    cached_value: undefined,
+    cached_at: undefined
+  }
+}
 ```
 
 **Behavior:**

@@ -26,15 +26,16 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- For text search
 -- CUSTOM TYPES
 -- -----------------------------------------------------------------------------
 
--- Property source types
-CREATE TYPE property_source AS ENUM (
-    'literal',
-    'inherited',
-    'computed',
-    'measured'
+-- Computation status for computed/inherited properties (ADR-005)
+CREATE TYPE computation_status AS ENUM (
+    'pending',    -- Never calculated
+    'valid',      -- Calculated and up-to-date
+    'stale',      -- Dependencies changed, needs recalculation
+    'error',      -- Last calculation failed
+    'circular'    -- Circular dependency detected
 );
 
--- Value types
+-- Value types (used for documentation; validated in application layer)
 CREATE TYPE value_type AS ENUM (
     'text',
     'number',
@@ -60,6 +61,7 @@ CREATE TYPE event_type AS ENUM (
     'entity_updated',
     'entity_deleted',
     'property_changed',
+    'property_stale',          -- Added: for staleness propagation events
     'relationship_created',
     'relationship_deleted',
     'type_schema_created',
@@ -194,6 +196,11 @@ CREATE TABLE relationships (
     from_entity     UUID NOT NULL REFERENCES entities(id),
     to_entity       UUID NOT NULL REFERENCES entities(id),
     metadata        JSONB NOT NULL DEFAULT '{}',
+
+    -- ltree path for hierarchical relationships (null for flat relationships)
+    -- Format: "root_id.parent_id.child_id" - see ADR-003
+    path            ltree,
+
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by      UUID NOT NULL REFERENCES actors(id),
 
@@ -214,6 +221,9 @@ CREATE INDEX idx_relationships_to_type ON relationships(to_entity, type);
 
 -- For bidirectional traversal
 CREATE INDEX idx_relationships_bidirectional ON relationships(tenant_id, type, to_entity, from_entity);
+
+-- GIST index for hierarchical path queries (ADR-003)
+CREATE INDEX idx_relationships_path ON relationships USING GIST (path) WHERE path IS NOT NULL;
 
 -- -----------------------------------------------------------------------------
 -- EVENTS (Immutable Event Log)
@@ -248,19 +258,62 @@ CREATE INDEX idx_events_entity_time ON events(entity_id, occurred_at DESC);
 -- -----------------------------------------------------------------------------
 
 -- Cache for computed property values to avoid recalculation
+-- Uses computation_status enum per ADR-005
 CREATE TABLE computed_cache (
     entity_id       UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
     property_name   TEXT NOT NULL,
-    cached_value    JSONB NOT NULL,
+    cached_value    JSONB,            -- NULL if pending/error/circular
     dependencies    TEXT[] NOT NULL,  -- Property paths this depends on
-    computed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    valid           BOOLEAN NOT NULL DEFAULT TRUE,
+    computed_at     TIMESTAMPTZ,      -- NULL if never computed
+    status          computation_status NOT NULL DEFAULT 'pending',
+    error_message   TEXT,             -- Populated if status is 'error' or 'circular'
 
     PRIMARY KEY (entity_id, property_name)
 );
 
-CREATE INDEX idx_computed_cache_valid ON computed_cache(entity_id) WHERE valid = TRUE;
+-- Index for finding valid cached values
+CREATE INDEX idx_computed_cache_valid ON computed_cache(entity_id) WHERE status = 'valid';
+
+-- Index for finding stale values that need recalculation
+CREATE INDEX idx_computed_cache_stale ON computed_cache(entity_id) WHERE status = 'stale';
+
+-- Index for finding properties by their dependencies (for staleness propagation)
 CREATE INDEX idx_computed_cache_deps ON computed_cache USING GIN (dependencies);
+
+-- -----------------------------------------------------------------------------
+-- PROPERTY DEPENDENCIES (ADR-005)
+-- -----------------------------------------------------------------------------
+
+-- Tracks which properties depend on which for staleness propagation
+CREATE TABLE property_dependencies (
+    id                      UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    tenant_id               UUID NOT NULL REFERENCES tenants(id),
+
+    -- The property that has the expression (the dependent)
+    dependent_entity_id     UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    dependent_property_name TEXT NOT NULL,
+
+    -- The property being referenced (the source)
+    source_entity_id        UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    source_property_name    TEXT NOT NULL,
+
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Prevent duplicate dependency records
+    CONSTRAINT unique_dependency UNIQUE (
+        dependent_entity_id, dependent_property_name,
+        source_entity_id, source_property_name
+    )
+);
+
+-- Index for finding all dependents of a source property (staleness propagation)
+CREATE INDEX idx_deps_source ON property_dependencies (source_entity_id, source_property_name);
+
+-- Index for finding all sources of a dependent property
+CREATE INDEX idx_deps_dependent ON property_dependencies (dependent_entity_id, dependent_property_name);
+
+-- Index for tenant-scoped queries
+CREATE INDEX idx_deps_tenant ON property_dependencies (tenant_id);
 
 -- -----------------------------------------------------------------------------
 -- ROW-LEVEL SECURITY
@@ -273,6 +326,7 @@ ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE actors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE type_schemas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE relationship_schemas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE property_dependencies ENABLE ROW LEVEL SECURITY;
 
 -- Tenant isolation policies (application sets current_tenant_id)
 CREATE POLICY tenant_isolation_entities ON entities
@@ -293,6 +347,9 @@ CREATE POLICY tenant_isolation_type_schemas ON type_schemas
 
 CREATE POLICY tenant_isolation_rel_schemas ON relationship_schemas
     USING (tenant_id IS NULL OR tenant_id = current_setting('app.current_tenant_id')::UUID);
+
+CREATE POLICY tenant_isolation_property_deps ON property_dependencies
+    USING (tenant_id = current_setting('app.current_tenant_id')::UUID);
 
 -- -----------------------------------------------------------------------------
 -- HELPER FUNCTIONS
@@ -326,14 +383,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
--- Function to invalidate computed cache when dependencies change
+-- Function to mark computed cache as stale when dependencies change
 CREATE OR REPLACE FUNCTION invalidate_computed_cache()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Mark cached values as invalid if they depend on changed properties
+    -- Mark cached values as stale if they depend on changed properties
     UPDATE computed_cache
-    SET valid = FALSE
+    SET status = 'stale'
     WHERE entity_id = NEW.id
+      AND status = 'valid'
       AND dependencies && ARRAY(SELECT jsonb_object_keys(NEW.properties));
 
     RETURN NEW;

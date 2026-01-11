@@ -105,6 +105,14 @@ interface PropertyValue {
 }
 ```
 
+## Authoritative Implementation
+
+The kernel specification has evolved from this ADR. For the authoritative property structure:
+- Types: [specs/kernel/01-types.ts](../../specs/kernel/01-types.ts) - `Property`, `PropertySource`, `Value` types
+- Schema: [specs/kernel/02-schema.sql](../../specs/kernel/02-schema.sql) - `entities` table
+
+Key evolution: Properties now use `source` (literal/inherited/computed/measured) rather than embedding type in the value structure. Values have their own typed structure (`TextValue`, `NumberValue`, etc.).
+
 ## References
 
 - [ADR-001: Technology Stack](./001-tech-stack.md)

@@ -10,13 +10,19 @@ This document defines key terms used throughout the Trellis platform. Keep this 
 A domain object with properties and relationships. Examples: Part, Contact, Document, Test Case. Entities are instances of Entity Types.
 
 ### Entity Type
-A template defining what properties an entity can have. Defined in product configuration YAML. Similar to a "class" in OOP or a "table" in databases.
+A template defining what properties an entity can have. Represented as a **TypePath** (hierarchical path like `product.variant`). Defined in product configuration YAML or type_schemas table. Similar to a "class" in OOP.
+
+### TypePath
+A hierarchical type identifier using dot notation (stored as `ltree` in PostgreSQL). Examples: `product`, `product.variant`, `test.result.measurement`. Enables type inheritance and hierarchy queries.
 
 ### Property
-A named, typed attribute of an entity. Properties can be:
-- **Literal**: Direct values (string, number, boolean, date)
-- **Expression**: Computed from other properties
-- **Reference**: Pointer to another entity
+A named, typed attribute of an entity. Properties have a **source** that determines how their value is obtained:
+- **literal**: Directly set value
+- **inherited**: Value from a parent entity or template (can become stale)
+- **computed**: Calculated from an expression (can become stale)
+- **measured**: From a measurement with optional uncertainty
+
+See [specs/kernel/01-types.ts](../specs/kernel/01-types.ts) for authoritative type definitions.
 
 ### Property Definition
 Schema for a property within an Entity Type. Specifies name, type, validation rules, dimension category, and default value.
@@ -31,8 +37,19 @@ Definition of a kind of relationship. Specifies source/target entity types, whet
 
 ## Value System
 
+### Value
+The typed data stored in a property. Value types include:
+- **text**: UTF-8 string
+- **number**: Numeric with optional dimension and unit
+- **boolean**: True/false
+- **datetime**: ISO 8601 timestamp
+- **duration**: ISO 8601 duration
+- **reference**: Pointer to another entity
+- **list**: Ordered collection of same-typed values
+- **record**: Named collection of typed fields
+
 ### Value Node
-(Legacy term from Drip) A computable unit - either a literal value, expression, or reference. In Trellis, this concept is embedded in Property values.
+(Legacy term from Drip) A computable unit. In Trellis, this concept evolved into the Property with its source types (literal, inherited, computed, measured).
 
 ### Computation Status
 State of a computed property:
@@ -42,14 +59,23 @@ State of a computed property:
 - **error**: Calculation failed
 - **circular**: Circular dependency detected
 
-### Expression
-A formula that computes a property value from other properties. Uses syntax like `#material_cost + #labor_cost`. See [ADR-005](./adr/005-expressions-staleness.md).
+### Data Binding
+UI-layer system for accessing runtime scope in views. Syntax: `$scope.property`, `${template}`, `$can()`. Used in block props, showWhen conditions, and wiring transforms. Not dependency-tracked - evaluated at render time. See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md).
+
+### Expression (Generic)
+A formula that computes a value. Trellis has two distinct expression systems - see **Expression Engine** and **Data Binding**.
+
+### Expression Engine
+Kernel-layer system for computing entity property values. Syntax: `@self.property`, `#shorthand`, `SUM()`, `IF()`. Used in computed properties, lifecycle conditions, and entity filters. Dependency-tracked for staleness propagation. See [specs/kernel/06-expressions.md](../specs/kernel/06-expressions.md) and [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md).
 
 ### Staleness Propagation
 When a property changes, all properties that depend on it are marked as "stale". This propagates through the entire dependency graph.
 
 ### Dependency Graph
-The network of which properties depend on which other properties. Used for staleness propagation and circular dependency detection.
+The network of which properties depend on which other properties. Stored in the `property_dependencies` table. Used for staleness propagation and circular dependency detection. See [specs/kernel/02-schema.sql](../specs/kernel/02-schema.sql).
+
+### Computed Cache
+Cache table (`computed_cache`) storing evaluated values for computed properties. Tracks `computation_status`, `cached_value`, and `dependencies` to avoid re-evaluation of valid expressions.
 
 ---
 
@@ -85,7 +111,11 @@ Checking that mathematical operations make physical sense. You can't add meters 
 An immutable record of something that happened. Contains: type, aggregate, payload, metadata. Powers audit, undo, webhooks, and real-time updates.
 
 ### Event Type
-Category of event: `entity.created`, `property.updated`, `relationship.deleted`, etc.
+Category of event stored in the `event_type` enum:
+- `entity_created`, `entity_updated`, `entity_deleted`
+- `property_changed`, `property_stale`
+- `relationship_created`, `relationship_deleted`
+- `type_schema_created`, `type_schema_updated`
 
 ### Aggregate
 The domain object an event relates to. Usually an entity or relationship.

@@ -149,6 +149,14 @@ async function propagateStaleness(
 }
 ```
 
+## Authoritative Implementation
+
+The kernel specification closely follows this ADR:
+- Types: [specs/kernel/01-types.ts](../../specs/kernel/01-types.ts) - `ComputationStatus`, `ComputedProperty`
+- Schema: [specs/kernel/02-schema.sql](../../specs/kernel/02-schema.sql) - `property_dependencies`, `computed_cache` tables
+
+The spec adds a `computed_cache` table for storing evaluated values, and uses `property_stale` event type (underscore, not dot notation).
+
 ## References
 
 - [ADR-002: Entity Properties via JSONB](./002-entity-properties-jsonb.md)
