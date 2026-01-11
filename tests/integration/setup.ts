@@ -1,17 +1,36 @@
 /**
  * Trellis Integration Test Setup
  *
- * Global setup using Testcontainers for PostgreSQL.
+ * Global setup for PostgreSQL - uses Testcontainers locally, CI-provided service in CI.
  */
 
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 let container: StartedPostgreSqlContainer | null = null;
+let usingExternalDatabase = false;
 
 /**
- * Global setup - starts PostgreSQL container.
+ * Global setup - starts PostgreSQL container or uses existing DATABASE_URL.
  */
 export async function setup(): Promise<void> {
+  // In CI or when DATABASE_URL is already set, use the provided database
+  if (process.env.CI || process.env.DATABASE_URL) {
+    console.log('\n[Integration Tests] Using provided DATABASE_URL');
+    usingExternalDatabase = true;
+
+    const connectionUri = process.env.DATABASE_URL;
+    if (!connectionUri) {
+      throw new Error('DATABASE_URL must be set in CI environment');
+    }
+
+    console.log(`[Integration Tests] Using database at: ${connectionUri.replace(/:[^:@]+@/, ':***@')}`);
+
+    // Run migrations
+    await runMigrations(connectionUri);
+    return;
+  }
+
+  // Locally, use Testcontainers
   console.log('\n[Integration Tests] Starting PostgreSQL container...');
 
   container = await new PostgreSqlContainer('postgres:15')
@@ -33,10 +52,10 @@ export async function setup(): Promise<void> {
 }
 
 /**
- * Global teardown - stops PostgreSQL container.
+ * Global teardown - stops PostgreSQL container if we started one.
  */
 export async function teardown(): Promise<void> {
-  if (container) {
+  if (container && !usingExternalDatabase) {
     console.log('\n[Integration Tests] Stopping PostgreSQL container...');
     await container.stop();
     container = null;
