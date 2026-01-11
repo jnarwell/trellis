@@ -149,7 +149,7 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
         return reply.status(401).send(error);
       }
 
-      // In development mode, fall back to legacy header auth
+      // In development mode, fall back to legacy header auth or demo defaults
       if (isDevelopmentMode()) {
         const legacyAuthContext = extractLegacyAuthContext(request);
 
@@ -161,13 +161,22 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
           request.auth = legacyAuthContext;
           return;
         }
+
+        // No auth headers at all - use demo defaults in dev mode
+        request.log.warn(
+          'Using demo authentication defaults (demo-tenant/demo-user). This is only allowed in development mode.'
+        );
+        request.auth = {
+          tenantId: 'demo-tenant' as TenantId,
+          actorId: 'demo-user' as ActorId,
+          permissions: ['read', 'write', 'delete', 'admin'],
+        };
+        return;
       }
 
-      // No valid authentication found
+      // No valid authentication found (production)
       const error = createAuthError(
-        isDevelopmentMode()
-          ? 'Missing authentication. Provide Bearer token or X-Tenant-Id/X-Actor-Id headers.'
-          : 'Missing or invalid Bearer token in Authorization header'
+        'Missing or invalid Bearer token in Authorization header'
       );
 
       return reply.status(401).send(error);

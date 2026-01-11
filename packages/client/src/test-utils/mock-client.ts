@@ -95,19 +95,35 @@ function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
   return builder;
 }
 
-export const mockClient: MockClient = {
-  query: (type?: string) => {
+export interface MockClientOptions {
+  /** Initial entities to populate the mock with */
+  entities?: MockEntity[];
+}
+
+/**
+ * Mock Trellis Client class for Storybook and Tests.
+ *
+ * Provides a mock implementation that can be instantiated with options.
+ */
+export class MockTrellisClient implements MockClient {
+  private entities: MockEntity[];
+
+  constructor(options?: MockClientOptions) {
+    this.entities = options?.entities ? [...options.entities] : [...mockEntities];
+  }
+
+  query(type?: string): QueryBuilder {
     const filtered = type
-      ? mockEntities.filter((e) => e.type === type)
-      : mockEntities;
+      ? this.entities.filter((e) => e.type === type)
+      : this.entities;
     return createQueryBuilder(filtered);
-  },
+  }
 
-  getEntity: async (id: string) => {
-    return mockEntities.find((e) => e.id === id);
-  },
+  async getEntity(id: string): Promise<MockEntity | undefined> {
+    return this.entities.find((e) => e.id === id);
+  }
 
-  createEntity: async (type: string, properties: Record<string, unknown>) => {
+  async createEntity(type: string, properties: Record<string, unknown>): Promise<MockEntity> {
     const newEntity: MockEntity = {
       id: `01924f8a-${Date.now().toString(16)}-7000-8000-${Math.random().toString(16).slice(2, 14)}`,
       type,
@@ -118,16 +134,19 @@ export const mockClient: MockClient = {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    this.entities.push(newEntity);
     return newEntity;
-  },
+  }
 
-  updateEntity: async (id: string, properties: Record<string, unknown>) => {
-    const entity = mockEntities.find((e) => e.id === id);
-    if (!entity) {
+  async updateEntity(id: string, properties: Record<string, unknown>): Promise<MockEntity> {
+    const index = this.entities.findIndex((e) => e.id === id);
+    if (index === -1) {
       throw new Error(`Entity ${id} not found`);
     }
-    return {
-      ...entity,
+    const entity = this.entities[index]!;
+    const updated: MockEntity = {
+      id: entity.id,
+      type: entity.type,
       properties: {
         ...entity.properties,
         ...Object.fromEntries(
@@ -135,14 +154,21 @@ export const mockClient: MockClient = {
         ),
       },
       version: entity.version + 1,
+      createdAt: entity.createdAt,
       updatedAt: new Date().toISOString(),
     };
-  },
+    this.entities[index] = updated;
+    return updated;
+  }
 
-  deleteEntity: async (id: string) => {
-    const index = mockEntities.findIndex((e) => e.id === id);
+  async deleteEntity(id: string): Promise<void> {
+    const index = this.entities.findIndex((e) => e.id === id);
     if (index === -1) {
       throw new Error(`Entity ${id} not found`);
     }
-  },
-};
+    this.entities.splice(index, 1);
+  }
+}
+
+/** Singleton instance for backwards compatibility */
+export const mockClient: MockClient = new MockTrellisClient();
