@@ -1,7 +1,7 @@
 # Trellis - Current State
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 2.3 Complete - API Layer
+**Status:** Phase 2.4 Complete - Full Stack
 
 ---
 
@@ -69,10 +69,23 @@ Completed:
 
 **Total Tests:** 446 passing (+237 from Phase 2.2)
 
+---
+
+**Phase 2.4: Full Stack** ✅ Complete
+
+| Component | Instance | Status | Tests |
+|-----------|----------|--------|-------|
+| Computed Property Evaluation | Instance 15 | ✅ Complete | Expression Engine wired |
+| JWT Authentication | Instance 16 | ✅ Complete | Replaces header-based |
+| WebSocket Subscriptions | Instance 17 | ✅ Complete | Real-time events |
+| Integration Test Harness | Instance 18 | ✅ Complete | E2E coverage |
+
+**Total Tests:** 607 passing (+161 from Phase 2.3)
+
 | Package | Tests |
 |---------|-------|
 | @trellis/kernel | 134 |
-| @trellis/server | 258 |
+| @trellis/server | 419 |
 | @trellis/client | 54 |
 
 ---
@@ -180,22 +193,40 @@ packages/
 │       ├── routes/
 │       │   ├── entities.ts  # Entity CRUD endpoints
 │       │   ├── relationships.ts  # Relationship endpoints
-│       │   └── queries.ts   # Query engine endpoints
+│       │   ├── queries.ts   # Query engine endpoints
+│       │   └── auth/        # Auth endpoints (login, refresh)
 │       ├── services/
 │       │   ├── entity.service.ts
 │       │   ├── relationship.service.ts
 │       │   ├── query.service.ts
 │       │   └── event.service.ts  # Event emitter
+│       ├── auth/            # JWT authentication (Phase 2.4)
+│       │   ├── jwt.ts       # Token signing/verification
+│       │   ├── tokens.ts    # Token generation
+│       │   └── types.ts     # Auth types
+│       ├── evaluation/      # Computed property evaluation (Phase 2.4)
+│       │   ├── context-builder.ts
+│       │   ├── evaluator.ts
+│       │   ├── computation-service.ts
+│       │   └── recalculation-handler.ts
+│       ├── websocket/       # Real-time subscriptions (Phase 2.4)
+│       │   ├── protocol.ts
+│       │   ├── subscriptions.ts
+│       │   ├── connection.ts
+│       │   └── handlers.ts
 │       └── lib/
 │           ├── pagination.ts # Cursor pagination
 │           └── errors.ts    # API error types
+│   └── tests/
+│       ├── harness/         # Test infrastructure (Phase 2.4)
+│       └── e2e/             # End-to-end tests
 └── client/
     └── src/
         ├── index.ts         # TrellisClient export
         └── client.ts        # Tenant-scoped API client
 ```
 
-**Test Coverage:** 446 tests passing
+**Test Coverage:** 607 tests passing
 
 ---
 
@@ -244,54 +275,56 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 | Query Engine | ✅ Complete | Cursor pagination, filtering, sorting, property queries |
 | Event Emitter | ✅ Complete | Immutable event log, 8 event types, sequence numbers |
 
-**Total: 446 tests passing**
+### Phase 2.4: Full Stack ✅
+| Component | Status | Details |
+|-----------|--------|---------|
+| Computed Property Evaluation | ✅ Complete | Expression Engine wired to server, EvaluationContext, recalculation handler |
+| JWT Authentication | ✅ Complete | Access tokens (1h), refresh tokens (7d), replaces header-based auth |
+| WebSocket Subscriptions | ✅ Complete | Real-time event subscriptions, connection management, filters |
+| Integration Test Harness | ✅ Complete | TestHarness class, database pool, E2E test structure |
+
+**Total: 607 tests passing**
 
 ---
 
 ## What's Next
 
-### Phase 2.3: API Layer ✅ COMPLETE
+### Phase 2.4: Full Stack ✅ COMPLETE
 
-#### Server Setup (Instance 10) ✅
-- [x] Fastify application setup
-- [x] Prisma plugin with connection pooling
-- [x] Tenant context middleware
-- [x] Authentication middleware structure
+#### Computed Property Evaluation (Instance 15) ✅
+- [x] EvaluationContext builder
+- [x] Server-side expression evaluator
+- [x] ComputationService for orchestration
+- [x] RecalculationHandler for staleness events
 
-#### Entity API (Instance 11) ✅
-- [x] Full CRUD endpoints (create, read, update, delete)
-- [x] Optimistic locking enforcement (ADR-010)
-- [x] RLS tenant isolation (ADR-009)
-- [x] Property JSONB operations
+#### JWT Authentication (Instance 16) ✅
+- [x] Access token generation (1h expiry)
+- [x] Refresh token generation (7d expiry)
+- [x] JWT verification middleware
+- [x] Login and refresh endpoints
 
-#### Relationship API (Instance 12) ✅
-- [x] Create/delete relationship endpoints
-- [x] Hierarchy queries with ltree (ADR-003)
-- [x] Ancestor/descendant traversal
-- [x] Relationship type validation
+#### WebSocket Subscriptions (Instance 17) ✅
+- [x] WebSocket protocol definition
+- [x] Subscription management
+- [x] Connection lifecycle handling
+- [x] Event filtering and broadcasting
 
-#### Query Engine (Instance 13) ✅
-- [x] Cursor-based pagination
-- [x] Filtering by type, properties, relationships
-- [x] Sorting with multiple fields
-- [x] Property value queries
+#### Integration Test Harness (Instance 18) ✅
+- [x] TestHarness class with setup/teardown
+- [x] Database pool management
+- [x] E2E test structure
+- [x] Tenant isolation in tests
 
-#### Event Emitter (Instance 14) ✅
-- [x] Immutable event log (ADR-006)
-- [x] 8 event types implemented
-- [x] Sequence number generation
-- [x] Tenant-scoped event streams
-
-### Phase 2.4: Integration (Next)
-1. Expression Engine + Block Runtime integration
-2. Computed property evaluation pipeline
-3. Real-time staleness propagation
-4. End-to-end testing with API
+### Phase 2.5: Production Readiness (Next)
+1. Schema validation (validate properties against type definitions)
+2. Permission system (role-based access control)
+3. Audit log UI (query event store)
+4. Client SDK enhancements (TypeScript SDK improvements)
 
 ### Future Phases
 - Frontend foundation (React + Block rendering)
-- Real-time updates (SSE/WebSocket)
 - Product layer deployment
+- Multi-region support
 
 ---
 
@@ -335,6 +368,10 @@ This is being built with AI assistance using multiple specialized Claude Code in
 | 12 | Relationship API | Create/delete, hierarchy queries, ltree support | Phase 2.3 | 🔴 Released |
 | 13 | Query Engine | Cursor pagination, filtering, sorting, property queries | Phase 2.3 | 🔴 Released |
 | 14 | Event Emitter | Immutable event log, 8 event types, sequence numbers | Phase 2.3 | 🔴 Released |
+| 15 | Computed Property Evaluation | EvaluationContext, ComputationService, RecalculationHandler | Phase 2.4 | 🔴 Released |
+| 16 | JWT Authentication | Access/refresh tokens, JWT middleware, login endpoints | Phase 2.4 | 🔴 Released |
+| 17 | WebSocket Subscriptions | Protocol, subscriptions, connection management, handlers | Phase 2.4 | 🔴 Released |
+| 18 | Integration Test Harness | TestHarness class, database pool, E2E test structure | Phase 2.4 | 🔴 Released |
 
 Each instance can read CLAUDE.md and this document to understand the current state.
 

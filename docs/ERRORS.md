@@ -291,3 +291,62 @@ interface ErrorResponse {
 - Referenced entity was deleted
 - Relationship target no longer exists
 **Resolution:** Update or remove the broken reference
+
+---
+
+## Authentication Errors (Phase 2.4)
+
+> **Status:** ✅ Finalized - Implementation in `packages/server/src/auth/`
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `UNAUTHORIZED` | 401 | Missing or invalid Authorization header |
+| `TOKEN_EXPIRED` | 401 | JWT has expired, needs refresh |
+| `TOKEN_INVALID` | 401 | JWT signature invalid or malformed |
+| `REFRESH_INVALID` | 401 | Refresh token invalid or expired |
+
+### Common Causes and Resolutions
+
+#### TOKEN_EXPIRED
+**Symptoms:** API returns HTTP 401 with code `TOKEN_EXPIRED`
+**Common Causes:**
+- Access token older than 1 hour
+- System clock skew between client and server
+**Resolution:** Use refresh token to obtain new access token via `/auth/refresh` endpoint
+
+#### REFRESH_INVALID
+**Symptoms:** Refresh endpoint returns HTTP 401
+**Common Causes:**
+- Refresh token older than 7 days
+- Token was revoked on logout
+- Token was already used (if single-use policy)
+**Resolution:** User must re-authenticate via login flow
+
+---
+
+## WebSocket Errors (Phase 2.4)
+
+> **Status:** ✅ Finalized - Implementation in `packages/server/src/websocket/`
+
+| Code | Description |
+|------|-------------|
+| `WS_AUTH_REQUIRED` | Connection not authenticated, send auth message first |
+| `WS_AUTH_FAILED` | Authentication message invalid or token expired |
+| `WS_INVALID_MESSAGE` | Message format invalid (not valid JSON or missing type) |
+| `WS_SUBSCRIPTION_NOT_FOUND` | Unsubscribe for unknown subscription ID |
+| `WS_RATE_LIMITED` | Too many messages, connection throttled |
+
+### WebSocket Protocol
+
+```typescript
+// Client → Server messages
+{ type: 'auth', token: string }
+{ type: 'subscribe', filter: { entity_type?, entity_id?, event_types? } }
+{ type: 'unsubscribe', subscription_id: string }
+
+// Server → Client messages
+{ type: 'auth_ok' }
+{ type: 'subscribed', subscription_id: string }
+{ type: 'event', subscription_id: string, event: TrellisEvent }
+{ type: 'error', code: string, message: string }
+```

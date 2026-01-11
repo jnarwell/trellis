@@ -220,6 +220,42 @@ Generalized Inverted Index. Used to index JSONB for efficient queries.
 
 ---
 
+## Authentication
+
+### JWT (JSON Web Token)
+Stateless authentication token containing tenant_id, actor_id, and permissions. Used in Authorization header as `Bearer <token>`. Signed with secret key for integrity verification.
+
+### Access Token
+Short-lived JWT (1 hour expiry) for API authentication. Contains user identity and permissions. Refreshed via refresh token when expired.
+
+### Refresh Token
+Long-lived token (7 days expiry) used to obtain new access tokens without re-authentication. Stored securely, revocable on logout.
+
+---
+
+## Real-time
+
+### WebSocket Subscription
+Client registration to receive real-time events matching a filter. Subscriptions specify entity_type, entity_id, and/or event_types to receive. Managed per-connection.
+
+### Event Broadcasting
+Server-side distribution of events to subscribed WebSocket connections. Events are filtered based on each subscription's criteria before sending.
+
+---
+
+## Evaluation
+
+### Evaluation Context
+Runtime context for expression evaluation containing the `self` entity, referenced entities, and property accessor function. Built by ContextBuilder before expression execution.
+
+### Computation Service
+Server component that orchestrates computed property evaluation. Uses the kernel's Expression Engine with server-side EvaluationContext. Manages computation requests and caching.
+
+### Recalculation Handler
+Event handler that listens for `property_stale` events and triggers re-evaluation of computed properties. Ensures computed values stay up-to-date as dependencies change.
+
+---
+
 ## Debugging
 
 ### DebugContext
@@ -249,10 +285,12 @@ Record of event propagation through wiring connections. Shows which events fired
 | CQRS | Command Query Responsibility Segregation |
 | CRUD | Create, Read, Update, Delete |
 | EAV | Entity-Attribute-Value |
+| JWT | JSON Web Token |
 | PLM | Product Lifecycle Management |
 | RLS | Row-Level Security |
 | SI | International System of Units |
 | SSE | Server-Sent Events |
+| WS | WebSocket |
 
 ---
 
