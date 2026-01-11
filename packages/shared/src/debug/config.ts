@@ -126,7 +126,7 @@ export function configureDebug(config: Partial<DebugConfig>): void {
  * Reset debug configuration to defaults based on NODE_ENV.
  */
 export function resetDebugConfig(): void {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   const globalAny = globalThis as { process?: { env?: Record<string, string | undefined> } };
   const env = globalAny.process?.env?.['NODE_ENV'] ?? 'development';
 

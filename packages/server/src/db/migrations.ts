@@ -50,7 +50,7 @@ async function getMigrationFiles(migrationsDir: string): Promise<string[]> {
       .filter((f) => f.endsWith('.sql'))
       .sort(); // Sort alphabetically (001_, 002_, etc.)
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+    if ((err as { code?: string }).code === 'ENOENT') {
       console.log(`Migrations directory not found: ${migrationsDir}`);
       return [];
     }

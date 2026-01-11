@@ -27,7 +27,6 @@ import {
   createScope,
   createEventScope,
   resolveInScope,
-  type BindingScope,
 
   // Evaluator
   evaluate,

@@ -6,7 +6,6 @@
 
 import type {
   DebugContext,
-  ErrorInfo,
   EntityContext,
   ExpressionContext,
   WiringContext,

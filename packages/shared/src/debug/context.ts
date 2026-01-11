@@ -18,7 +18,6 @@ import type {
   EnvironmentInfo,
   OperationType,
   ErrorCategory,
-  EvaluationStep,
   Trace,
 } from './types.js';
 import {
@@ -54,7 +53,7 @@ function generateContextId(): string {
 export function captureEnvironment(overrides?: Partial<EnvironmentInfo>): EnvironmentInfo {
   const config = getDebugConfig();
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+   
   const globalAny = globalThis as { process?: { env?: Record<string, string | undefined> } };
   const nodeEnv = globalAny.process?.env?.['NODE_ENV'] ?? 'browser';
 

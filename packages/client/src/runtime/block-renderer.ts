@@ -5,7 +5,7 @@
  * Actual React components will be implemented in a future phase.
  */
 
-import type { BlockType, BlockInstanceId, BlockConfig, BlockSpec } from '@trellis/kernel';
+import type { BlockType, BlockInstanceId, BlockSpec } from '@trellis/kernel';
 import type { BlockPlacement } from '@trellis/server';
 import type { BindingScope } from '../binding/index.js';
 import { evaluateString, evaluateTemplate } from '../binding/index.js';

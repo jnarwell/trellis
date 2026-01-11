@@ -135,7 +135,7 @@ export class WiringManager {
     payload: unknown,
     scope: BindingScope
   ): void {
-    const event: BlockEvent = {
+    const _event: BlockEvent = {
       source: sourceId,
       event: eventName,
       payload,
