@@ -33,7 +33,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
+      - name: Debug - Check workspace links
+        run: |
+          echo "=== node_modules/@trellis structure ==="
+          ls -la node_modules/@trellis/ || echo "No @trellis folder"
+          echo ""
+          echo "=== packages/kernel structure ==="
+          ls -la packages/kernel/
+          echo ""
+          echo "=== packages/kernel/package.json ==="
+          cat packages/kernel/package.json
+
+      - name: Build kernel first
+        run: pnpm --filter @trellis/kernel build
+
+      - name: Debug - Verify kernel dist
+        run: |
+          echo "=== kernel dist contents ==="
+          ls -la packages/kernel/dist/ || echo "No dist folder"
+          echo ""
+          echo "=== kernel dist/index.d.ts exists? ==="
+          test -f packages/kernel/dist/index.d.ts && echo "YES" || echo "NO"
+
+      - name: Build remaining packages
         run: pnpm build
 
       - name: TypeScript check
