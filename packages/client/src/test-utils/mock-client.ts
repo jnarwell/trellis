@@ -57,10 +57,12 @@ export const mockEntities: MockEntity[] = [
 ];
 
 export interface QueryBuilder {
-  where: (condition: unknown) => QueryBuilder;
+  where: (path: string, operator: string, value: unknown) => QueryBuilder;
   orderBy: (field: string, direction?: 'asc' | 'desc') => QueryBuilder;
+  orderByMultiple: (sort: Array<{ field: string; direction?: 'asc' | 'desc' }>) => QueryBuilder;
   limit: (n: number) => QueryBuilder;
   offset: (n: number) => QueryBuilder;
+  includeTotal: () => QueryBuilder;
   execute: () => Promise<{ items: MockEntity[]; total: number }>;
 }
 
@@ -95,8 +97,9 @@ function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
   let filtered = [...entities];
 
   const builder: QueryBuilder = {
-    where: () => builder,
+    where: (_path: string, _operator: string, _value: unknown) => builder,
     orderBy: () => builder,
+    orderByMultiple: () => builder,
     limit: (n: number) => {
       filtered = filtered.slice(0, n);
       return builder;
@@ -105,6 +108,7 @@ function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
       filtered = filtered.slice(n);
       return builder;
     },
+    includeTotal: () => builder,
     execute: async () => ({
       items: filtered,
       total: entities.length,
