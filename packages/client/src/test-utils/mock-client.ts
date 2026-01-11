@@ -78,6 +78,8 @@ export type MockConnectionState =
   | 'connected'
   | 'reconnecting';
 
+export type MockEventName = 'onConnected' | 'onDisconnected' | 'onReconnecting' | 'onEvent';
+
 export interface MockClient {
   query: (type?: string) => QueryBuilder;
   getEntity: (id: string) => Promise<MockEntity | undefined>;
@@ -86,6 +88,7 @@ export interface MockClient {
   deleteEntity: (id: string) => Promise<void>;
   getAuthState: () => MockAuthState;
   getConnectionState: () => MockConnectionState;
+  on: (event: MockEventName, callback: (...args: unknown[]) => void) => () => void;
 }
 
 function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
@@ -223,6 +226,11 @@ export class MockTrellisClient implements MockClient {
 
   getConnectionState(): MockConnectionState {
     return this.loading ? 'connecting' : 'connected';
+  }
+
+  on(_event: MockEventName, _callback: (...args: unknown[]) => void): () => void {
+    // Mock implementation - no-op, returns unsubscribe function
+    return () => {};
   }
 }
 
