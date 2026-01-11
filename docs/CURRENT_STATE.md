@@ -94,11 +94,12 @@ Completed:
 
 | Component | Instance | Status | Notes |
 |-----------|----------|--------|-------|
-| Client SDK | Instance 19 | 🟢 In Progress | TypeScript SDK enhancements |
+| Client SDK | Instance 19 | ✅ Complete | 127 tests, React hooks |
 | PLM Demo Product | Instance 24 | ✅ Complete | 11 YAML files, computed props |
-| Product Loader | Instance 25 | 🟢 In Progress | Server-side YAML loading |
+| Product Loader | Instance 25 | ✅ Complete | 80+ tests, schema validation |
 | Storybook Setup | Instance 26 | ✅ Complete | Component dev at localhost:6006 |
-| React Blocks | Instances 20-23 | ⏳ Queued | Table, Form, Detail, Kanban |
+| React Blocks | Instances 20-22 | 🟢 In Progress | Table, Form, Detail, Kanban |
+| Block Integration | Instance 23 | ⏳ Queued | After 20-22 |
 
 ### Demo Product Structure
 ```
@@ -118,11 +119,32 @@ products/plm-demo/
 └── navigation.yaml
 ```
 
-### Storybook
+### Storybook Infrastructure
 ```bash
 pnpm --filter @trellis/client storybook
 # Opens at http://localhost:6006
 ```
+
+**Structure:**
+```
+packages/client/
+├── .storybook/
+│   ├── main.ts           # Storybook 8 + react-vite
+│   └── preview.ts        # Global config
+├── src/
+│   ├── test-utils/
+│   │   └── mock-client.ts  # Mock TrellisClient for stories
+│   └── stories/
+│       ├── Introduction.mdx
+│       ├── foundations/    # Colors, Typography
+│       └── blocks/         # Table, Form, Detail, Kanban placeholders
+```
+
+**Block Placeholders:**
+- TableBlock - 4 variants (Default, WithFilters, WithPagination, Loading)
+- FormBlock - 4 variants (Create, Edit, WithValidation, Loading)
+- DetailBlock - 3 variants (Default, WithSections, Loading)
+- KanbanBlock - 3 variants (Default, WithDragDrop, Loading)
 
 ---
 
@@ -324,11 +346,12 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 ### Phase 2.5: UI Layer 🟢
 | Component | Status | Details |
 |-----------|--------|---------|
+| Client SDK | ✅ Complete | 127 tests, TrellisClient, React hooks, WebSocket hooks |
 | PLM Demo Product | ✅ Complete | 11 YAML files, 4 entities with computed props, 5 views |
-| Storybook Setup | ✅ Complete | Storybook 8.x, block placeholders, localhost:6006 |
-| Client SDK | 🟢 In Progress | TypeScript SDK, React hooks |
-| Product Loader | 🟢 In Progress | Server-side YAML loading, schema validation |
-| React Blocks | ⏳ Queued | Table, Form, Detail, Kanban blocks |
+| Product Loader | ✅ Complete | 80+ tests, schema validation, entity type registration |
+| Storybook Setup | ✅ Complete | Storybook 8.x, block placeholders, mock client |
+| React Blocks | 🟢 In Progress | Table, Form, Detail, Kanban (Instances 20-22) |
+| Block Integration | ⏳ Queued | After React Blocks (Instance 23) |
 
 ---
 
@@ -376,21 +399,28 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] Visual development at localhost:6006
 - [x] React + TypeScript integration
 
-#### Client SDK (Instance 19) 🟢
-- [ ] Enhanced TypeScript SDK
-- [ ] React hooks for data fetching
-- [ ] WebSocket subscription hooks
+#### Client SDK (Instance 19) ✅
+- [x] TrellisClient with full API coverage
+- [x] React hooks for data fetching (useEntity, useEntities, useQuery)
+- [x] WebSocket subscription hooks (useSubscription)
+- [x] 127 tests
 
-#### Product Loader (Instance 25) 🟢
-- [ ] Server-side YAML loader
-- [ ] Schema validation
-- [ ] Entity type registration
+#### Product Loader (Instance 25) ✅
+- [x] Server-side YAML loader with validation
+- [x] Schema generation from YAML definitions
+- [x] Entity type registration in database
+- [x] 80+ tests
 
-#### React Blocks (Instances 20-23) ⏳
-- [ ] TableBlock - Data table with sorting/filtering
-- [ ] FormBlock - Entity create/edit forms
-- [ ] DetailBlock - Entity detail view
-- [ ] KanbanBlock - Status-based card view
+#### React Blocks (Instances 20-22) 🟢
+- [ ] TableBlock - Data table with sorting/filtering (Instance 20)
+- [ ] FormBlock - Entity create/edit forms (Instance 21)
+- [ ] DetailBlock - Entity detail view (Instance 22)
+- [ ] KanbanBlock - Status-based card view (Instance 22)
+
+#### Block Integration (Instance 23) ⏳
+- [ ] Wire blocks to real API
+- [ ] Navigation between views
+- [ ] End-to-end demo flow
 
 ### Phase 2.6: Production (Next)
 1. Permission system (role-based access control)
@@ -449,10 +479,14 @@ This is being built with AI assistance using multiple specialized Claude Code in
 | 16 | JWT Authentication | Access/refresh tokens, JWT middleware, login endpoints | Phase 2.4 | 🔴 Released |
 | 17 | WebSocket Subscriptions | Protocol, subscriptions, connection management, handlers | Phase 2.4 | 🔴 Released |
 | 18 | Integration Test Harness | TestHarness class, database pool, E2E test structure | Phase 2.4 | 🔴 Released |
-| 19 | Client SDK | TypeScript SDK enhancements, React hooks | Phase 2.5 | 🟢 Active |
+| 19 | Client SDK | TrellisClient, React hooks, WebSocket hooks, 127 tests | Phase 2.5 | 🔴 Released |
+| 20 | TableBlock | Data table with sorting, filtering, pagination | Phase 2.5 | 🟢 Active |
+| 21 | FormBlock | Entity create/edit forms with validation | Phase 2.5 | 🟢 Active |
+| 22 | Detail + Kanban | DetailBlock and KanbanBlock components | Phase 2.5 | 🟢 Active |
+| 23 | Block Integration | Wire blocks to API, navigation, E2E demo | Phase 2.5 | ⏳ Queued |
 | 24 | PLM Demo Product | 11 YAML files, 4 entities, 5 views, computed props | Phase 2.5 | 🔴 Released |
-| 25 | Product Loader | Server-side YAML loading, schema validation | Phase 2.5 | 🟢 Active |
-| 26 | Storybook Setup | Storybook 8.x, block placeholders, visual dev | Phase 2.5 | 🔴 Released |
+| 25 | Product Loader | YAML loading, schema validation, 80+ tests | Phase 2.5 | 🔴 Released |
+| 26 | Storybook Setup | Storybook 8.x, block placeholders, mock client | Phase 2.5 | 🔴 Released |
 
 Each instance can read CLAUDE.md and this document to understand the current state.
 

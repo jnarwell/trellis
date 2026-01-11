@@ -270,6 +270,12 @@ Visual development environment for React components at localhost:6006. Used to d
 ### Block Placeholder
 Storybook story showing where a block component will be rendered once implemented. Displays block spec (props, events, receivers) and expected behavior. Used during incremental UI development.
 
+### Mock Client
+Test utility providing a fake TrellisClient implementation for Storybook stories and unit tests. Returns static mock data without hitting the real API. Located at `packages/client/src/test-utils/mock-client.ts`.
+
+### Story Variant
+Different configurations of a Storybook story showing a component in various states (e.g., Default, Loading, WithErrors, Empty). Each block has multiple variants to demonstrate different use cases.
+
 ---
 
 ## Debugging
