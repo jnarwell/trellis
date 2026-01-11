@@ -56,6 +56,16 @@ export const mockEntities: MockEntity[] = [
   },
 ];
 
+export interface QueryResult {
+  data: MockEntity[];
+  pagination: {
+    offset: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
 export interface QueryBuilder {
   where: (path: string, operator: string, value: unknown) => QueryBuilder;
   orderBy: (field: string, direction?: 'asc' | 'desc') => QueryBuilder;
@@ -63,7 +73,7 @@ export interface QueryBuilder {
   limit: (n: number) => QueryBuilder;
   offset: (n: number) => QueryBuilder;
   includeTotal: () => QueryBuilder;
-  execute: () => Promise<{ items: MockEntity[]; total: number }>;
+  execute: () => Promise<QueryResult>;
 }
 
 export interface MockAuthState {
@@ -95,23 +105,32 @@ export interface MockClient {
 
 function createQueryBuilder(entities: MockEntity[]): QueryBuilder {
   let filtered = [...entities];
+  let limitVal = entities.length;
+  let offsetVal = 0;
 
   const builder: QueryBuilder = {
     where: (_path: string, _operator: string, _value: unknown) => builder,
     orderBy: () => builder,
     orderByMultiple: () => builder,
     limit: (n: number) => {
+      limitVal = n;
       filtered = filtered.slice(0, n);
       return builder;
     },
     offset: (n: number) => {
+      offsetVal = n;
       filtered = filtered.slice(n);
       return builder;
     },
     includeTotal: () => builder,
-    execute: async () => ({
-      items: filtered,
-      total: entities.length,
+    execute: async (): Promise<QueryResult> => ({
+      data: filtered,
+      pagination: {
+        offset: offsetVal,
+        limit: limitVal,
+        total: entities.length,
+        hasMore: offsetVal + filtered.length < entities.length,
+      },
     }),
   };
 
