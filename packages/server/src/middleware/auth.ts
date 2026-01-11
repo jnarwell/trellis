@@ -1,15 +1,16 @@
 /**
  * Trellis Server - Authentication Middleware
  *
- * Extracts authentication context from request headers.
- * For V1, uses simple header-based auth. JWT integration is Phase 3.
+ * Extracts authentication context from JWT tokens.
+ * Falls back to header-based auth in development mode.
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import type { TenantId, ActorId, KernelError } from '@trellis/kernel';
+import type { TenantId, ActorId } from '@trellis/kernel';
 import type { AuthContext } from '../types/fastify.js';
+import { verifyAccessToken, createAuthError } from '../auth/index.js';
 
-/** Header names for auth context */
+/** Header names for legacy auth context (development only) */
 export const AUTH_HEADERS = {
   TENANT_ID: 'x-tenant-id',
   ACTOR_ID: 'x-actor-id',
@@ -19,7 +20,7 @@ export const AUTH_HEADERS = {
 /**
  * Paths that do not require authentication.
  */
-const PUBLIC_PATHS = ['/health', '/ready', '/metrics'] as const;
+const PUBLIC_PATHS = ['/health', '/ready', '/metrics', '/auth'] as const;
 
 /**
  * Check if a path is public (no auth required).
@@ -29,10 +30,54 @@ function isPublicPath(path: string): boolean {
 }
 
 /**
- * Extract auth context from request headers.
- * Returns null if required headers are missing.
+ * Extract Bearer token from Authorization header.
+ *
+ * @param authHeader - The Authorization header value
+ * @returns The token or null if not present/invalid format
  */
-export function extractAuthContext(request: FastifyRequest): AuthContext | null {
+function extractBearerToken(authHeader: string | undefined): string | null {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  return authHeader.slice(7).trim();
+}
+
+/**
+ * Extract auth context from JWT token.
+ *
+ * @param request - The Fastify request
+ * @returns Auth context or null if no valid token
+ */
+function extractJWTAuthContext(request: FastifyRequest): AuthContext | null {
+  const authHeader = request.headers.authorization;
+  const token = extractBearerToken(authHeader);
+
+  if (!token) {
+    return null;
+  }
+
+  const result = verifyAccessToken(token);
+
+  if (!result.success) {
+    // Store error for later use in error response
+    (request as FastifyRequest & { authError?: string }).authError = result.error;
+    return null;
+  }
+
+  return {
+    tenantId: result.payload.tenant_id as TenantId,
+    actorId: result.payload.sub as ActorId,
+    permissions: [...result.payload.permissions],
+  };
+}
+
+/**
+ * Extract auth context from legacy headers (development only).
+ *
+ * @param request - The Fastify request
+ * @returns Auth context or null if headers missing
+ */
+function extractLegacyAuthContext(request: FastifyRequest): AuthContext | null {
   const tenantId = request.headers[AUTH_HEADERS.TENANT_ID];
   const actorId = request.headers[AUTH_HEADERS.ACTOR_ID];
   const permissionsHeader = request.headers[AUTH_HEADERS.PERMISSIONS];
@@ -59,18 +104,17 @@ export function extractAuthContext(request: FastifyRequest): AuthContext | null 
 }
 
 /**
- * Create an authentication error response.
+ * Check if we're in development mode.
  */
-function createAuthError(message: string): KernelError {
-  return {
-    code: 'PERMISSION_DENIED',
-    message,
-  };
+function isDevelopmentMode(): boolean {
+  return process.env['NODE_ENV'] !== 'production';
 }
 
 /**
  * Register authentication middleware.
- * Extracts auth context from headers and attaches to request.
+ *
+ * In production: Requires JWT Bearer token in Authorization header.
+ * In development: Falls back to legacy header auth if no JWT present.
  */
 export function registerAuthMiddleware(fastify: FastifyInstance): void {
   fastify.addHook(
@@ -87,25 +131,49 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
         return;
       }
 
-      const authContext = extractAuthContext(request);
+      // Try JWT authentication first
+      const jwtAuthContext = extractJWTAuthContext(request);
 
-      if (!authContext) {
-        const missingHeaders: string[] = [];
-        if (!request.headers[AUTH_HEADERS.TENANT_ID]) {
-          missingHeaders.push(AUTH_HEADERS.TENANT_ID);
-        }
-        if (!request.headers[AUTH_HEADERS.ACTOR_ID]) {
-          missingHeaders.push(AUTH_HEADERS.ACTOR_ID);
-        }
+      if (jwtAuthContext) {
+        request.auth = jwtAuthContext;
+        return;
+      }
 
-        const error = createAuthError(
-          `Missing required authentication headers: ${missingHeaders.join(', ')}`
-        );
+      // Check if there was a JWT error (malformed/expired token)
+      const authError = (request as FastifyRequest & { authError?: string }).authError;
+      const hasAuthHeader = request.headers.authorization !== undefined;
 
+      if (hasAuthHeader && authError) {
+        // User provided a token but it was invalid
+        const error = createAuthError(authError);
         return reply.status(401).send(error);
       }
 
-      request.auth = authContext;
+      // In development mode, fall back to legacy header auth
+      if (isDevelopmentMode()) {
+        const legacyAuthContext = extractLegacyAuthContext(request);
+
+        if (legacyAuthContext) {
+          // Log warning about using legacy auth
+          request.log.warn(
+            'Using legacy header authentication. This is only allowed in development mode.'
+          );
+          request.auth = legacyAuthContext;
+          return;
+        }
+      }
+
+      // No valid authentication found
+      const error = createAuthError(
+        isDevelopmentMode()
+          ? 'Missing authentication. Provide Bearer token or X-Tenant-Id/X-Actor-Id headers.'
+          : 'Missing or invalid Bearer token in Authorization header'
+      );
+
+      return reply.status(401).send(error);
     }
   );
 }
+
+// Re-export for backward compatibility
+export { extractLegacyAuthContext as extractAuthContext };

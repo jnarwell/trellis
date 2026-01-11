@@ -15,6 +15,7 @@ import { registerErrorHandler } from './middleware/error-handler.js';
 import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
+import { registerAuthRoutes } from './routes/auth/index.js';
 
 /**
  * Application configuration.
@@ -84,6 +85,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   registerErrorHandler(app);
 
   // Register routes
+  registerAuthRoutes(app);  // Auth routes first (public paths)
   await app.register(entityRoutes);
   await app.register(relationshipRoutes);
   await app.register(queryRoutes);

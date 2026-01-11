@@ -26,6 +26,7 @@ import {
 import { withTenantTransaction, type TenantScopedClient } from '../db/client.js';
 import { EntityRepository, type EntityRow } from '../repositories/entity-repository.js';
 import { EventFactory, type EventEmitter } from '../events/emitter.js';
+import { ComputationService } from '../evaluation/computation-service.js';
 
 // =============================================================================
 // TYPES
@@ -62,6 +63,14 @@ export interface UpdateEntityServiceInput {
  */
 export interface DeleteEntityOptions {
   hardDelete?: boolean;
+}
+
+/**
+ * Options for EntityService configuration.
+ */
+export interface EntityServiceOptions {
+  /** Whether to evaluate computed properties on create/update */
+  evaluateOnWrite?: boolean;
 }
 
 // =============================================================================
@@ -240,17 +249,22 @@ function detectPropertyChanges(
  */
 export class EntityService {
   private readonly eventFactory: EventFactory;
+  private readonly computationService: ComputationService;
+  private readonly evaluateOnWrite: boolean;
 
   constructor(
     private readonly pool: Pool,
     private readonly tenantId: TenantId,
     private readonly actorId: ActorId,
-    private readonly events?: EventEmitter
+    private readonly events?: EventEmitter,
+    options: EntityServiceOptions = {}
   ) {
     this.eventFactory = new EventFactory({
       tenantId: this.tenantId,
       actorId: this.actorId,
     });
+    this.computationService = new ComputationService(pool, tenantId, actorId);
+    this.evaluateOnWrite = options.evaluateOnWrite ?? true;
   }
 
   /**
@@ -261,9 +275,14 @@ export class EntityService {
     // Validate type exists in type_schemas table
 
     const entityId = uuidv7() as EntityId;
-    const properties = transformProperties(input.properties);
+    let properties = transformProperties(input.properties);
 
-    const entity = await withTenantTransaction(
+    // Check if we have computed properties that need evaluation
+    const hasComputedProperties = Object.values(properties).some(
+      (p) => p.source === 'computed'
+    );
+
+    let entity = await withTenantTransaction(
       this.pool,
       this.tenantId,
       async (client) => {
@@ -277,6 +296,28 @@ export class EntityService {
         return rowToEntity(row);
       }
     );
+
+    // Evaluate computed properties if enabled and there are any
+    if (this.evaluateOnWrite && hasComputedProperties) {
+      const computeResult = await this.computationService.computeProperties(entity);
+
+      // Update entity with computed values if any changed
+      if (computeResult.results.length > 0) {
+        entity = await withTenantTransaction(
+          this.pool,
+          this.tenantId,
+          async (client) => {
+            const repository = new EntityRepository(client);
+            const updatedRow = await repository.update({
+              id: entity.id,
+              properties: computeResult.properties,
+              expectedVersion: entity.version,
+            });
+            return updatedRow ? rowToEntity(updatedRow) : entity;
+          }
+        );
+      }
+    }
 
     // Emit events
     if (this.events) {
@@ -308,7 +349,7 @@ export class EntityService {
    * Get an entity by ID.
    */
   async get(id: EntityId, options: GetEntityOptions = {}): Promise<Entity> {
-    const entity = await withTenantTransaction(
+    let entity = await withTenantTransaction(
       this.pool,
       this.tenantId,
       async (client) => {
@@ -322,11 +363,35 @@ export class EntityService {
       throw createError('NOT_FOUND', `Entity ${id} not found`);
     }
 
-    // TODO: Implement resolve_inherited and evaluate_computed options
-    // These require the expression evaluator and inheritance resolver
-    if (options.resolveInherited || options.evaluateComputed) {
+    // Evaluate stale/pending computed properties on read
+    if (options.evaluateComputed) {
+      const computeResult = await this.computationService.computeProperties(
+        entity,
+        { onlyStale: true }
+      );
+
+      // Update entity with computed values if any changed
+      if (computeResult.results.length > 0) {
+        entity = await withTenantTransaction(
+          this.pool,
+          this.tenantId,
+          async (client) => {
+            const repository = new EntityRepository(client);
+            const updatedRow = await repository.update({
+              id: entity!.id,
+              properties: computeResult.properties,
+              expectedVersion: entity!.version,
+            });
+            return updatedRow ? rowToEntity(updatedRow) : entity!;
+          }
+        );
+      }
+    }
+
+    // TODO: Implement resolve_inherited option
+    // This requires the inheritance resolver (future work)
+    if (options.resolveInherited) {
       // For now, return entity as-is
-      // Instance 14 or future work will implement resolution
     }
 
     return entity;
@@ -338,8 +403,9 @@ export class EntityService {
   async update(input: UpdateEntityServiceInput): Promise<Entity> {
     // Track changes for event emission
     let beforeProperties: Record<PropertyName, Property> = {};
+    let hasNewComputedProperties = false;
 
-    const entity = await withTenantTransaction(
+    let entity = await withTenantTransaction(
       this.pool,
       this.tenantId,
       async (client) => {
@@ -378,6 +444,11 @@ export class EntityService {
         if (input.setProperties) {
           const transformedProps = transformProperties(input.setProperties);
           newProperties = { ...newProperties, ...transformedProps };
+
+          // Check if any new properties are computed
+          hasNewComputedProperties = Object.values(transformedProps).some(
+            (p) => p.source === 'computed'
+          );
         }
 
         // Perform update with optimistic lock
@@ -404,6 +475,28 @@ export class EntityService {
         return rowToEntity(updatedRow);
       }
     );
+
+    // Evaluate new computed properties if enabled
+    if (this.evaluateOnWrite && hasNewComputedProperties) {
+      const computeResult = await this.computationService.computeProperties(entity);
+
+      // Update entity with computed values if any changed
+      if (computeResult.results.length > 0) {
+        entity = await withTenantTransaction(
+          this.pool,
+          this.tenantId,
+          async (client) => {
+            const repository = new EntityRepository(client);
+            const updatedRow = await repository.update({
+              id: entity.id,
+              properties: computeResult.properties,
+              expectedVersion: entity.version,
+            });
+            return updatedRow ? rowToEntity(updatedRow) : entity;
+          }
+        );
+      }
+    }
 
     // Emit events
     if (this.events) {
@@ -493,7 +586,8 @@ export function createEntityService(
   pool: Pool,
   tenantId: TenantId,
   actorId: ActorId,
-  events?: EventEmitter
+  events?: EventEmitter,
+  options?: EntityServiceOptions
 ): EntityService {
-  return new EntityService(pool, tenantId, actorId, events);
+  return new EntityService(pool, tenantId, actorId, events, options);
 }

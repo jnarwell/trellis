@@ -27,12 +27,13 @@ export default defineWorkspace([
     },
   },
 
-  // Server package tests
+  // Server package tests (excluding e2e which require database)
   {
     test: {
       name: 'server',
       root: './packages/server',
-      include: ['tests/**/*.test.ts'],
+      include: ['tests/**/*.test.ts', 'src/**/__tests__/*.test.ts'],
+      exclude: ['tests/e2e/**/*.test.ts'],
       environment: 'node',
     },
   },
