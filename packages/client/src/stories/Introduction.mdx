@@ -1,0 +1,44 @@
+{/* Introduction.mdx */}
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Introduction" />
+
+# Trellis Component Library
+
+Welcome to the Trellis component library. This Storybook documents the visual building blocks of the Trellis enterprise data platform.
+
+## What is Trellis?
+
+Trellis is a universal enterprise data platform for product and process data. It uses an event-sourced architecture where entities hold properties and relate to each other through typed relationships.
+
+## Component Categories
+
+### Blocks
+
+Blocks are the primary visual components in Trellis:
+
+- **TableBlock** - Data grid for displaying and managing entity collections
+- **FormBlock** - Form interface for creating and editing entities
+- **DetailBlock** - Read-only detail view for single entities
+- **KanbanBlock** - Board view for workflow management
+
+### Foundations
+
+Design system primitives:
+
+- **Colors** - Trellis color palette
+- **Typography** - Font scales and text styles
+
+## Development Status
+
+This component library is under active development. Placeholder stories indicate components that are planned but not yet implemented.
+
+## Getting Started
+
+```bash
+# Start Storybook
+pnpm --filter @trellis/client storybook
+
+# Build static Storybook
+pnpm --filter @trellis/client build-storybook
+```

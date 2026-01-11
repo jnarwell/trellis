@@ -1,0 +1,113 @@
+# Dashboard View
+# Overview with statistics and recent products
+
+id: dashboard
+name: Dashboard
+description: PLM Demo overview with key metrics and recent activity
+route: /
+
+layout:
+  type: stack
+  direction: vertical
+  gap: 24px
+  blocks:
+    # Page header
+    - type: trellis.page-header
+      id: dashboard-header
+      props:
+        title: Dashboard
+        subtitle: PLM Demo Overview
+
+    # Stats row
+    - type: trellis.card
+      props:
+        padding: none
+      slots:
+        content:
+          - type: trellis.dashboard-widget
+            id: stats-grid
+            props:
+              layout: grid
+              columns: 4
+              widgets:
+                - id: total-products
+                  label: Total Products
+                  icon: package
+                  value:
+                    query:
+                      entityType: product
+                      aggregate: count
+                  color: blue
+
+                - id: low-stock
+                  label: Low Stock Items
+                  icon: alert-triangle
+                  value:
+                    query:
+                      entityType: product
+                      filter: "#quantity_on_hand <= #reorder_point && #quantity_on_hand > 0"
+                      aggregate: count
+                  color: yellow
+
+                - id: active-categories
+                  label: Categories
+                  icon: folder
+                  value:
+                    query:
+                      entityType: category
+                      aggregate: count
+                  color: green
+
+                - id: total-suppliers
+                  label: Suppliers
+                  icon: truck
+                  value:
+                    query:
+                      entityType: supplier
+                      aggregate: count
+                  color: purple
+
+    # Recent products section
+    - type: trellis.card
+      props:
+        title: Recent Products
+      slots:
+        content:
+          - type: trellis.data-table
+            id: recent-products
+            props:
+              entityType: product
+              columns:
+                - property: name
+                  label: Name
+                  sortable: true
+                - property: sku
+                  label: SKU
+                  width: 120
+                - property: status
+                  label: Status
+                  width: 100
+                - property: price
+                  label: Price
+                  width: 100
+                  format: currency
+                - property: stock_status
+                  label: Stock
+                  width: 100
+              sort:
+                - property: created_at
+                  direction: desc
+              pageSize: 5
+              compact: true
+
+wiring:
+  - from: recent-products
+    event: rowSelected
+    to: $navigate
+    receiver: push
+    transform:
+      kind: expression
+      expr: "{ path: '/products/' + payload.entityId }"
+
+meta:
+  title: Dashboard

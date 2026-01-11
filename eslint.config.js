@@ -67,14 +67,21 @@ export default [
     },
   },
 
-  // Client package - needs browser globals
+  // Client package - needs browser globals and React
   {
-    files: ['packages/client/**/*.ts'],
+    files: ['packages/client/**/*.ts', 'packages/client/**/*.tsx'],
     languageOptions: {
       globals: {
         ...globals.browser,
         ...globals.node,
         ...globals.es2021,
+        // React globals (for JSX transform and React types)
+        React: 'readonly',
+        JSX: 'readonly',
+        // Fetch API types (used in SDK)
+        RequestInit: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
       },
     },
   },

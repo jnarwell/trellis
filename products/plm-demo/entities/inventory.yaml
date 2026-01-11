@@ -1,0 +1,85 @@
+# Inventory Entity Definition
+# Track inventory at specific locations
+
+id: inventory
+name: Inventory Record
+description: Inventory tracking for products at specific locations
+icon: warehouse
+
+properties:
+  - name: product
+    label: Product
+    type:
+      type: reference
+      entityType: product
+      displayProperty: name
+    required: true
+
+  - name: location
+    label: Location
+    type: text
+    required: true
+    validation:
+      maxLength: 100
+    ui:
+      placeholder: "e.g., Warehouse A, Shelf B-12"
+
+  - name: quantity
+    label: Quantity
+    type:
+      type: integer
+      min: 0
+    required: true
+    default: 0
+
+  - name: bin_number
+    label: Bin Number
+    type: text
+    validation:
+      maxLength: 50
+    ui:
+      placeholder: "e.g., BIN-001"
+
+  - name: last_count_date
+    label: Last Count Date
+    type: datetime
+    ui:
+      helpText: "Date of last physical inventory count"
+
+  - name: last_count_by
+    label: Last Count By
+    type: text
+    validation:
+      maxLength: 100
+    ui:
+      helpText: "Person who performed the last count"
+
+  - name: notes
+    label: Notes
+    type:
+      type: text
+      maxLength: 500
+    ui:
+      widget: textarea
+
+# UI configuration
+ui:
+  displayProperty: location
+  listProperties: [product, location, quantity, bin_number, last_count_date]
+  searchProperties: [location, bin_number]
+  groups:
+    - name: location
+      label: Location Details
+      properties: [location, bin_number]
+    - name: inventory
+      label: Inventory
+      properties: [product, quantity]
+    - name: audit
+      label: Audit Trail
+      properties: [last_count_date, last_count_by, notes]
+
+# Indexes
+indexes:
+  - name: product_location
+    properties: [product, location]
+    unique: true

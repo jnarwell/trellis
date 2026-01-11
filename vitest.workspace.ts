@@ -43,8 +43,9 @@ export default defineWorkspace([
     test: {
       name: 'client',
       root: './packages/client',
-      include: ['tests/**/*.test.ts'],
+      include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
       environment: 'jsdom',
+      setupFiles: ['./tests/setup.ts'],
     },
   },
 

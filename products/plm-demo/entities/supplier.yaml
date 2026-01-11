@@ -1,0 +1,85 @@
+# Supplier Entity Definition
+# Vendor/supplier information for product sourcing
+
+id: supplier
+name: Supplier
+description: Vendor or supplier providing products
+icon: truck
+
+properties:
+  - name: name
+    label: Company Name
+    type: text
+    required: true
+    validation:
+      maxLength: 200
+    ui:
+      placeholder: "Enter supplier name"
+
+  - name: contact_name
+    label: Contact Name
+    type: text
+    validation:
+      maxLength: 100
+
+  - name: contact_email
+    label: Contact Email
+    type: text
+    validation:
+      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+      patternMessage: "Must be a valid email address"
+    ui:
+      placeholder: "email@example.com"
+
+  - name: phone
+    label: Phone
+    type: text
+    validation:
+      maxLength: 20
+    ui:
+      placeholder: "+1 (555) 123-4567"
+
+  - name: address
+    label: Address
+    type:
+      type: text
+      maxLength: 500
+    ui:
+      widget: textarea
+
+  - name: website
+    label: Website
+    type: text
+    ui:
+      placeholder: "https://example.com"
+
+  - name: notes
+    label: Notes
+    type:
+      type: text
+      maxLength: 2000
+    ui:
+      widget: textarea
+
+# Computed properties
+computed:
+  - name: total_products
+    label: Total Products
+    expression: "COUNT(@self.products[*])"
+    description: "Number of products from this supplier"
+
+# UI configuration
+ui:
+  displayProperty: name
+  listProperties: [name, contact_email, phone, total_products]
+  searchProperties: [name, contact_name, contact_email]
+  groups:
+    - name: company
+      label: Company Information
+      properties: [name, website, address]
+    - name: contact
+      label: Contact Details
+      properties: [contact_name, contact_email, phone]
+    - name: other
+      label: Additional Information
+      properties: [notes]

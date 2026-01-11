@@ -1,0 +1,96 @@
+# Product Form View
+# Create and edit products
+
+id: product-form
+name: Product Form
+description: Create or edit a product
+route: /products/:entityId?/edit
+
+data:
+  params:
+    entityId:
+      type: entityId
+      entityType: product
+      fetch: true
+      as: product
+
+  computed:
+    isNew: $params.entityId == null
+    pageTitle: "${$isNew ? 'New Product' : 'Edit ' + $product.name}"
+
+layout:
+  type: stack
+  direction: vertical
+  gap: 24px
+  blocks:
+    # Page header
+    - type: trellis.page-header
+      id: form-header
+      props:
+        title: $pageTitle
+        breadcrumbs:
+          - label: Products
+            path: /products
+          - label: $pageTitle
+
+    # Form card
+    - type: trellis.card
+      slots:
+        content:
+          - type: trellis.property-editor
+            id: product-form
+            props:
+              entityId: $params.entityId
+              entityType: product
+              mode: edit
+              sections:
+                - label: Basic Information
+                  properties:
+                    - name
+                    - sku
+                    - description
+                    - status
+
+                - label: Pricing
+                  properties:
+                    - price
+                    - cost
+
+                - label: Inventory
+                  properties:
+                    - quantity_on_hand
+                    - reorder_point
+
+                - label: Relationships
+                  properties:
+                    - category
+                    - supplier
+
+              actions:
+                - label: Save
+                  icon: check
+                  variant: primary
+                  action: save
+                - label: Cancel
+                  variant: secondary
+                  action: cancel
+
+wiring:
+  - from: product-form
+    event: saved
+    to: $navigate
+    receiver: push
+    transform:
+      kind: expression
+      expr: "{ path: '/products/' + payload.entityId }"
+
+  - from: product-form
+    event: cancelled
+    to: $navigate
+    receiver: back
+
+permissions:
+  access: product.edit
+
+meta:
+  title: $pageTitle

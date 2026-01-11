@@ -1,0 +1,70 @@
+# Categories View
+# List and manage product categories
+
+id: categories-list
+name: Categories
+description: Manage product categories
+route: /categories
+
+layout:
+  type: single
+  block:
+    type: trellis.page-layout
+    props:
+      title: Categories
+      subtitle: Organize your product catalog
+    slots:
+      actions:
+        - type: trellis.button
+          id: new-category-btn
+          props:
+            label: New Category
+            icon: plus
+            variant: primary
+            action: create
+            params:
+              entityType: category
+
+      content:
+        - type: trellis.card
+          slots:
+            content:
+              - type: trellis.data-table
+                id: categories-table
+                props:
+                  entityType: category
+                  columns:
+                    - property: name
+                      label: Name
+                      sortable: true
+                    - property: description
+                      label: Description
+                    - property: parent
+                      label: Parent
+                      width: 150
+                      display: reference
+                      displayProperty: name
+                    - property: product_count
+                      label: Products
+                      width: 100
+                      sortable: true
+                    - property: sort_order
+                      label: Order
+                      width: 80
+                      sortable: true
+                  selectable: true
+                  searchable: true
+                  searchPlaceholder: "Search categories..."
+                  pageSize: 25
+                  actions:
+                    row:
+                      - label: Edit
+                        icon: pencil
+                        action: edit
+                      - label: Delete
+                        icon: trash
+                        action: delete
+                        confirm: "Delete this category?"
+
+meta:
+  title: Categories

@@ -1,0 +1,131 @@
+# Product Detail View
+# Detailed view of a single product
+
+id: product-detail
+name: Product Detail
+description: View detailed product information
+route: /products/:entityId
+
+data:
+  params:
+    entityId:
+      type: entityId
+      entityType: product
+      fetch: true
+      as: product
+
+layout:
+  type: stack
+  direction: vertical
+  gap: 24px
+  blocks:
+    # Page header with actions
+    - type: trellis.page-header
+      id: product-header
+      props:
+        title: $product.name
+        subtitle: $product.sku
+        status: $product.status
+        breadcrumbs:
+          - label: Products
+            path: /products
+          - label: $product.name
+        actions:
+          - label: Edit
+            icon: pencil
+            variant: secondary
+            action: navigate
+            params:
+              path: "/products/${$params.entityId}/edit"
+          - label: Activate
+            icon: check
+            variant: primary
+            action: lifecycle
+            params:
+              transition: activate
+            showWhen: $product.status == "draft"
+          - label: Discontinue
+            icon: x-circle
+            variant: danger
+            action: lifecycle
+            params:
+              transition: discontinue
+            showWhen: $product.status == "active"
+
+    # Main content in cards
+    - type: trellis.card
+      props:
+        title: Basic Information
+      slots:
+        content:
+          - type: trellis.property-editor
+            id: basic-info
+            props:
+              entityId: $params.entityId
+              entityType: product
+              readOnly: true
+              properties:
+                - name
+                - sku
+                - description
+                - status
+
+    - type: trellis.card
+      props:
+        title: Pricing
+      slots:
+        content:
+          - type: trellis.property-editor
+            id: pricing-info
+            props:
+              entityId: $params.entityId
+              entityType: product
+              readOnly: true
+              properties:
+                - price
+                - cost
+                - margin
+              layout: horizontal
+
+    - type: trellis.card
+      props:
+        title: Inventory
+      slots:
+        content:
+          - type: trellis.property-editor
+            id: inventory-info
+            props:
+              entityId: $params.entityId
+              entityType: product
+              readOnly: true
+              properties:
+                - quantity_on_hand
+                - reorder_point
+                - stock_status
+              layout: horizontal
+
+    - type: trellis.card
+      props:
+        title: Relationships
+      slots:
+        content:
+          - type: trellis.property-editor
+            id: relationships-info
+            props:
+              entityId: $params.entityId
+              entityType: product
+              readOnly: true
+              properties:
+                - category
+                - supplier
+
+permissions:
+  access: product.view
+  actions:
+    edit: product.edit
+    activate: product.activate
+    discontinue: product.discontinue
+
+meta:
+  title: "${product.sku} - ${product.name}"
+  description: "View product ${product.name}"

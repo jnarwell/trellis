@@ -1,0 +1,62 @@
+# Category Entity Definition
+# Hierarchical product categorization
+
+id: category
+name: Category
+description: Product category for organizing the catalog
+icon: folder
+
+properties:
+  - name: name
+    label: Name
+    type: text
+    required: true
+    validation:
+      maxLength: 100
+    ui:
+      placeholder: "Enter category name"
+
+  - name: description
+    label: Description
+    type:
+      type: text
+      maxLength: 500
+    ui:
+      widget: textarea
+
+  - name: parent
+    label: Parent Category
+    type:
+      type: reference
+      entityType: category
+      displayProperty: name
+    description: "Parent category for hierarchy"
+
+  - name: sort_order
+    label: Sort Order
+    type:
+      type: integer
+      min: 0
+    default: 0
+    ui:
+      helpText: "Lower numbers appear first"
+
+# Computed properties
+computed:
+  - name: product_count
+    label: Product Count
+    expression: "COUNT(@self.products[*])"
+    description: "Number of products in this category"
+
+# UI configuration
+ui:
+  displayProperty: name
+  listProperties: [name, product_count, sort_order]
+  searchProperties: [name, description]
+  groups:
+    - name: basic
+      label: Basic Information
+      properties: [name, description, sort_order]
+    - name: hierarchy
+      label: Hierarchy
+      properties: [parent]

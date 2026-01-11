@@ -1,0 +1,189 @@
+# Product Entity Definition
+# Core entity for PLM demo - represents products with pricing, inventory, and relationships
+
+id: product
+name: Product
+description: A product in the catalog with pricing, inventory, and supplier information
+icon: package
+
+properties:
+  - name: name
+    label: Name
+    type: text
+    required: true
+    validation:
+      maxLength: 200
+    ui:
+      placeholder: "Enter product name"
+
+  - name: sku
+    label: SKU
+    type: text
+    unique: true
+    validation:
+      pattern: "^[A-Z0-9-]+$"
+      patternMessage: "SKU must be uppercase letters, numbers, and hyphens"
+    ui:
+      placeholder: "e.g., PROD-001"
+
+  - name: description
+    label: Description
+    type:
+      type: text
+      maxLength: 2000
+    ui:
+      widget: textarea
+      helpText: "Detailed product description"
+
+  - name: price
+    label: Price
+    type:
+      type: number
+      dimension: currency
+      unit: USD
+      min: 0
+    ui:
+      widget: currency
+
+  - name: cost
+    label: Cost
+    type:
+      type: number
+      dimension: currency
+      unit: USD
+      min: 0
+    ui:
+      widget: currency
+      helpText: "Unit cost for margin calculation"
+
+  - name: quantity_on_hand
+    label: Quantity on Hand
+    type:
+      type: integer
+      min: 0
+    default: 0
+
+  - name: reorder_point
+    label: Reorder Point
+    type:
+      type: integer
+      min: 0
+    default: 10
+    ui:
+      helpText: "Quantity threshold for low stock warning"
+
+  - name: status
+    label: Status
+    type:
+      type: option
+      options:
+        - value: draft
+          label: Draft
+          color: gray
+          icon: pencil
+        - value: active
+          label: Active
+          color: green
+          icon: check-circle
+        - value: discontinued
+          label: Discontinued
+          color: red
+          icon: x-circle
+    default: draft
+
+  - name: category
+    label: Category
+    type:
+      type: reference
+      entityType: category
+      displayProperty: name
+    description: "Product category for organization"
+
+  - name: supplier
+    label: Supplier
+    type:
+      type: reference
+      entityType: supplier
+      displayProperty: name
+    description: "Primary supplier for this product"
+
+# Computed properties demonstrating Expression Engine
+computed:
+  - name: margin
+    label: Margin %
+    expression: "IF(@self.price > 0, (@self.price - @self.cost) / @self.price * 100, 0)"
+    description: "Profit margin as percentage"
+
+  - name: stock_status
+    label: Stock Status
+    expression: "IF(@self.quantity_on_hand <= 0, 'Out of Stock', IF(@self.quantity_on_hand <= @self.reorder_point, 'Low Stock', 'In Stock'))"
+    description: "Inventory status based on quantity vs reorder point"
+
+# Lifecycle for product status
+lifecycle:
+  stateProperty: status
+  initialState: draft
+
+  states:
+    - value: draft
+      label: Draft
+      color: gray
+      editable: true
+      deletable: true
+
+    - value: active
+      label: Active
+      color: green
+      editable: true
+      deletable: false
+
+    - value: discontinued
+      label: Discontinued
+      color: red
+      editable: false
+      deletable: false
+
+  transitions:
+    - from: draft
+      to: active
+      action: activate
+      label: Activate
+      when: "@self.price != null && @self.sku != null"
+
+    - from: active
+      to: discontinued
+      action: discontinue
+      label: Discontinue
+
+    - from: discontinued
+      to: active
+      action: reactivate
+      label: Reactivate
+
+# UI configuration
+ui:
+  displayProperty: name
+  listProperties: [sku, name, status, price, quantity_on_hand]
+  searchProperties: [sku, name, description]
+  groups:
+    - name: basic
+      label: Basic Information
+      properties: [name, sku, description, status]
+    - name: pricing
+      label: Pricing
+      properties: [price, cost, margin]
+    - name: inventory
+      label: Inventory
+      properties: [quantity_on_hand, reorder_point, stock_status]
+    - name: relationships
+      label: Relationships
+      properties: [category, supplier]
+
+# Indexes for performance
+indexes:
+  - name: sku_unique
+    properties: [sku]
+    unique: true
+
+  - name: status_category
+    properties: [status, category]

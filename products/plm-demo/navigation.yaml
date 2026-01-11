@@ -1,0 +1,98 @@
+# Navigation Configuration
+# Sidebar navigation for PLM Demo
+
+navigation:
+  sections:
+    # Main navigation (ungrouped)
+    - items:
+        - id: dashboard
+          label: Dashboard
+          icon: home
+          view: dashboard
+
+        - id: products
+          label: Products
+          icon: package
+          view: products-list
+          badge:
+            type: count
+            query:
+              entityType: product
+              filter: "#status == 'draft'"
+            color: warning
+            max: 99
+          activeOnPrefix: true
+          activeRoutes:
+            - /products/*
+
+        - id: categories
+          label: Categories
+          icon: folder
+          view: categories-list
+          activeOnPrefix: true
+
+        - id: suppliers
+          label: Suppliers
+          icon: truck
+          view: suppliers-list
+          activeOnPrefix: true
+
+        - id: inventory
+          label: Inventory
+          icon: warehouse
+          view: inventory-list
+          activeOnPrefix: true
+
+  # Breadcrumb configuration
+  breadcrumbs:
+    showHome: true
+    homeLabel: PLM Demo
+    overrides:
+      product-detail:
+        prepend:
+          - label: Products
+            view: products-list
+
+      product-form:
+        prepend:
+          - label: Products
+            view: products-list
+
+  # Quick actions
+  quickActions:
+    - id: new-product
+      label: New Product
+      icon: plus
+      shortcut: Ctrl+Shift+P
+      action:
+        type: create
+        entityType: product
+
+    - id: search
+      label: Search
+      icon: search
+      shortcut: Ctrl+K
+      action:
+        type: search
+
+  # Global search configuration
+  search:
+    shortcut: Ctrl+K
+    placeholder: Search products, categories, suppliers...
+    recentCount: 5
+    entityTypes:
+      - entityType: product
+        searchProperties: [sku, name, description]
+        displayProperties: [sku, name, status]
+        targetView: product-detail
+        paramName: entityId
+
+      - entityType: category
+        searchProperties: [name, description]
+        displayProperties: [name]
+        targetView: categories-list
+
+      - entityType: supplier
+        searchProperties: [name, contact_email]
+        displayProperties: [name, contact_email]
+        targetView: suppliers-list

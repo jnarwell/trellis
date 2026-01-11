@@ -1,0 +1,40 @@
+# PLM Demo Product - Main Manifest
+# A simple Product Lifecycle Management system demonstrating Trellis capabilities
+
+id: plm-demo
+version: 1.0.0
+name: PLM Demo
+description: |
+  A simple Product Lifecycle Management demo showcasing Trellis entity management,
+  computed properties, relationships, and configurable views.
+
+defaultView: dashboard
+
+features:
+  - product-management
+  - inventory-tracking
+  - supplier-management
+
+requires:
+  platformVersion: ">=1.0.0"
+  blocks:
+    - trellis.data-table
+    - trellis.page-layout
+    - trellis.page-header
+    - trellis.property-editor
+    - trellis.dashboard-widget
+    - trellis.card
+    - trellis.button
+
+settings:
+  locale: en-US
+  theme:
+    primaryColor: "#2563eb"
+    colorMode: system
+  branding:
+    titleTemplate: "{{page}} | PLM Demo"
+
+includes:
+  entities: entities/*.yaml
+  views: views/*.yaml
+  navigation: navigation.yaml

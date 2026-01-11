@@ -1,0 +1,118 @@
+# Products List View
+# Table view of all products with filtering and sorting
+
+id: products-list
+name: Products
+description: Browse and manage all products
+route: /products
+
+data:
+  query:
+    status:
+      type: string
+      enum: [draft, active, discontinued]
+    category:
+      type: string
+    search:
+      type: string
+
+layout:
+  type: single
+  block:
+    type: trellis.page-layout
+    props:
+      title: Products
+      subtitle: Manage your product catalog
+    slots:
+      actions:
+        - type: trellis.button
+          id: new-product-btn
+          props:
+            label: New Product
+            icon: plus
+            variant: primary
+            action: navigate
+            params:
+              path: /products/new
+
+      content:
+        - type: trellis.card
+          slots:
+            content:
+              - type: trellis.data-table
+                id: products-table
+                props:
+                  entityType: product
+                  columns:
+                    - property: name
+                      label: Name
+                      sortable: true
+                    - property: sku
+                      label: SKU
+                      width: 120
+                      sortable: true
+                    - property: category
+                      label: Category
+                      width: 150
+                      display: reference
+                      displayProperty: name
+                    - property: price
+                      label: Price
+                      width: 100
+                      format: currency
+                      sortable: true
+                    - property: quantity_on_hand
+                      label: Stock
+                      width: 80
+                      sortable: true
+                    - property: stock_status
+                      label: Status
+                      width: 100
+                      display: badge
+                    - property: status
+                      label: State
+                      width: 100
+                      display: badge
+                  selectable: true
+                  searchable: true
+                  searchPlaceholder: "Search by name, SKU, or description..."
+                  pageSize: 25
+                  filters:
+                    - property: status
+                      type: select
+                      label: Status
+                      options:
+                        - value: draft
+                          label: Draft
+                        - value: active
+                          label: Active
+                        - value: discontinued
+                          label: Discontinued
+                    - property: category
+                      type: reference
+                      label: Category
+                      entityType: category
+                  actions:
+                    row:
+                      - label: View
+                        icon: eye
+                        action: navigate
+                        params:
+                          path: "/products/${$row.id}"
+                      - label: Edit
+                        icon: pencil
+                        action: navigate
+                        params:
+                          path: "/products/${$row.id}/edit"
+
+wiring:
+  - from: products-table
+    event: rowSelected
+    to: $navigate
+    receiver: push
+    transform:
+      kind: expression
+      expr: "{ path: '/products/' + payload.entityId }"
+
+meta:
+  title: Products
