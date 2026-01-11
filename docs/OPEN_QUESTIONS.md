@@ -183,6 +183,23 @@ This document tracks unresolved architectural and design questions. When a quest
 
 ---
 
+## Known Issues (Non-blocking)
+
+### PLM Demo - Minor Issues
+**Discovered:** 2026-01-10
+**Status:** Acknowledged (non-blocking)
+**Context:** Audit of PLM demo product configuration
+
+1. **Missing view files**: `suppliers-list` and `inventory-list` referenced in navigation.yaml but view files don't exist yet
+   - Impact: Navigation links will 404 until views created
+   - Resolution: Create during React Blocks implementation (Instances 20-23)
+
+2. **Badge query syntax**: Navigation uses `#status` shorthand in badge queries
+   - Note: This is per Expression Engine spec, just documenting for awareness
+   - No action needed
+
+---
+
 ## Resolved Questions
 
 ### RQ-005: Monorepo Package Structure

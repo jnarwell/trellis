@@ -1,7 +1,7 @@
 # Trellis - Current State
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 2.4 Complete - Full Stack
+**Status:** Phase 2.5 In Progress - UI Layer
 
 ---
 
@@ -87,6 +87,42 @@ Completed:
 | @trellis/kernel | 134 |
 | @trellis/server | 419 |
 | @trellis/client | 54 |
+
+---
+
+**Phase 2.5: UI Layer** 🟢 In Progress
+
+| Component | Instance | Status | Notes |
+|-----------|----------|--------|-------|
+| Client SDK | Instance 19 | 🟢 In Progress | TypeScript SDK enhancements |
+| PLM Demo Product | Instance 24 | ✅ Complete | 11 YAML files, computed props |
+| Product Loader | Instance 25 | 🟢 In Progress | Server-side YAML loading |
+| Storybook Setup | Instance 26 | ✅ Complete | Component dev at localhost:6006 |
+| React Blocks | Instances 20-23 | ⏳ Queued | Table, Form, Detail, Kanban |
+
+### Demo Product Structure
+```
+products/plm-demo/
+├── product.yaml              # Main manifest
+├── entities/
+│   ├── product.yaml          # With computed margin, stock_status
+│   ├── category.yaml         # With computed product_count
+│   ├── supplier.yaml         # With computed total_products
+│   └── inventory.yaml
+├── views/
+│   ├── dashboard.yaml        # Stats + recent products
+│   ├── products.yaml         # Product table
+│   ├── product-detail.yaml
+│   ├── product-form.yaml
+│   └── categories.yaml
+└── navigation.yaml
+```
+
+### Storybook
+```bash
+pnpm --filter @trellis/client storybook
+# Opens at http://localhost:6006
+```
 
 ---
 
@@ -285,6 +321,15 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 
 **Total: 607 tests passing**
 
+### Phase 2.5: UI Layer 🟢
+| Component | Status | Details |
+|-----------|--------|---------|
+| PLM Demo Product | ✅ Complete | 11 YAML files, 4 entities with computed props, 5 views |
+| Storybook Setup | ✅ Complete | Storybook 8.x, block placeholders, localhost:6006 |
+| Client SDK | 🟢 In Progress | TypeScript SDK, React hooks |
+| Product Loader | 🟢 In Progress | Server-side YAML loading, schema validation |
+| React Blocks | ⏳ Queued | Table, Form, Detail, Kanban blocks |
+
 ---
 
 ## What's Next
@@ -315,16 +360,48 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] E2E test structure
 - [x] Tenant isolation in tests
 
-### Phase 2.5: Production Readiness (Next)
-1. Schema validation (validate properties against type definitions)
-2. Permission system (role-based access control)
-3. Audit log UI (query event store)
-4. Client SDK enhancements (TypeScript SDK improvements)
+### Phase 2.5: UI Layer 🟢 IN PROGRESS
+
+#### PLM Demo Product (Instance 24) ✅
+- [x] Product entity with computed margin, stock_status
+- [x] Category entity with computed product_count
+- [x] Supplier entity with computed total_products
+- [x] Inventory entity with reorder expressions
+- [x] Dashboard, product list, detail, form views
+- [x] Navigation with badge queries
+
+#### Storybook Setup (Instance 26) ✅
+- [x] Storybook 8.x configuration
+- [x] Block placeholder stories
+- [x] Visual development at localhost:6006
+- [x] React + TypeScript integration
+
+#### Client SDK (Instance 19) 🟢
+- [ ] Enhanced TypeScript SDK
+- [ ] React hooks for data fetching
+- [ ] WebSocket subscription hooks
+
+#### Product Loader (Instance 25) 🟢
+- [ ] Server-side YAML loader
+- [ ] Schema validation
+- [ ] Entity type registration
+
+#### React Blocks (Instances 20-23) ⏳
+- [ ] TableBlock - Data table with sorting/filtering
+- [ ] FormBlock - Entity create/edit forms
+- [ ] DetailBlock - Entity detail view
+- [ ] KanbanBlock - Status-based card view
+
+### Phase 2.6: Production (Next)
+1. Permission system (role-based access control)
+2. Audit log UI (query event store)
+3. Deployment configuration
+4. Performance optimization
 
 ### Future Phases
-- Frontend foundation (React + Block rendering)
-- Product layer deployment
 - Multi-region support
+- Plugin marketplace
+- Advanced analytics
 
 ---
 
@@ -372,6 +449,10 @@ This is being built with AI assistance using multiple specialized Claude Code in
 | 16 | JWT Authentication | Access/refresh tokens, JWT middleware, login endpoints | Phase 2.4 | 🔴 Released |
 | 17 | WebSocket Subscriptions | Protocol, subscriptions, connection management, handlers | Phase 2.4 | 🔴 Released |
 | 18 | Integration Test Harness | TestHarness class, database pool, E2E test structure | Phase 2.4 | 🔴 Released |
+| 19 | Client SDK | TypeScript SDK enhancements, React hooks | Phase 2.5 | 🟢 Active |
+| 24 | PLM Demo Product | 11 YAML files, 4 entities, 5 views, computed props | Phase 2.5 | 🔴 Released |
+| 25 | Product Loader | Server-side YAML loading, schema validation | Phase 2.5 | 🟢 Active |
+| 26 | Storybook Setup | Storybook 8.x, block placeholders, visual dev | Phase 2.5 | 🔴 Released |
 
 Each instance can read CLAUDE.md and this document to understand the current state.
 

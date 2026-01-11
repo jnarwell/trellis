@@ -158,8 +158,14 @@ See `packages/kernel/src/blocks/wiring.ts` for implementation.
 ### Product
 A complete application built on Trellis. Defined in YAML configuration. Examples: PLM, CRM, Test Management.
 
+### Product Definition
+The complete YAML configuration that defines a Trellis application, including entities, views, navigation, and settings. Located in `products/<name>/` directory with a main `product.yaml` manifest.
+
 ### Product Configuration
 The YAML files defining a product: entity types, views, workflows, permissions.
+
+### PLM (Product Lifecycle Management)
+Demo application type in Trellis showing products, categories, suppliers, and inventory management. Features computed properties like margin calculation and stock status. Located at `products/plm-demo/`.
 
 ### View
 A screen/page in a product. Composed of blocks arranged in a layout.
@@ -253,6 +259,16 @@ Server component that orchestrates computed property evaluation. Uses the kernel
 
 ### Recalculation Handler
 Event handler that listens for `property_stale` events and triggers re-evaluation of computed properties. Ensures computed values stay up-to-date as dependencies change.
+
+---
+
+## Development Tools
+
+### Storybook
+Visual development environment for React components at localhost:6006. Used to develop and test blocks in isolation before integration. Run with `pnpm --filter @trellis/client storybook`.
+
+### Block Placeholder
+Storybook story showing where a block component will be rendered once implemented. Displays block spec (props, events, receivers) and expected behavior. Used during incremental UI development.
 
 ---
 
