@@ -335,6 +335,31 @@ Work In Progress limits in KanbanBlock columns. Restricts how many cards can be 
 
 ---
 
+## Product Research
+
+### Feature Capture
+Structured competitive research document that maps market analysis to Trellis primitives (entities, properties, relationships, workflows). Uses a 9-section template covering market overview through draft YAML.
+
+### Domain Researcher
+Agent role that conducts competitive analysis for a software domain, outputting a completed Feature Capture document. Analyzes competitors, reviews, and UX patterns.
+
+### Competitive Analysis
+Skill for systematically researching competitors: features, reviews, pricing, UX patterns. Uses only public, legal sources (marketing sites, G2, Capterra, demos).
+
+### YAML Generator
+Skill that converts completed Feature Capture documents into draft Trellis YAML product definitions. Maps research terms to Trellis types and expressions.
+
+### Table Stakes
+Features that every competitor has - must-have baseline functionality that users expect.
+
+### Killer Feature
+Differentiating capability that makes a product stand out from competitors. Opportunity for Trellis to exceed market expectations.
+
+### Pain Point
+Common user complaint identified through review analysis (G2, Capterra, forums). Represents opportunity for Trellis to solve better than existing solutions.
+
+---
+
 ## Abbreviations
 
 | Abbr | Full Form |

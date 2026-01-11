@@ -245,6 +245,86 @@ trellis serve ./products/plm-demo --port 3000
 
 ---
 
+## Feature Capture System
+
+A pipeline for converting competitive research into Trellis YAML products.
+
+### Pipeline Overview
+```
+Domain Researcher (Agent)
+         │
+         ▼
+Feature Capture Template
+         │
+         ▼
+YAML Generator (Skill)
+         │
+         ▼
+products/[name]/ (Draft YAML)
+```
+
+### Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| Feature Capture Template | `docs/product-research/FEATURE-CAPTURE-TEMPLATE.md` | 9-section research template |
+| Research Guide | `docs/product-research/RESEARCH-GUIDE.md` | Legal sources, type mapping |
+| PLM Example | `docs/product-research/examples/plm-capture-example.md` | Real competitor analysis |
+| Domain Researcher | `.claude/agents/domain-researcher.md` | Agent definition |
+| Competitive Analysis | `.claude/skills/competitive-analysis.md` | Research methodology |
+| YAML Generator | `.claude/skills/yaml-generator.md` | Template → YAML conversion |
+| Generation Guide | `docs/product-research/YAML-GENERATION-GUIDE.md` | Step-by-step usage |
+
+### Usage
+
+**Start a new product research:**
+```
+Spawn a Domain Researcher for [domain] domain,
+focusing on [market segment]. Analyze [competitor1], [competitor2], [competitor3].
+```
+
+**Generate YAML from completed research:**
+```
+Use the YAML Generator skill to convert
+docs/product-research/captures/[domain]-capture.md
+into a Trellis product at products/[name]/
+```
+
+### Template Sections
+
+1. Market Overview - Domain, players, personas
+2. Core Entities - Data objects, properties, types
+3. Relationships - Connections, cardinality
+4. Feature Analysis - Killer features, table stakes, pain points
+5. UX Patterns - Navigation, data entry, visualization
+6. Workflows - Processes, approvals, lifecycles
+7. Gap Analysis - Opportunities, differentiation
+8. Research Sources - Links, reviews analyzed
+9. Draft YAML - Ready for `products/` directory
+
+### Type Mapping (Quick Reference)
+
+| Research Term | Trellis Type |
+|---------------|--------------|
+| text, string | `{ type: text }` |
+| number, integer | `{ type: number }` |
+| currency, money | `{ type: number, dimension: currency }` |
+| date | `{ type: datetime, format: date }` |
+| yes/no, boolean | `{ type: boolean }` |
+| dropdown, enum | `{ type: text, enum: [...] }` |
+| reference, link | `{ type: reference, target: entity }` |
+
+### Expression Mapping
+
+| Business Logic | Trellis Expression |
+|----------------|-------------------|
+| Sum children | `SUM(@self.items[*].amount)` |
+| Count related | `COUNT(@self.items[*])` |
+| Percentage | `@self.part / @self.whole * 100` |
+| Conditional | `IF(@self.x > 0, 'Yes', 'No')` |
+
+---
+
 ## Architectural Decisions Made
 
 | ADR | Decision | Status |
