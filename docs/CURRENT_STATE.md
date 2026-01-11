@@ -1,7 +1,7 @@
 # Trellis - Current State
 
-**Last Updated:** 2026-01-10
-**Status:** Phase 2.5 In Progress - UI Layer
+**Last Updated:** 2026-01-11
+**Status:** Phase 2.5 Complete - UI Layer
 
 ---
 
@@ -90,16 +90,51 @@ Completed:
 
 ---
 
-**Phase 2.5: UI Layer** 🟢 In Progress
+**Phase 2.5: UI Layer** ✅ Complete
 
-| Component | Instance | Status | Notes |
+| Component | Instance | Status | Tests |
 |-----------|----------|--------|-------|
-| Client SDK | Instance 19 | ✅ Complete | 127 tests, React hooks |
-| PLM Demo Product | Instance 24 | ✅ Complete | 11 YAML files, computed props |
-| Product Loader | Instance 25 | ✅ Complete | 80+ tests, schema validation |
-| Storybook Setup | Instance 26 | ✅ Complete | Component dev at localhost:6006 |
-| React Blocks | Instances 20-22 | 🟢 In Progress | Table, Form, Detail, Kanban |
-| Block Integration | Instance 23 | ⏳ Queued | After 20-22 |
+| Client SDK | Instance 19 | ✅ Complete | 127 |
+| PLM Demo Product | Instance 24 | ✅ Complete | YAML configs |
+| Product Loader | Instance 25 | ✅ Complete | 80+ |
+| Storybook Setup | Instance 26 | ✅ Complete | Dev infra |
+| React Blocks | Instances 20-22 | ✅ Complete | 143 |
+| Block Integration | Instance 23 | ✅ Complete | E2E wiring |
+
+**Total Tests:** 827 passing (+220 from Phase 2.4)
+
+| Package | Tests |
+|---------|-------|
+| @trellis/kernel | 134 |
+| @trellis/server | 423 |
+| @trellis/client | 270 |
+
+### React Blocks (Instances 20-22)
+
+| Block | Features | Tests |
+|-------|----------|-------|
+| TableBlock | 12 cell formats, sorting, filtering, pagination, bulk select, column resize | 42 |
+| FormBlock | 7 field types, validation, sections, conditional fields, auto-save | 66 |
+| DetailBlock | Property display, computed values, relationship links, sections | 15 |
+| KanbanBlock | Drag-drop cards, WIP limits, swimlanes, status filtering | 20 |
+
+### Block Integration (Instance 23)
+
+Architecture wiring blocks to live API:
+
+```
+ProductApp (shell)
+└── TrellisProvider (auth + client)
+    └── ViewRenderer (layout)
+        └── BlockRenderer (registry lookup)
+            └── [TableBlock | FormBlock | DetailBlock | KanbanBlock]
+```
+
+Components:
+- **Block Registry**: Maps block names to React components
+- **BlockRenderer**: Resolves blocks, injects props, handles wiring
+- **ProductApp**: Authentication shell with navigation
+- **ViewRenderer**: Parses YAML view configs, renders layout
 
 ### Demo Product Structure
 ```
@@ -346,7 +381,7 @@ packages/
         └── client.ts        # Tenant-scoped API client
 ```
 
-**Test Coverage:** 607 tests passing
+**Test Coverage:** 827 tests passing
 
 ---
 
@@ -405,15 +440,17 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 
 **Total: 607 tests passing**
 
-### Phase 2.5: UI Layer 🟢
+### Phase 2.5: UI Layer ✅
 | Component | Status | Details |
 |-----------|--------|---------|
 | Client SDK | ✅ Complete | 127 tests, TrellisClient, React hooks, WebSocket hooks |
 | PLM Demo Product | ✅ Complete | 11 YAML files, 4 entities with computed props, 5 views |
 | Product Loader | ✅ Complete | 80+ tests, schema validation, entity type registration |
 | Storybook Setup | ✅ Complete | Storybook 8.x, block placeholders, mock client |
-| React Blocks | 🟢 In Progress | Table, Form, Detail, Kanban (Instances 20-22) |
-| Block Integration | ⏳ Queued | After React Blocks (Instance 23) |
+| React Blocks | ✅ Complete | TableBlock (42), FormBlock (66), DetailBlock (15), KanbanBlock (20) |
+| Block Integration | ✅ Complete | Block Registry, BlockRenderer, ProductApp, ViewRenderer |
+
+**Total: 827 tests passing**
 
 ---
 
@@ -445,7 +482,7 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] E2E test structure
 - [x] Tenant isolation in tests
 
-### Phase 2.5: UI Layer 🟢 IN PROGRESS
+### Phase 2.5: UI Layer ✅ COMPLETE
 
 #### PLM Demo Product (Instance 24) ✅
 - [x] Product entity with computed margin, stock_status
@@ -473,16 +510,17 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] Entity type registration in database
 - [x] 80+ tests
 
-#### React Blocks (Instances 20-22) 🟢
-- [ ] TableBlock - Data table with sorting/filtering (Instance 20)
-- [ ] FormBlock - Entity create/edit forms (Instance 21)
-- [ ] DetailBlock - Entity detail view (Instance 22)
-- [ ] KanbanBlock - Status-based card view (Instance 22)
+#### React Blocks (Instances 20-22) ✅
+- [x] TableBlock - 12 cell formats, sorting, filtering, pagination (42 tests)
+- [x] FormBlock - 7 field types, validation, sections, conditional fields (66 tests)
+- [x] DetailBlock - Property display, computed values, relationship links (15 tests)
+- [x] KanbanBlock - Drag-drop, WIP limits, swimlanes (20 tests)
 
-#### Block Integration (Instance 23) ⏳
-- [ ] Wire blocks to real API
-- [ ] Navigation between views
-- [ ] End-to-end demo flow
+#### Block Integration (Instance 23) ✅
+- [x] Block Registry - Maps block names to React components
+- [x] BlockRenderer - Resolves blocks, injects props, handles wiring
+- [x] ProductApp - Authentication shell with navigation
+- [x] ViewRenderer - Parses YAML view configs, renders layout
 
 ### Phase 2.6: Production (Next)
 1. Permission system (role-based access control)
@@ -542,10 +580,10 @@ This is being built with AI assistance using multiple specialized Claude Code in
 | 17 | WebSocket Subscriptions | Protocol, subscriptions, connection management, handlers | Phase 2.4 | 🔴 Released |
 | 18 | Integration Test Harness | TestHarness class, database pool, E2E test structure | Phase 2.4 | 🔴 Released |
 | 19 | Client SDK | TrellisClient, React hooks, WebSocket hooks, 127 tests | Phase 2.5 | 🔴 Released |
-| 20 | TableBlock | Data table with sorting, filtering, pagination | Phase 2.5 | 🟢 Active |
-| 21 | FormBlock | Entity create/edit forms with validation | Phase 2.5 | 🟢 Active |
-| 22 | Detail + Kanban | DetailBlock and KanbanBlock components | Phase 2.5 | 🟢 Active |
-| 23 | Block Integration | Wire blocks to API, navigation, E2E demo | Phase 2.5 | ⏳ Queued |
+| 20 | TableBlock | 12 cell formats, sorting, filtering, pagination, 42 tests | Phase 2.5 | 🔴 Released |
+| 21 | FormBlock | 7 field types, validation, sections, conditional fields, 66 tests | Phase 2.5 | 🔴 Released |
+| 22 | Detail + Kanban | DetailBlock (15 tests) + KanbanBlock (20 tests) | Phase 2.5 | 🔴 Released |
+| 23 | Block Integration | Block Registry, BlockRenderer, ProductApp, ViewRenderer | Phase 2.5 | 🔴 Released |
 | 24 | PLM Demo Product | 11 YAML files, 4 entities, 5 views, computed props | Phase 2.5 | 🔴 Released |
 | 25 | Product Loader | YAML loading, schema validation, 80+ tests | Phase 2.5 | 🔴 Released |
 | 26 | Storybook Setup | Storybook 8.x, block placeholders, mock client | Phase 2.5 | 🔴 Released |

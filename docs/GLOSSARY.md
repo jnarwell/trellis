@@ -313,6 +313,28 @@ Record of event propagation through wiring connections. Shows which events fired
 
 ---
 
+## UI Layer
+
+### Block Registry
+A mapping of block type names (e.g., `table`, `form`, `detail`) to their React component implementations. Enables dynamic block resolution at runtime. Located at `packages/client/src/blocks/registry.ts`.
+
+### BlockRenderer
+React component that resolves a block configuration to its concrete component. Looks up the block type in the Block Registry, injects props from view config, and handles wiring connections between blocks.
+
+### TrellisProvider
+React context provider that supplies authentication state and TrellisClient instance to child components. Wraps the entire product application to enable hooks like `useEntity` and `useQuery`.
+
+### ProductApp
+The top-level React component that renders a Trellis product. Handles authentication flow, navigation shell, and view routing. Located at `packages/client/src/product/ProductApp.tsx`.
+
+### ViewRenderer
+Component that parses YAML view configurations and renders the appropriate layout with blocks. Handles grid layouts, block positioning, and conditional rendering based on `showWhen` expressions.
+
+### WIP Limits
+Work In Progress limits in KanbanBlock columns. Restricts how many cards can be in a status column at once. When exceeded, column is visually highlighted. Configurable per-column in view YAML.
+
+---
+
 ## Abbreviations
 
 | Abbr | Full Form |
@@ -328,6 +350,7 @@ Record of event propagation through wiring connections. Shows which events fired
 | RLS | Row-Level Security |
 | SI | International System of Units |
 | SSE | Server-Sent Events |
+| WIP | Work In Progress |
 | WS | WebSocket |
 
 ---
