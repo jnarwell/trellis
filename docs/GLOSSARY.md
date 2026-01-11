@@ -278,6 +278,22 @@ Different configurations of a Storybook story showing a component in various sta
 
 ---
 
+## SDK Patterns
+
+### Proactive Token Refresh
+Auth strategy that refreshes JWT tokens before they expire (typically when <2 minutes remaining) to avoid failed requests. Implemented in TrellisClient's HTTP interceptor.
+
+### Fluent Query Builder
+API design pattern allowing chained method calls: `client.query('type').where(...).orderBy(...).execute()`. Provides type-safe query construction.
+
+### LRU Cache
+Least Recently Used cache that evicts oldest entries when capacity is reached. Used for entity caching in the SDK with TTL (time-to-live) and WebSocket-based invalidation.
+
+### Atomic Transaction
+Database operation where all changes succeed or all are rolled back. Used in Product Loader to prevent partial loads when loading YAML definitions.
+
+---
+
 ## Debugging
 
 ### DebugContext

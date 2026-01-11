@@ -146,6 +146,68 @@ packages/client/
 - DetailBlock - 3 variants (Default, WithSections, Loading)
 - KanbanBlock - 3 variants (Default, WithDragDrop, Loading)
 
+### Client SDK (Instance 19)
+
+TypeScript SDK for calling Trellis API from React.
+
+**Location:** `packages/client/src/sdk/` and `packages/client/src/state/`
+
+**Features:**
+- HTTP client with automatic auth header injection
+- Proactive token refresh (refreshes when <2 min remaining)
+- Fluent query builder API
+- WebSocket with auto-reconnect (exponential backoff: 1s→30s max)
+- React hooks: `useEntity`, `useQuery`, `useSubscription`
+- LRU entity cache with TTL and WebSocket invalidation
+
+**Usage:**
+```typescript
+import { TrellisClient, TrellisProvider, useQuery } from '@trellis/client';
+
+const client = new TrellisClient({ baseUrl: 'http://localhost:3000' });
+
+// Fluent query
+const products = await client
+  .query('product')
+  .where('status', 'eq', 'active')
+  .orderBy('name')
+  .limit(50)
+  .execute();
+
+// React hook
+const { data, loading } = useQuery('product', { filter: { status: 'active' } });
+```
+
+**Tests:** 127 passing
+
+### Product Loader (Instance 25)
+
+CLI and library for loading YAML product definitions into the database.
+
+**Location:** `packages/server/src/loader/` and `packages/server/src/cli/`
+
+**CLI Commands:**
+```bash
+# Load product definition
+trellis load ./products/plm-demo --force --dry-run
+
+# Validate without loading
+trellis validate ./products/plm-demo --verbose
+
+# Start server with product
+trellis serve ./products/plm-demo --port 3000
+```
+
+**Features:**
+- Atomic transactions (rollback on failure)
+- `--force` to overwrite existing schemas
+- `--dry-run` for validation without writing
+- `--skip-seed` to skip initial data
+- Event emitter for progress tracking
+- Type inheritance support
+
+**Tests:** 80+ passing
+
 ---
 
 ## Architectural Decisions Made
