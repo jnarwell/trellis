@@ -275,7 +275,7 @@ export class EntityService {
     // Validate type exists in type_schemas table
 
     const entityId = uuidv7() as EntityId;
-    let properties = transformProperties(input.properties);
+    const properties = transformProperties(input.properties);
 
     // Check if we have computed properties that need evaluation
     const hasComputedProperties = Object.values(properties).some(

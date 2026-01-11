@@ -61,7 +61,7 @@ export class RecalculationHandler {
     string, // entityId
     Set<PropertyName>
   >();
-  private batchTimeout: NodeJS.Timeout | null = null;
+  private batchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly pool: Pool,
