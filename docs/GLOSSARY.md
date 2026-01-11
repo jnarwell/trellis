@@ -123,6 +123,9 @@ The domain object an event relates to. Usually an entity or relationship.
 ### Sequence Number
 Monotonically increasing number per tenant. Ensures event ordering.
 
+### Event Store
+The immutable append-only table storing all events. Implemented in `events` table with tenant isolation and sequence numbers. See [ADR-006](./adr/006-immutable-events.md).
+
 ---
 
 ## Blocks and Products
@@ -174,18 +177,27 @@ The current tenant identifier, passed through all operations. Set from authentic
 ### Query-Layer Isolation
 Tenant isolation enforced by always filtering queries by tenant_id.
 
+### Row-Level Security (RLS)
+PostgreSQL feature that automatically filters rows based on security policies. Trellis uses RLS policies to enforce tenant isolation at the database level. See [ADR-009](./adr/009-multi-tenancy.md).
+
+### Tenant-Scoped Client
+API client that automatically includes tenant context in all requests. The `TrellisClient` class in `@trellis/client` provides tenant-scoped access to entities, relationships, and queries.
+
 ---
 
 ## Concurrency
 
 ### Optimistic Locking
-Conflict detection using version numbers. Updates fail if the version has changed since reading.
+Conflict detection using version numbers. Updates fail if the version has changed since reading. Requires `expected_version` parameter on all update operations. See [ADR-010](./adr/010-optimistic-locking.md).
 
 ### Version
-Integer incremented on each update. Used for optimistic locking.
+Integer incremented on each update. Used for optimistic locking. Starts at 1 for new entities.
 
 ### Conflict
-When two users try to update the same entity simultaneously. Detected via version mismatch.
+When two users try to update the same entity simultaneously. Detected via version mismatch. Returns HTTP 409 Conflict with current version in response.
+
+### Cursor Pagination
+Pagination strategy using opaque cursors instead of page numbers. More efficient for large datasets and handles concurrent insertions gracefully. Implemented in Query Engine with `cursor` and `limit` parameters.
 
 ---
 
@@ -235,6 +247,7 @@ Record of event propagation through wiring connections. Shows which events fired
 | BOM | Bill of Materials |
 | CRM | Customer Relationship Management |
 | CQRS | Command Query Responsibility Segregation |
+| CRUD | Create, Read, Update, Delete |
 | EAV | Entity-Attribute-Value |
 | PLM | Product Lifecycle Management |
 | RLS | Row-Level Security |

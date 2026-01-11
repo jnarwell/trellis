@@ -1,7 +1,7 @@
 # Trellis - Current State
 
-**Last Updated:** 2025-01-10
-**Status:** Phase 2.2 Complete - Core Systems
+**Last Updated:** 2026-01-10
+**Status:** Phase 2.3 Complete - API Layer
 
 ---
 
@@ -55,7 +55,25 @@ Completed:
 | Debug Infrastructure | Instance 8 | ✅ Complete | Integrated |
 | Orchestration Plugin | Instance 9 | ✅ Complete | Ready for install |
 
-**Total Tests:** 209 passing
+---
+
+**Phase 2.3: API Layer** ✅ Complete
+
+| Component | Instance | Status | Tests |
+|-----------|----------|--------|-------|
+| Server Setup | Instance 10 | ✅ Complete | Fastify + Prisma |
+| Entity API | Instance 11 | ✅ Complete | Full CRUD |
+| Relationship API | Instance 12 | ✅ Complete | Hierarchy support |
+| Query Engine | Instance 13 | ✅ Complete | Cursor pagination |
+| Event Emitter | Instance 14 | ✅ Complete | Immutable log |
+
+**Total Tests:** 446 passing (+237 from Phase 2.2)
+
+| Package | Tests |
+|---------|-------|
+| @trellis/kernel | 134 |
+| @trellis/server | 258 |
+| @trellis/client | 54 |
 
 ---
 
@@ -155,10 +173,29 @@ packages/
 │   └── src/
 │       ├── types/           # Core type definitions
 │       └── debug/           # DebugContext, traces
-└── server/                  # API server (future)
+├── server/
+│   └── src/
+│       ├── index.ts         # Fastify app setup
+│       ├── plugins/         # Fastify plugins (prisma, tenant, auth)
+│       ├── routes/
+│       │   ├── entities.ts  # Entity CRUD endpoints
+│       │   ├── relationships.ts  # Relationship endpoints
+│       │   └── queries.ts   # Query engine endpoints
+│       ├── services/
+│       │   ├── entity.service.ts
+│       │   ├── relationship.service.ts
+│       │   ├── query.service.ts
+│       │   └── event.service.ts  # Event emitter
+│       └── lib/
+│           ├── pagination.ts # Cursor pagination
+│           └── errors.ts    # API error types
+└── client/
+    └── src/
+        ├── index.ts         # TrellisClient export
+        └── client.ts        # Tenant-scoped API client
 ```
 
-**Test Coverage:** 209 tests passing
+**Test Coverage:** 446 tests passing
 
 ---
 
@@ -193,55 +230,66 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 ### Phase 2.2: Core Systems ✅
 | Component | Status | Details |
 |-----------|--------|---------|
-| Expression Engine | ✅ Complete | Lexer, Parser, Evaluator, 21 functions, Staleness propagation, 104 tests |
-| Block Runtime | ✅ Complete | 50+ ProductConfig interfaces, YAML loader, Data Binding, Wiring, 105 tests |
+| Expression Engine | ✅ Complete | Lexer, Parser, Evaluator, 21 functions, Staleness propagation |
+| Block Runtime | ✅ Complete | 50+ ProductConfig interfaces, YAML loader, Data Binding, Wiring |
 | Debug Infrastructure | ✅ Complete | DebugContext types, evaluation traces, AI-parseable errors |
 | Orchestration Plugin | ✅ Complete | 4 agents, 5 commands, 4 skills |
 
-**Total: 209 tests passing**
+### Phase 2.3: API Layer ✅
+| Component | Status | Details |
+|-----------|--------|---------|
+| Server Setup | ✅ Complete | Fastify app, Prisma plugin, tenant context, auth middleware |
+| Entity API | ✅ Complete | Full CRUD, optimistic locking, RLS enforcement |
+| Relationship API | ✅ Complete | Create/delete, hierarchy queries, ltree support |
+| Query Engine | ✅ Complete | Cursor pagination, filtering, sorting, property queries |
+| Event Emitter | ✅ Complete | Immutable event log, 8 event types, sequence numbers |
+
+**Total: 446 tests passing**
 
 ---
 
 ## What's Next
 
-### Phase 2.2: Core Systems ✅ COMPLETE
+### Phase 2.3: API Layer ✅ COMPLETE
 
-#### Expression Engine (Instance 6) ✅
-- [x] Lexer implementation (`lexer.ts`)
-- [x] Parser with BNF grammar (`parser.ts`)
-- [x] Evaluator (`evaluator.ts`)
-- [x] 21 built-in functions
-- [x] Dependency extraction (`dependencies.ts`)
-- [x] Staleness propagation BFS (`staleness.ts`)
-- [x] 104 passing tests
+#### Server Setup (Instance 10) ✅
+- [x] Fastify application setup
+- [x] Prisma plugin with connection pooling
+- [x] Tenant context middleware
+- [x] Authentication middleware structure
 
-#### Block Runtime (Instance 7) ✅
-- [x] 50+ ProductConfig TypeScript interfaces
-- [x] YAML loader with includes resolution
-- [x] Data Binding system ($scope, $params, $can, $hasRole, $now)
-- [x] Wiring system (events → receivers, transforms, navigation)
-- [x] 105 passing tests
+#### Entity API (Instance 11) ✅
+- [x] Full CRUD endpoints (create, read, update, delete)
+- [x] Optimistic locking enforcement (ADR-010)
+- [x] RLS tenant isolation (ADR-009)
+- [x] Property JSONB operations
 
-#### Debug Infrastructure (Instance 8) ✅
-- [x] DebugContext types for full error capture
-- [x] Evaluation traces, wiring traces
-- [x] AI-parseable error formatting
-- [x] Debug modes (off/errors/verbose/trace)
+#### Relationship API (Instance 12) ✅
+- [x] Create/delete relationship endpoints
+- [x] Hierarchy queries with ltree (ADR-003)
+- [x] Ancestor/descendant traversal
+- [x] Relationship type validation
 
-#### Orchestration Plugin (Instance 9) ✅
-- [x] 4 agents (Explore, Plan, general-purpose, claude-code-guide)
-- [x] 5 commands for project workflow
-- [x] 4 skills for specialized tasks
-- [x] Ready for installation
+#### Query Engine (Instance 13) ✅
+- [x] Cursor-based pagination
+- [x] Filtering by type, properties, relationships
+- [x] Sorting with multiple fields
+- [x] Property value queries
 
-### Phase 2.3: Integration
+#### Event Emitter (Instance 14) ✅
+- [x] Immutable event log (ADR-006)
+- [x] 8 event types implemented
+- [x] Sequence number generation
+- [x] Tenant-scoped event streams
+
+### Phase 2.4: Integration (Next)
 1. Expression Engine + Block Runtime integration
-2. API implementation from `specs/kernel/03-api.md`
-3. Event system implementation
-4. End-to-end testing
+2. Computed property evaluation pipeline
+3. Real-time staleness propagation
+4. End-to-end testing with API
 
 ### Future Phases
-- Frontend foundation
+- Frontend foundation (React + Block rendering)
 - Real-time updates (SSE/WebSocket)
 - Product layer deployment
 
@@ -282,6 +330,11 @@ This is being built with AI assistance using multiple specialized Claude Code in
 | 7 | Block Runtime | 50+ config types, YAML loader, Data Binding, Wiring, 105 tests | Phase 2.2 | 🔴 Released |
 | 8 | Test & Debug | DebugContext types, traces, AI-parseable errors | Phase 2.2 | 🔴 Released |
 | 9 | Plugin Developer | Orchestration plugin (4 agents, 5 commands, 4 skills) | Phase 2.2 | 🔴 Released |
+| 10 | Server Setup | Fastify app, Prisma plugin, tenant context, auth middleware | Phase 2.3 | 🔴 Released |
+| 11 | Entity API | Full CRUD, optimistic locking, RLS enforcement, 258 tests | Phase 2.3 | 🔴 Released |
+| 12 | Relationship API | Create/delete, hierarchy queries, ltree support | Phase 2.3 | 🔴 Released |
+| 13 | Query Engine | Cursor pagination, filtering, sorting, property queries | Phase 2.3 | 🔴 Released |
+| 14 | Event Emitter | Immutable event log, 8 event types, sequence numbers | Phase 2.3 | 🔴 Released |
 
 Each instance can read CLAUDE.md and this document to understand the current state.
 

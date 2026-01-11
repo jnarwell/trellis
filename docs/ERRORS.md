@@ -238,3 +238,56 @@ interface ExpressionError {
 |------|----------|-------------|
 | `DEBUG_TRACE_OVERFLOW` | Trace | Trace buffer exceeded limit |
 | `DEBUG_CONTEXT_NOT_SET` | Context | Debug context not initialized |
+
+---
+
+## API Layer Errors (Phase 2.3)
+
+> **Status:** ✅ Finalized - Implementation in `packages/kernel/src/types/errors.ts`
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `NOT_FOUND` | 404 | Entity, relationship, or resource not found |
+| `ALREADY_EXISTS` | 409 | Entity or relationship already exists |
+| `VERSION_CONFLICT` | 409 | Optimistic locking version mismatch |
+| `VALIDATION_ERROR` | 400 | Request validation failed |
+| `TYPE_MISMATCH` | 400 | Property type doesn't match schema |
+| `PERMISSION_DENIED` | 403 | User lacks permission for operation |
+| `TENANT_MISMATCH` | 403 | Resource belongs to different tenant |
+| `CIRCULAR_DEPENDENCY` | 422 | Circular reference in relationships or expressions |
+| `INVALID_EXPRESSION` | 400 | Expression syntax or evaluation error |
+| `REFERENCE_BROKEN` | 422 | Referenced entity no longer exists |
+
+### Error Response Format
+
+```typescript
+interface ErrorResponse {
+  code: string;           // e.g., 'VERSION_CONFLICT'
+  message: string;        // Human-readable description
+  details?: Record<string, unknown>;  // Additional context
+  requestId?: string;     // Request ID for debugging
+}
+```
+
+### Common Causes and Resolutions
+
+#### VERSION_CONFLICT
+**Symptoms:** Update returns HTTP 409
+**Common Causes:**
+- Another user updated the entity since you read it
+- Missing `expected_version` in request
+**Resolution:** Re-fetch entity, get current version, retry update
+
+#### TENANT_MISMATCH
+**Symptoms:** Access returns HTTP 403
+**Common Causes:**
+- Trying to access entity from different tenant
+- Auth token has wrong tenant_id
+**Resolution:** Verify tenant context in request, check authentication
+
+#### REFERENCE_BROKEN
+**Symptoms:** Operation returns HTTP 422
+**Common Causes:**
+- Referenced entity was deleted
+- Relationship target no longer exists
+**Resolution:** Update or remove the broken reference
