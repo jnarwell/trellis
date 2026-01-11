@@ -1,0 +1,68 @@
+[
+  {
+    "id": "test-user-admin",
+    "email": "admin@test.trellis.dev",
+    "name": "Test Admin",
+    "role": "admin",
+    "permissions": [
+      "entity.create",
+      "entity.read",
+      "entity.update",
+      "entity.delete",
+      "part.submit",
+      "part.approve",
+      "part.obsolete",
+      "assembly.release",
+      "user.manage"
+    ],
+    "tenantId": "test-tenant",
+    "metadata": {
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "id": "test-user-engineer",
+    "email": "engineer@test.trellis.dev",
+    "name": "Test Engineer",
+    "role": "engineer",
+    "permissions": [
+      "entity.create",
+      "entity.read",
+      "entity.update",
+      "part.submit"
+    ],
+    "tenantId": "test-tenant",
+    "metadata": {
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "id": "test-user-viewer",
+    "email": "viewer@test.trellis.dev",
+    "name": "Test Viewer",
+    "role": "viewer",
+    "permissions": [
+      "entity.read"
+    ],
+    "tenantId": "test-tenant",
+    "metadata": {
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "id": "test-user-other-tenant",
+    "email": "other@other.trellis.dev",
+    "name": "Other Tenant User",
+    "role": "admin",
+    "permissions": [
+      "entity.create",
+      "entity.read",
+      "entity.update",
+      "entity.delete"
+    ],
+    "tenantId": "other-tenant",
+    "metadata": {
+      "createdAt": "2024-01-01T00:00:00Z"
+    }
+  }
+]

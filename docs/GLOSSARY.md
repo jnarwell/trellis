@@ -143,7 +143,14 @@ An output signal from a block when something happens. Carries a typed payload.
 An action a block can receive from other blocks or the system. Like a method that can be called.
 
 ### Wiring
-Configuration connecting one block's events to another block's receivers.
+Configuration connecting one block's events to another block's receivers. Wiring definitions specify:
+- **source**: Block ID and event name
+- **target**: Block ID and receiver name
+- **transform**: Optional Data Binding expression to transform payload
+- **condition**: Optional `when` clause to conditionally trigger
+- **navigation**: Optional route/view change after action
+
+See `packages/kernel/src/blocks/wiring.ts` for implementation.
 
 ### Product
 A complete application built on Trellis. Defined in YAML configuration. Examples: PLM, CRM, Test Management.
@@ -198,6 +205,25 @@ PostgreSQL's binary JSON type. Used for flexible property storage with indexing.
 
 ### GIN Index
 Generalized Inverted Index. Used to index JSONB for efficient queries.
+
+---
+
+## Debugging
+
+### DebugContext
+A structured object capturing full error context for AI-assisted debugging. Contains:
+- **mode**: `off` | `errors` | `verbose` | `trace`
+- **errors**: Array of captured errors with stack traces
+- **traces**: Evaluation traces, wiring traces, binding traces
+- **timing**: Performance measurements
+
+Designed to be AI-parseable for automated error analysis. See `packages/shared/src/debug/`.
+
+### Evaluation Trace
+Step-by-step record of expression evaluation. Captures input values, intermediate results, function calls, and final output. Used for debugging computed properties.
+
+### Wiring Trace
+Record of event propagation through wiring connections. Shows which events fired, which receivers were triggered, and any transforms applied.
 
 ---
 

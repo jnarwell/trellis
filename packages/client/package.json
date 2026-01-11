@@ -1,0 +1,32 @@
+{
+  "name": "@trellis/client",
+  "version": "0.0.1",
+  "description": "Trellis React client",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "pnpm exec vitest run"
+  },
+  "dependencies": {
+    "@trellis/kernel": "workspace:*",
+    "@trellis/server": "workspace:*",
+    "@trellis/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

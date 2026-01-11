@@ -1,0 +1,284 @@
+# PLM Test Product Configuration
+# Minimal but complete PLM setup for E2E testing
+
+name: PLM Test
+version: "1.0.0"
+description: Test product for E2E testing
+defaultView: parts-list
+
+# =============================================================================
+# ENTITY TYPES
+# =============================================================================
+
+entities:
+  # -------------------------------------------------------------------------
+  # Part Entity
+  # -------------------------------------------------------------------------
+  - id: part
+    name: Part
+    description: A manufactured part or component
+    icon: box
+
+    properties:
+      - name: part_number
+        type: text
+        required: true
+        description: Unique part identifier
+        validators:
+          - pattern: ^[A-Z]{2}-\d{6}$
+            message: Part number must be in format XX-000000
+
+      - name: name
+        type: text
+        required: true
+        description: Part name
+        maxLength: 200
+
+      - name: description
+        type: text
+        required: false
+        description: Part description
+        maxLength: 2000
+
+      - name: unit_cost
+        type: number
+        required: false
+        description: Cost per unit in USD
+        min: 0
+
+      - name: quantity
+        type: number
+        required: false
+        default: 1
+        description: Default quantity
+        min: 0
+        integer: true
+
+      - name: weight
+        type: number
+        required: false
+        description: Weight in kg
+        min: 0
+
+      - name: material
+        type: text
+        required: false
+        description: Primary material
+
+    computed:
+      - name: extended_cost
+        expression: "#unit_cost * #quantity"
+        description: Total cost (unit_cost × quantity)
+        type: number
+
+    lifecycle:
+      states:
+        - draft
+        - in_review
+        - released
+        - obsolete
+      initial: draft
+      transitions:
+        - from: draft
+          to: in_review
+          action: submit
+          permissions: [part.submit]
+        - from: in_review
+          to: released
+          action: approve
+          permissions: [part.approve]
+        - from: in_review
+          to: draft
+          action: reject
+          permissions: [part.approve]
+        - from: released
+          to: obsolete
+          action: obsolete
+          permissions: [part.obsolete]
+
+  # -------------------------------------------------------------------------
+  # Assembly Entity
+  # -------------------------------------------------------------------------
+  - id: assembly
+    name: Assembly
+    description: A product assembly containing parts
+    icon: layers
+
+    properties:
+      - name: assembly_number
+        type: text
+        required: true
+        description: Unique assembly identifier
+
+      - name: name
+        type: text
+        required: true
+        description: Assembly name
+
+      - name: description
+        type: text
+        required: false
+        description: Assembly description
+
+    computed:
+      - name: total_cost
+        expression: "SUM(@self.children[*].extended_cost)"
+        description: Sum of all child part costs
+        type: number
+
+      - name: part_count
+        expression: "COUNT(@self.children)"
+        description: Number of parts in assembly
+        type: number
+
+    lifecycle:
+      states:
+        - draft
+        - released
+      initial: draft
+      transitions:
+        - from: draft
+          to: released
+          action: release
+          permissions: [assembly.release]
+
+# =============================================================================
+# RELATIONSHIPS
+# =============================================================================
+
+relationships:
+  - type: children
+    from: assembly
+    to: part
+    cardinality: one-to-many
+    description: Parts that belong to this assembly
+
+  - type: parent
+    from: part
+    to: assembly
+    cardinality: many-to-one
+    description: Assembly this part belongs to
+
+# =============================================================================
+# VIEWS
+# =============================================================================
+
+views:
+  # -------------------------------------------------------------------------
+  # Parts List View
+  # -------------------------------------------------------------------------
+  - id: parts-list
+    name: Parts
+    description: Browse and manage parts
+    icon: list
+
+    layout:
+      type: split
+      direction: horizontal
+      sizes: [60, 40]
+
+      children:
+        - id: parts-table
+          type: trellis.data-table
+          props:
+            entityType: part
+            columns:
+              - property: part_number
+                label: "Part #"
+                width: 120
+                sortable: true
+              - property: name
+                label: Name
+                sortable: true
+              - property: unit_cost
+                label: Unit Cost
+                format: currency
+                width: 100
+              - property: quantity
+                label: Qty
+                width: 60
+              - property: extended_cost
+                label: Extended
+                format: currency
+                width: 100
+              - property: state
+                label: Status
+                width: 100
+            selectable: true
+            pageSize: 25
+
+        - id: part-detail
+          type: trellis.record-view
+          props:
+            entityType: part
+            sections:
+              - name: Basic Information
+                properties:
+                  - part_number
+                  - name
+                  - description
+              - name: Cost & Quantity
+                properties:
+                  - unit_cost
+                  - quantity
+                  - extended_cost
+              - name: Specifications
+                properties:
+                  - weight
+                  - material
+
+  # -------------------------------------------------------------------------
+  # Assemblies View
+  # -------------------------------------------------------------------------
+  - id: assemblies
+    name: Assemblies
+    description: Manage product assemblies
+    icon: layers
+
+    layout:
+      type: split
+      direction: horizontal
+      sizes: [40, 60]
+
+      children:
+        - id: assembly-tree
+          type: trellis.tree-view
+          props:
+            entityType: assembly
+            relationshipType: children
+            displayProperty: name
+
+        - id: bom-table
+          type: trellis.data-table
+          props:
+            entityType: part
+            title: Bill of Materials
+            columns:
+              - property: part_number
+                label: "Part #"
+              - property: name
+                label: Name
+              - property: quantity
+                label: Qty
+              - property: extended_cost
+                label: Cost
+
+# =============================================================================
+# WIRING
+# =============================================================================
+
+wiring:
+  # Parts view wiring
+  - from: parts-table
+    event: rowSelected
+    to: part-detail
+    receiver: loadEntity
+
+  # Assembly view wiring
+  - from: assembly-tree
+    event: nodeSelected
+    to: bom-table
+    receiver: setFilter
+    transform:
+      kind: expression
+      expr: "{ filter: { parent: $payload.entityId } }"

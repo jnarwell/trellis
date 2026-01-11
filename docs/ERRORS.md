@@ -131,3 +131,110 @@ Two distinct expression systems (Expression Engine vs Data Binding) were not exp
 ### Prevention
 [How to prevent recurrence]
 ```
+
+---
+
+# Runtime Error Codes
+
+This section documents error codes thrown by Trellis at runtime. These are distinct from the ERROR-NNN entries above, which track development/documentation mistakes.
+
+## Expression Engine Errors
+
+> **Status:** ✅ Finalized - Implementation in `packages/kernel/src/expressions/errors.ts`
+
+| Code | Category | Description |
+|------|----------|-------------|
+| `EXPR_SYNTAX_ERROR` | Parse | Invalid expression syntax |
+| `EXPR_UNEXPECTED_TOKEN` | Parse | Unexpected token during parsing |
+| `EXPR_UNEXPECTED_END` | Parse | Unexpected end of expression |
+| `EXPR_UNKNOWN_PROPERTY` | Reference | Referenced property does not exist |
+| `EXPR_UNKNOWN_FUNCTION` | Reference | Function name not recognized |
+| `EXPR_INVALID_ARGUMENT` | Argument | Invalid argument to function |
+| `EXPR_ARGUMENT_COUNT` | Argument | Wrong number of arguments to function |
+| `EXPR_TYPE_MISMATCH` | Type | Incompatible types in operation |
+| `EXPR_DIVISION_BY_ZERO` | Runtime | Division by zero attempted |
+| `EXPR_CIRCULAR_DEPENDENCY` | Dependency | Circular reference detected |
+| `EXPR_DIMENSION_MISMATCH` | Dimension | Incompatible units in operation |
+| `EXPR_NULL_REFERENCE` | Reference | Null value in non-nullable context |
+| `EXPR_EVALUATION_FAILED` | Runtime | General evaluation failure |
+
+### Error Code Format
+
+```typescript
+interface ExpressionError {
+  code: string;           // e.g., 'EXPR_SYNTAX_ERROR'
+  message: string;        // Human-readable description
+  position?: {            // Location in expression (if applicable)
+    line: number;
+    column: number;
+    offset: number;
+  };
+  expression?: string;    // The failing expression
+  context?: Record<string, unknown>;  // Additional debug info
+}
+```
+
+### Common Causes and Resolutions
+
+#### EXPR_SYNTAX_ERROR
+**Symptoms:** Expression fails to parse
+**Common Causes:**
+- Missing closing parenthesis
+- Invalid operator usage
+- Unquoted string literals
+**Resolution:** Check expression against [EXPRESSION-QUICK-REF.md](../specs/config/EXPRESSION-QUICK-REF.md)
+
+#### EXPR_CIRCULAR_DEPENDENCY
+**Symptoms:** Property shows `circular` computation status
+**Common Causes:**
+- Property A depends on B, B depends on A
+- Indirect cycles through multiple properties
+**Resolution:** Review dependency graph, refactor to break cycle
+
+#### EXPR_DIMENSION_MISMATCH
+**Symptoms:** Computation fails on unit-aware operations
+**Common Causes:**
+- Adding length to mass
+- Comparing incompatible units
+**Resolution:** Ensure operands have compatible dimensions, use explicit conversions
+
+---
+
+## Data Binding Errors
+
+> **Status:** ✅ Finalized - Implementation in `packages/kernel/src/blocks/errors.ts`
+
+| Code | Category | Description |
+|------|----------|-------------|
+| `BIND_SCOPE_NOT_FOUND` | Reference | Referenced scope variable doesn't exist |
+| `BIND_INVALID_PATH` | Reference | Invalid property path in binding |
+| `BIND_PERMISSION_DENIED` | Auth | `$can()` check failed |
+| `BIND_EVALUATION_FAILED` | Runtime | Binding expression evaluation failed |
+
+---
+
+## Block Runtime Errors
+
+> **Status:** ✅ Finalized - Implementation in `packages/kernel/src/blocks/errors.ts`
+
+| Code | Category | Description |
+|------|----------|-------------|
+| `BLOCK_NOT_FOUND` | Reference | Referenced block ID doesn't exist |
+| `BLOCK_VALIDATION_ERROR` | Validation | Block config validation failed |
+| `WIRING_INVALID_SOURCE` | Wiring | Source block/event not found |
+| `WIRING_INVALID_TARGET` | Wiring | Target block/receiver not found |
+| `WIRING_TRANSFORM_FAILED` | Wiring | Transform expression failed |
+| `CONFIG_LOAD_ERROR` | Config | YAML config failed to load |
+| `CONFIG_INCLUDE_ERROR` | Config | Included file not found |
+| `CONFIG_VALIDATION_ERROR` | Config | Config schema validation failed |
+
+---
+
+## Debug Error Codes
+
+> **Status:** ✅ Finalized - Implementation in `packages/shared/src/debug/`
+
+| Code | Category | Description |
+|------|----------|-------------|
+| `DEBUG_TRACE_OVERFLOW` | Trace | Trace buffer exceeded limit |
+| `DEBUG_CONTEXT_NOT_SET` | Context | Debug context not initialized |

@@ -1,0 +1,23 @@
+{
+  "name": "orchestration",
+  "version": "1.0.0",
+  "description": "Multi-instance Claude Code orchestration methodology for complex projects",
+  "author": "Trellis Team",
+  "homepage": "https://github.com/trellis/orchestration-plugin",
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "multi-instance",
+    "parallel-development",
+    "discovery",
+    "scratchpad"
+  ],
+  "engines": {
+    "claude-code": ">=1.0.0"
+  },
+  "capabilities": {
+    "agents": true,
+    "commands": true,
+    "skills": true
+  }
+}

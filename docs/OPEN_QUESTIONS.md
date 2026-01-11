@@ -183,44 +183,14 @@ This document tracks unresolved architectural and design questions. When a quest
 
 ---
 
-### OQ-010: Monorepo Package Structure
-**Status:** Open
-**Priority:** High
-**Context:** How to organize packages in the TypeScript monorepo.
+## Resolved Questions
 
-**Options:**
-```
-Option A (by layer):
-packages/
-  core/         # Shared types, utils
-  api/          # Fastify server
-  web/          # React frontend
-  cli/          # CLI tools
-
-Option B (by domain):
-packages/
-  entities/     # Entity domain (types, API, UI)
-  relationships/
-  expressions/
-  events/
-
-Option C (hybrid):
-packages/
-  kernel/       # Core domain types
-  server/       # API implementation
-  client/       # Frontend
-  shared/       # Shared utilities
-```
-
-**Considerations:**
-- Code sharing between packages
-- Build and test isolation
-- Deployment units
-- Team ownership boundaries
+### RQ-005: Monorepo Package Structure
+**Resolved:** 2026-01-10
+**Decision:** Hybrid structure with kernel, server, client, shared packages
+**ADR:** [011-monorepo-structure.md](./adr/011-monorepo-structure.md)
 
 ---
-
-## Resolved Questions
 
 ### RQ-001: Data Storage Approach
 **Resolved:** 2026-01-10

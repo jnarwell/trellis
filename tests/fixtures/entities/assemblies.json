@@ -1,0 +1,65 @@
+[
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000101",
+    "type": "assembly",
+    "version": 1,
+    "state": "released",
+    "properties": {
+      "assembly_number": {
+        "value": "ASSY-001",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Widget Assembly Complete",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Complete widget assembly with housing and components",
+        "source": "literal"
+      }
+    },
+    "relationships": {
+      "children": [
+        "0191a2b3-c4d5-7000-8000-000000000001",
+        "0191a2b3-c4d5-7000-8000-000000000002",
+        "0191a2b3-c4d5-7000-8000-000000000003",
+        "0191a2b3-c4d5-7000-8000-000000000004"
+      ]
+    },
+    "metadata": {
+      "createdBy": "test-user-admin",
+      "createdAt": "2024-01-15T12:00:00Z",
+      "updatedAt": "2024-01-15T12:00:00Z"
+    }
+  },
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000102",
+    "type": "assembly",
+    "version": 1,
+    "state": "draft",
+    "properties": {
+      "assembly_number": {
+        "value": "ASSY-002",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Sensor Module",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Temperature and pressure sensor module",
+        "source": "literal"
+      }
+    },
+    "relationships": {
+      "children": [
+        "0191a2b3-c4d5-7000-8000-000000000003"
+      ]
+    },
+    "metadata": {
+      "createdBy": "test-user-engineer",
+      "createdAt": "2024-01-18T09:00:00Z",
+      "updatedAt": "2024-01-18T09:00:00Z"
+    }
+  }
+]

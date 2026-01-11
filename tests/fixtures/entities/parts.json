@@ -1,0 +1,207 @@
+[
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000001",
+    "type": "part",
+    "version": 1,
+    "state": "released",
+    "properties": {
+      "part_number": {
+        "value": "WD-001234",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Widget Pro",
+        "source": "literal"
+      },
+      "description": {
+        "value": "High-performance widget for industrial applications",
+        "source": "literal"
+      },
+      "unit_cost": {
+        "value": 10.00,
+        "source": "literal"
+      },
+      "quantity": {
+        "value": 5,
+        "source": "literal"
+      },
+      "weight": {
+        "value": 0.25,
+        "source": "literal"
+      },
+      "material": {
+        "value": "Aluminum",
+        "source": "literal"
+      }
+    },
+    "metadata": {
+      "createdBy": "test-user-admin",
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    }
+  },
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000002",
+    "type": "part",
+    "version": 1,
+    "state": "draft",
+    "properties": {
+      "part_number": {
+        "value": "GK-002345",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Gasket Standard",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Standard rubber gasket for sealing",
+        "source": "literal"
+      },
+      "unit_cost": {
+        "value": 2.50,
+        "source": "literal"
+      },
+      "quantity": {
+        "value": 10,
+        "source": "literal"
+      },
+      "weight": {
+        "value": 0.05,
+        "source": "literal"
+      },
+      "material": {
+        "value": "Rubber",
+        "source": "literal"
+      }
+    },
+    "metadata": {
+      "createdBy": "test-user-engineer",
+      "createdAt": "2024-01-16T14:30:00Z",
+      "updatedAt": "2024-01-16T14:30:00Z"
+    }
+  },
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000003",
+    "type": "part",
+    "version": 2,
+    "state": "in_review",
+    "properties": {
+      "part_number": {
+        "value": "BT-003456",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Bolt M8x20",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Metric bolt M8 thread, 20mm length",
+        "source": "literal"
+      },
+      "unit_cost": {
+        "value": 0.50,
+        "source": "literal"
+      },
+      "quantity": {
+        "value": 100,
+        "source": "literal"
+      },
+      "weight": {
+        "value": 0.015,
+        "source": "literal"
+      },
+      "material": {
+        "value": "Stainless Steel",
+        "source": "literal"
+      }
+    },
+    "metadata": {
+      "createdBy": "test-user-engineer",
+      "createdAt": "2024-01-10T09:00:00Z",
+      "updatedAt": "2024-01-17T11:00:00Z"
+    }
+  },
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000004",
+    "type": "part",
+    "version": 1,
+    "state": "released",
+    "properties": {
+      "part_number": {
+        "value": "HS-004567",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Housing Main",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Main housing enclosure, injection molded",
+        "source": "literal"
+      },
+      "unit_cost": {
+        "value": 45.00,
+        "source": "literal"
+      },
+      "quantity": {
+        "value": 1,
+        "source": "literal"
+      },
+      "weight": {
+        "value": 1.2,
+        "source": "literal"
+      },
+      "material": {
+        "value": "ABS Plastic",
+        "source": "literal"
+      }
+    },
+    "metadata": {
+      "createdBy": "test-user-admin",
+      "createdAt": "2024-01-12T08:00:00Z",
+      "updatedAt": "2024-01-12T08:00:00Z"
+    }
+  },
+  {
+    "id": "0191a2b3-c4d5-7000-8000-000000000005",
+    "type": "part",
+    "version": 1,
+    "state": "obsolete",
+    "properties": {
+      "part_number": {
+        "value": "CP-005678",
+        "source": "literal"
+      },
+      "name": {
+        "value": "Capacitor 100uF (Legacy)",
+        "source": "literal"
+      },
+      "description": {
+        "value": "Legacy capacitor, replaced by CP-005679",
+        "source": "literal"
+      },
+      "unit_cost": {
+        "value": 1.25,
+        "source": "literal"
+      },
+      "quantity": {
+        "value": 1,
+        "source": "literal"
+      },
+      "weight": {
+        "value": 0.002,
+        "source": "literal"
+      },
+      "material": {
+        "value": "Ceramic",
+        "source": "literal"
+      }
+    },
+    "metadata": {
+      "createdBy": "test-user-admin",
+      "createdAt": "2023-06-01T10:00:00Z",
+      "updatedAt": "2024-01-05T16:00:00Z"
+    }
+  }
+]
