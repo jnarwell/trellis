@@ -289,7 +289,8 @@ CREATE TABLE events (
 
     -- Events are immutable - no updated_at
     -- Partition key for time-based partitioning
-    partition_key   DATE GENERATED ALWAYS AS (DATE(occurred_at)) STORED
+    -- Use UTC timezone for immutable conversion (required for generated columns)
+    partition_key   DATE GENERATED ALWAYS AS ((occurred_at AT TIME ZONE 'UTC')::DATE) STORED
 );
 
 -- Event query indexes
