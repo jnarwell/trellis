@@ -602,56 +602,61 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] ProductApp - Authentication shell with navigation
 - [x] ViewRenderer - Parses YAML view configs, renders layout
 
-### Phase 2.6: E2E Demo 🟢 IN PROGRESS
+### Phase 2.6: E2E Demo ✅ COMPLETE
 
-#### Client Entry Point (In Progress)
+#### Client Entry Point ✅
+- [x] `packages/client/index.html` - HTML shell
+- [x] `packages/client/src/main.tsx` - React entry with PLM config
+- [x] `packages/client/vite.config.ts` - Dev server + API proxy
+- [x] Vite proxy configuration for `/api` routes
 
-Created minimal web app to run PLM demo:
+#### E2E Integration Fixes ✅
+- [x] SQL SET syntax → `set_config()` function
+- [x] UUID format validation for tenant IDs
+- [x] CORS proxy configuration
+- [x] URL construction for relative paths
+- [x] Transaction ordering (BEGIN before set_config)
 
-**Files:**
-- `packages/client/index.html` - HTML shell
-- `packages/client/src/main.tsx` - React entry with hardcoded PLM config
-- `packages/client/vite.config.ts` - Dev server + API proxy
+### Phase 2.7: Full CRUD Demo ✅ COMPLETE
 
-**Run:**
+#### Working Features
+- [x] **Multi-block pages** - Dashboard with table + stats
+- [x] **Table CRUD** - List, create, edit, delete entities
+- [x] **Form operations** - Create new, edit existing with validation
+- [x] **Kanban drag-drop** - Move cards between columns, persist status
+- [x] **Navigation** - Route between views
+- [x] **Real-time updates** - WebSocket subscription (with fallback)
+
+#### Fixes Applied
+- [x] DELETE requests without body
+- [x] Version conflict handling (refetch on edit)
+- [x] Entity undefined guards in FormBlock
+- [x] DataTransfer forwarding in Kanban
+- [x] Template resolution for `${property}` syntax
+- [x] WebSocket connection guards
+
+**Run the Demo:**
 ```bash
-# Terminal 1: Server
+# Terminal 1: Database
+docker start trellis-db
+
+# Terminal 2: Server
 cd packages/server
 DATABASE_URL=postgres://postgres:trellis@localhost:5432/trellis \
   pnpm cli serve ../../products/plm-demo/product.yaml
 
-# Terminal 2: Client
+# Terminal 3: Client
 cd packages/client
 pnpm dev
 
-# Browser
-http://localhost:5173
+# Browser: http://localhost:5173
 ```
 
-**PLM Config Structure:**
-```typescript
-{
-  name: 'PLM Demo',
-  api: { baseUrl: 'http://localhost:3000' },
-  navigation: {
-    items: [
-      { id: 'products', label: 'Products', view: 'products' },
-      { id: 'categories', label: 'Categories', view: 'categories' }
-    ]
-  },
-  views: {
-    products: { blocks: [{ type: 'table', config: { entityType: 'product' } }] },
-    categories: { blocks: [{ type: 'table', config: { entityType: 'category' } }] }
-  }
-}
-```
-
-#### Remaining Work
-- [ ] Fix Query API SQL syntax error
-- [ ] Wire ProductApp to real views from YAML
+### Phase 2.8: Production (Next)
 - [ ] Permission system (role-based access control)
 - [ ] Audit log UI (query event store)
 - [ ] Deployment configuration
+- [ ] Performance optimization
 
 ### Future Phases
 - Multi-region support

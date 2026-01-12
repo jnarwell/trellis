@@ -147,6 +147,19 @@ During the E2E demo run (Phase 2.6), several issues were discovered that prevent
 | URL constructor on relative path | `packages/client/src/sdk/http.ts:157` | `new URL('/api')` fails without base URL | Use `window.location.origin` as base for relative URLs |
 | Path joining loses baseUrl | `packages/client/src/sdk/http.ts:164` | `new URL('/query', 'http://localhost:5173/api')` replaces path | Manually join paths: `basePath + requestPath` |
 | deriveWsUrl fails on relative URL | `packages/client/src/sdk/client.ts:336` | WebSocket URL derivation used `new URL()` on `/api` | Added origin fallback for relative URLs |
+| set_config before BEGIN | `packages/server/src/db/client.ts:139` | `set_config(..., true)` with `local=true` was called BEFORE `BEGIN` transaction, making the setting ineffective | Swap order: call `BEGIN` first, then `set_config()` |
+
+### Phase 2.7 E2E Integration Errors (Session 2026-01-11 continued)
+
+| Issue | Location | Root Cause | Resolution |
+|-------|----------|------------|------------|
+| DELETE empty body error | `packages/client/src/sdk/http.ts` | DELETE request sent Content-Type with no body | Only set Content-Type header when body exists |
+| Update 409 version conflict | `packages/client/src/blocks/form/FormBlock.tsx` | Stale cached entity version used in update | Refetch entity on edit mount, pass correct `expected_version` |
+| FormBlock entity undefined | `packages/client/src/blocks/form/FormBlock.tsx` | `entityToValues` called before entity loaded | Add guard: `if (!entity) return {}` |
+| Kanban drag-drop broken | `packages/client/src/blocks/kanban/*.tsx` | Created fake `new DataTransfer()` instead of real event | Forward real DragEvent through component chain |
+| Template resolution incomplete | `packages/client/src/blocks/kanban/KanbanCard.tsx` | `evaluateSimpleTemplate` only matched `${$entity.name}` format | Added second regex pass for `${property}` format |
+| WebSocket not connected loop | `packages/client/src/sdk/client.ts` | Subscription attempted without WS connection | Guard subscription with connection check, log warning |
+| expected_version vs version mismatch | `packages/server/src/routes/schemas.ts` | Client sent `expected_version`, server expected `version` | Align schema field names across client and server |
 
 ### Prevention
 

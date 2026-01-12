@@ -99,12 +99,49 @@ pnpm --filter @trellis/client test
 
 ## Common Issues
 
+### Startup Errors
+
 | Error | Cause | Solution |
 |-------|-------|----------|
 | `DATABASE_URL environment variable is required` | Missing env var | Set `DATABASE_URL=postgres://postgres:trellis@localhost:5432/trellis` |
 | `EISDIR: illegal operation on a directory` | Gave directory path to CLI | Point to `product.yaml` file directly |
 | `EADDRINUSE: address already in use ::1:3000` | Port already in use | `lsof -ti:3000 \| xargs kill -9` |
 | `connect ECONNREFUSED` | Database not running | Start docker container |
+
+### API Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `syntax error at or near "SET"` | Wrong PostgreSQL syntax | Server uses `set_config()` function, not `SET` |
+| `invalid input syntax for type uuid` | Non-UUID tenant ID | Use valid UUID format: `00000000-0000-0000-0000-000000000001` |
+| `Entity was modified by another request` (409) | Stale version number | Refetch entity before update, use current `version` |
+| `CORS policy` blocked | Direct browser requests | Use Vite proxy, requests should go to `/api/*` |
+
+### Client Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Failed to construct 'URL'` | Relative URL without base | Check `baseUrl` includes protocol or use origin fallback |
+| `Body cannot be empty with content-type` | DELETE with empty body | Remove Content-Type header for DELETE requests |
+| `TrellisError: Not connected` | WebSocket not ready | Wait for connection or disable real-time updates |
+| `Cannot read properties of undefined` | Entity not loaded | Add loading guards before accessing entity properties |
+
+### Debugging Tips
+
+```bash
+# Check what's running on port 3000
+lsof -i :3000
+
+# Watch server logs
+cd packages/server
+DATABASE_URL=... pnpm cli serve ... 2>&1 | tee server.log
+
+# Check database connection
+docker exec trellis-db psql -U postgres -c "SELECT 1"
+
+# View tenant in database
+docker exec trellis-db psql -U postgres -d trellis -c "SELECT id, name FROM tenants"
+```
 
 ## Environment Variables
 
