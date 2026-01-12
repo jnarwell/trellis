@@ -163,12 +163,13 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
         }
 
         // No auth headers at all - use demo defaults in dev mode
+        // Use the plm-demo tenant and Product Loader actor from seed data
         request.log.warn(
-          'Using demo authentication defaults (demo-tenant/demo-user). This is only allowed in development mode.'
+          'Using demo authentication defaults. This is only allowed in development mode.'
         );
         request.auth = {
-          tenantId: 'demo-tenant' as TenantId,
-          actorId: 'demo-user' as ActorId,
+          tenantId: '019bae6d-b0e2-3790-8b1d-007fc3bee890' as TenantId,
+          actorId: '019bae6d-b0e5-4abc-8f9f-00415fda79aa' as ActorId,
           permissions: ['read', 'write', 'delete', 'admin'],
         };
         return;

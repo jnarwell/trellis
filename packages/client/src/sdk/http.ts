@@ -154,7 +154,15 @@ export class HttpClient {
     path: string,
     params?: Record<string, string | number | boolean | undefined>
   ): string {
-    const url = new URL(path, this.baseUrl);
+    // Handle relative baseUrl (e.g., '/api') by using window.location.origin
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+
+    // Join baseUrl and path properly (both may have leading/trailing slashes)
+    const basePath = this.baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    const requestPath = path.startsWith('/') ? path : '/' + path;
+    const fullPath = basePath + requestPath;
+
+    const url = new URL(fullPath, origin);
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {

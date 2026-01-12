@@ -331,9 +331,12 @@ export class TrellisClient {
 
   /**
    * Derive WebSocket URL from HTTP URL.
+   * Handles both absolute URLs and relative paths (e.g., '/api').
    */
   private deriveWsUrl(httpUrl: string): string {
-    const url = new URL(httpUrl);
+    // For relative URLs, use window.location.origin as base
+    const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const url = new URL(httpUrl, base);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     url.pathname = '/ws';
     return url.toString();

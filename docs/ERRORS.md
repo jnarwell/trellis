@@ -136,9 +136,17 @@ During the E2E demo run (Phase 2.6), several issues were discovered that prevent
 | options.entities not iterable | MockClient constructor | Constructor not handling undefined | Added `options?.entities ?? []` |
 | Route GET /api/entities not found | API requests | Wrong API path used | Check actual routes in server (use `/entities` not `/api/entities`) |
 
-### Open Issues (Not Yet Fixed)
+### Additional Issues Found (Session 2026-01-11)
 
-1. **Query API SQL Syntax Error**: The `/query` endpoint returns a syntax error "42601 - syntax error at or near $1". This is in the query builder implementation and needs investigation.
+| Issue | Location | Root Cause | Resolution |
+|-------|----------|------------|------------|
+| SQL SET syntax error | `packages/server/src/db/client.ts:36` | PostgreSQL `SET app.tenant_id = $1` doesn't support parameterized queries | Use `SELECT set_config($1, $2, true)` instead |
+| Invalid UUID format | `packages/server/src/middleware/auth.ts:170` | Demo auth used string `'demo-tenant'` instead of UUID | Use actual UUID from database: `'019bae6d-b0e2-...'` |
+| entityType fallback missing | `packages/client/src/blocks/integration/ConnectedTableBlock.tsx:236` | `buildTableBlockConfig` expected `source` but config used `entityType` | Added fallback: `source ?? entityType ?? ''` |
+| CORS blocking requests | Vite/Fastify | Browser blocking cross-origin requests to different port | Use Vite proxy: `/api` → `localhost:3000` |
+| URL constructor on relative path | `packages/client/src/sdk/http.ts:157` | `new URL('/api')` fails without base URL | Use `window.location.origin` as base for relative URLs |
+| Path joining loses baseUrl | `packages/client/src/sdk/http.ts:164` | `new URL('/query', 'http://localhost:5173/api')` replaces path | Manually join paths: `basePath + requestPath` |
+| deriveWsUrl fails on relative URL | `packages/client/src/sdk/client.ts:336` | WebSocket URL derivation used `new URL()` on `/api` | Added origin fallback for relative URLs |
 
 ### Prevention
 

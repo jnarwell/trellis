@@ -231,8 +231,9 @@ export function buildTableBlockConfig(
   blockSpec: Record<string, unknown>
 ): TableBlockConfig {
   // Build config object directly to avoid type assertion issues
+  // Support both 'source' and 'entityType' for backwards compatibility
   const configObj: Record<string, unknown> = {
-    source: (blockSpec['source'] as string) ?? '',
+    source: (blockSpec['source'] as string) ?? (blockSpec['entityType'] as string) ?? '',
     columns: blockSpec['columns'] ?? [],
   };
 

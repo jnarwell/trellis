@@ -33,7 +33,8 @@ export async function setTenantContext(
   client: PoolClient,
   tenantId: TenantId
 ): Promise<void> {
-  await client.query('SET app.current_tenant_id = $1', [tenantId]);
+  // Use set_config() instead of SET because SET doesn't support parameterized queries
+  await client.query('SELECT set_config($1, $2, true)', ['app.current_tenant_id', tenantId]);
 }
 
 /**

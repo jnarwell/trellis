@@ -563,7 +563,8 @@ function validateView(
   }
 
   // Validate route format
-  if (!/^\/[a-z0-9/:_-]*$/.test(view.route)) {
+  // Allow lowercase letters, numbers, underscores, hyphens, slashes, route params (:param), optional markers (?)
+  if (!/^\/[a-zA-Z0-9/:_?-]*$/.test(view.route)) {
     errors.push(
       createError(
         'view-invalid',
@@ -730,7 +731,8 @@ function validateBlockPlacement(
   }
 
   // Validate data bindings in props
-  for (const [propName, propValue] of Object.entries(block.props)) {
+  const props = block.props ?? {};
+  for (const [propName, propValue] of Object.entries(props)) {
     if (typeof propValue === 'string' && propValue.startsWith('$')) {
       // This is a data binding - validation would check scope
       // For now, just check basic syntax

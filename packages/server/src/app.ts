@@ -5,6 +5,7 @@
  */
 
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
+import cors from '@fastify/cors';
 import type { DatabaseConfig } from './config/database.js';
 import type { ServerConfig } from './config/server.js';
 import { postgresPlugin } from './plugins/postgres.js';
@@ -70,6 +71,16 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
 
   // Register plugins
   await app.register(postgresPlugin, { config: config.database });
+
+  // Register CORS - allow dev server origin
+  // Use 'onRequest' hook to handle preflight before route matching
+  await app.register(cors, {
+    origin: config.server.env === 'development' ? true : false,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Id', 'X-Actor-Id', 'X-Request-Id'],
+    credentials: true,
+    hook: 'onRequest',
+  });
 
   // Register middleware (order matters!)
   // 1. Request ID - first, before anything logs
