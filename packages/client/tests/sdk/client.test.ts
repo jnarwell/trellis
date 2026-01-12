@@ -136,7 +136,7 @@ describe('TrellisClient', () => {
         ok: true,
         status: 201,
         headers: new Headers({ 'content-type': 'application/json' }),
-        json: () => Promise.resolve(mockEntity),
+        json: () => Promise.resolve({ entity: mockEntity }),
       });
 
       const entity = await client.createEntity({
@@ -161,7 +161,7 @@ describe('TrellisClient', () => {
         ok: true,
         status: 200,
         headers: new Headers({ 'content-type': 'application/json' }),
-        json: () => Promise.resolve(mockEntity),
+        json: () => Promise.resolve({ entity: mockEntity }),
       });
 
       const entity = await client.getEntity('entity-1' as EntityId);
@@ -192,7 +192,7 @@ describe('TrellisClient', () => {
         ok: true,
         status: 200,
         headers: new Headers({ 'content-type': 'application/json' }),
-        json: () => Promise.resolve(updatedEntity),
+        json: () => Promise.resolve({ entity: updatedEntity }),
       });
 
       const entity = await client.updateEntity({
