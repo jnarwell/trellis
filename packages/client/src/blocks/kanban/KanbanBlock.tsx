@@ -231,7 +231,7 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
     return columns.map((columnConfig) => {
       const columnEntities = groupedEntities.get(columnConfig.value) ?? [];
       const isDropTarget = dragState.dropTargetColumn === columnConfig.value;
-      const cardClickHandler = card.onClick ? handleCardClick : undefined;
+      const cardClickHandler = card?.onClick ? handleCardClick : undefined;
 
       return (
         <KanbanColumn

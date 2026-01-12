@@ -43,14 +43,17 @@ const plmConfig: ProductConfig = {
       block: 'kanban',
       title: 'Product Board',
       route: '/product-board',
-      entityType: 'product',
-      groupBy: 'status',
+      source: 'product',
+      statusProperty: 'status',
       columns: [
-        { id: 'draft', label: 'Draft' },
-        { id: 'active', label: 'Active' },
-        { id: 'discontinued', label: 'Discontinued' },
+        { value: 'draft', label: 'Draft', color: '#9ca3af' },
+        { value: 'active', label: 'Active', color: '#22c55e' },
+        { value: 'discontinued', label: 'Discontinued', color: '#ef4444' },
       ],
-      cardFields: ['name', 'sku', 'price'],
+      card: {
+        title: '${name}',
+        subtitle: '${sku}',
+      },
     },
     // Table view: Categories
     categories: {
