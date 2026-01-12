@@ -8,8 +8,9 @@ import React, { useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Entity, EntityId, BlockInstanceId } from '@trellis/kernel';
 import { useQuery } from '../../state/hooks.js';
 import { TableBlock } from '../table/index.js';
-import type { TableBlockConfig, ColumnConfig } from '../table/types.js';
+import type { TableBlockConfig } from '../table/types.js';
 import { useOptionalBlockContext } from '../BlockProvider.js';
+import { useNavigation } from '../../runtime/NavigationProvider.js';
 
 // =============================================================================
 // TYPES
@@ -62,6 +63,7 @@ export function ConnectedTableBlock({
   onSelectionChange,
 }: ConnectedTableBlockProps): React.ReactElement {
   const blockContext = useOptionalBlockContext();
+  const { toView } = useNavigation();
 
   // Track query state internally
   const [queryState, setQueryState] = React.useState<QueryState>({
@@ -152,13 +154,11 @@ export function ConnectedTableBlock({
       onRowClick?.(entity, index);
 
       if (config.onRowClick === 'navigate' && config.rowClickTarget) {
-        blockContext?.emit('navigate', {
-          target: config.rowClickTarget,
-          entity,
-        });
+        // Navigate to the target view with entity ID as param
+        toView(config.rowClickTarget, { id: entity.id });
       }
     },
-    [blockContext, onRowClick, config.onRowClick, config.rowClickTarget]
+    [blockContext, onRowClick, config.onRowClick, config.rowClickTarget, toView]
   );
 
   // Handle selection change

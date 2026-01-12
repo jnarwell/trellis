@@ -157,7 +157,7 @@ export type EntityParams = z.infer<typeof entityParamsSchema>;
  * PUT /entities/:id request body
  */
 export const updateEntityBodySchema = z.object({
-  version: z.number().int().positive(),
+  expected_version: z.number().int().positive(),
   set_properties: z.record(z.string(), propertyInputSchema).optional(),
   remove_properties: z.array(z.string()).optional(),
 });

@@ -177,10 +177,14 @@ export class HttpClient {
 
   private buildHeaders(options: RequestOptions): Record<string, string> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       Accept: 'application/json',
       ...options.headers,
     };
+
+    // Only set Content-Type if there's a body (avoid empty body errors on DELETE)
+    if (options.body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (!options.skipAuth) {
       const token = this.tokenStorage.getAccessToken();

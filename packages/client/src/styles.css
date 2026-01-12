@@ -1,0 +1,697 @@
+/**
+ * Trellis Block Styles
+ *
+ * CSS for TableBlock, FormBlock, KanbanBlock, DetailBlock,
+ * and shared loading/error/empty states.
+ */
+
+/* =============================================================================
+   CSS VARIABLES (Theme)
+   ============================================================================= */
+
+:root {
+  --trellis-surface: #ffffff;
+  --trellis-surface-alt: #f8f9fa;
+  --trellis-border: #e9ecef;
+  --trellis-text: #212529;
+  --trellis-text-muted: #868e96;
+  --trellis-primary: #228be6;
+  --trellis-primary-hover: #1c7ed6;
+  --trellis-danger: #c92a2a;
+  --trellis-danger-bg: #fff5f5;
+  --trellis-danger-border: #ffc9c9;
+  --trellis-radius: 4px;
+  --trellis-radius-lg: 8px;
+  --trellis-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* =============================================================================
+   TABLE BLOCK
+   ============================================================================= */
+
+.table-block {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-block table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table-block th {
+  background: var(--trellis-surface-alt);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--trellis-border);
+  white-space: nowrap;
+}
+
+.table-block td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--trellis-border);
+}
+
+.table-block tbody tr:hover {
+  background: var(--trellis-surface-alt);
+  cursor: pointer;
+}
+
+.table-block tbody tr.selected {
+  background: #e7f5ff;
+}
+
+/* Hide broken sort icons */
+.sort-icon,
+.table-block th svg {
+  display: none;
+}
+
+/* Table cell formatting */
+.table-block .cell-number,
+.table-block .cell-currency {
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.table-block .cell-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 9999px;
+  background: #e9ecef;
+  color: #495057;
+}
+
+/* Badge colors */
+.table-block .cell-badge.status-active,
+.table-block .cell-badge.status-done,
+.table-block .cell-badge.status-approved {
+  background: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.table-block .cell-badge.status-draft,
+.table-block .cell-badge.status-pending {
+  background: #fff3bf;
+  color: #e67700;
+}
+
+.table-block .cell-badge.status-discontinued,
+.table-block .cell-badge.status-rejected,
+.table-block .cell-badge.status-blocked {
+  background: #ffe3e3;
+  color: #c92a2a;
+}
+
+/* =============================================================================
+   FORM BLOCK
+   ============================================================================= */
+
+.form-block {
+  max-width: 500px;
+}
+
+.form-field {
+  margin-bottom: 16px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--trellis-text);
+}
+
+.form-field label .required {
+  color: var(--trellis-danger);
+  margin-left: 2px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: var(--trellis-radius);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--trellis-surface);
+  color: var(--trellis-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--trellis-primary);
+  box-shadow: 0 0 0 3px rgba(34, 139, 230, 0.2);
+}
+
+.form-field input:disabled,
+.form-field select:disabled,
+.form-field textarea:disabled {
+  background: #f1f3f5;
+  cursor: not-allowed;
+}
+
+.form-field input[aria-invalid="true"],
+.form-field select[aria-invalid="true"],
+.form-field textarea[aria-invalid="true"] {
+  border-color: var(--trellis-danger);
+}
+
+.form-field input[aria-invalid="true"]:focus,
+.form-field select[aria-invalid="true"]:focus,
+.form-field textarea[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(201, 42, 42, 0.2);
+}
+
+.form-field .help-text {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--trellis-text-muted);
+}
+
+.form-field .error-message {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--trellis-danger);
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.form-submit,
+.btn-primary {
+  background: var(--trellis-primary);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--trellis-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.form-submit:hover,
+.btn-primary:hover {
+  background: var(--trellis-primary-hover);
+}
+
+.form-submit:disabled,
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--trellis-surface);
+  color: var(--trellis-text);
+  padding: 10px 20px;
+  border: 1px solid #ced4da;
+  border-radius: var(--trellis-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s;
+}
+
+.btn-secondary:hover {
+  background: var(--trellis-surface-alt);
+}
+
+.btn-danger {
+  background: var(--trellis-danger);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--trellis-radius);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* =============================================================================
+   KANBAN BLOCK
+   ============================================================================= */
+
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 16px 0;
+  min-height: 400px;
+}
+
+.kanban-column {
+  min-width: 280px;
+  width: 280px;
+  background: var(--trellis-surface-alt);
+  border-radius: var(--trellis-radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  padding: 8px;
+  margin-bottom: 12px;
+}
+
+.kanban-column-header .column-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-column-header .column-accent {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.kanban-column-header .column-count {
+  font-size: 12px;
+  font-weight: 500;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: var(--trellis-text-muted);
+}
+
+.kanban-column-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.kanban-column.drop-target {
+  box-shadow: 0 0 0 2px var(--trellis-primary);
+  background: #e7f5ff;
+}
+
+.kanban-column-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+  color: var(--trellis-text-muted);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.kanban-card {
+  background: white;
+  border: 1px solid var(--trellis-border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.kanban-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.kanban-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--trellis-text);
+  margin: 0 0 4px 0;
+  word-break: break-word;
+}
+
+.kanban-card-subtitle {
+  font-size: 12px;
+  color: var(--trellis-text-muted);
+  margin: 0;
+  word-break: break-word;
+}
+
+.kanban-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.kanban-card-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* =============================================================================
+   DETAIL BLOCK
+   ============================================================================= */
+
+.detail-block {
+  max-width: 600px;
+  background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border);
+  border-radius: var(--trellis-radius-lg);
+}
+
+.detail-section {
+  border-bottom: 1px solid var(--trellis-border);
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 16px;
+  margin: 0;
+  border-bottom: 1px solid var(--trellis-border);
+  background: var(--trellis-surface-alt);
+}
+
+.detail-section-content {
+  padding: 16px;
+}
+
+.detail-field {
+  display: flex;
+  padding: 8px 0;
+}
+
+.detail-field:first-child {
+  padding-top: 0;
+}
+
+.detail-field:last-child {
+  padding-bottom: 0;
+}
+
+.detail-field-label {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--trellis-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-field-value {
+  flex: 1;
+  font-size: 14px;
+  color: var(--trellis-text);
+  word-break: break-word;
+}
+
+.detail-field-value.empty {
+  color: #adb5bd;
+  font-style: italic;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--trellis-border);
+}
+
+/* =============================================================================
+   LOADING STATE
+   ============================================================================= */
+
+.block-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: var(--trellis-text-muted);
+  gap: 12px;
+}
+
+.block-loading .spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--trellis-border);
+  border-top-color: var(--trellis-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =============================================================================
+   ERROR STATE
+   ============================================================================= */
+
+.block-error {
+  background: var(--trellis-danger-bg);
+  border: 1px solid var(--trellis-danger-border);
+  border-radius: var(--trellis-radius-lg);
+  padding: 16px;
+  color: var(--trellis-danger);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.block-error .error-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.block-error .retry-button {
+  margin-left: auto;
+  background: var(--trellis-danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--trellis-radius);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
+
+.block-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--trellis-text-muted);
+}
+
+.block-empty .empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  opacity: 0.5;
+}
+
+.block-empty .empty-message {
+  font-size: 14px;
+}
+
+/* =============================================================================
+   PAGINATION
+   ============================================================================= */
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-top: 1px solid var(--trellis-border);
+  background: var(--trellis-surface-alt);
+  font-size: 14px;
+}
+
+.table-pagination .pagination-info {
+  color: var(--trellis-text-muted);
+}
+
+.table-pagination .pagination-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.table-pagination button {
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: var(--trellis-radius);
+  background: var(--trellis-surface);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.table-pagination button:hover:not(:disabled) {
+  background: var(--trellis-surface-alt);
+}
+
+.table-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
+   FILTERS
+   ============================================================================= */
+
+.table-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--trellis-surface-alt);
+  border-bottom: 1px solid var(--trellis-border);
+}
+
+.table-filters input,
+.table-filters select {
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: var(--trellis-radius);
+  font-size: 14px;
+}
+
+.table-filters input:focus,
+.table-filters select:focus {
+  outline: none;
+  border-color: var(--trellis-primary);
+}
+
+/* =============================================================================
+   NAVIGATION
+   ============================================================================= */
+
+.app-nav {
+  background: #1a1a2e;
+  padding: 16px;
+  min-height: 100vh;
+}
+
+.app-nav-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.app-nav-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  border-radius: var(--trellis-radius);
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 14px;
+  width: 100%;
+  text-align: left;
+}
+
+.app-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.app-nav-item.active {
+  background: var(--trellis-primary);
+  color: white;
+}
+
+/* =============================================================================
+   LAYOUT
+   ============================================================================= */
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.app-main {
+  flex: 1;
+  padding: 24px;
+  background: #f8f9fa;
+}
+
+.view-header {
+  margin-bottom: 24px;
+}
+
+.view-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--trellis-text);
+  margin: 0;
+}
+
+/* Multi-block layout */
+.multi-block-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.block-container {
+  background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border);
+  border-radius: var(--trellis-radius-lg);
+  overflow: hidden;
+}
+
+.block-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--trellis-border);
+  font-weight: 600;
+}

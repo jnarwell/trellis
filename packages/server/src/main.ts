@@ -68,7 +68,7 @@ function createTableAdapter(pool: Pool, tableName: string): DbTable {
   return {
     async findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null> {
       const entries = Object.entries(args.where);
-      const whereClauses = entries.map((_, i) => `${entries[i][0]} = $${i + 1}`);
+      const whereClauses = entries.map(([key], i) => `${key} = $${i + 1}`);
       const values = entries.map(([, v]) => v);
 
       const query = `SELECT id FROM ${tableName} WHERE ${whereClauses.join(' AND ')} LIMIT 1`;
@@ -97,7 +97,7 @@ function createTableAdapter(pool: Pool, tableName: string): DbTable {
 
     async update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }> {
       const entries = Object.entries(args.data);
-      const setClauses = entries.map((_, i) => `${entries[i][0]} = $${i + 1}`);
+      const setClauses = entries.map(([key], i) => `${key} = $${i + 1}`);
       const values = entries.map(([, v]) => {
         if (typeof v === 'object' && v !== null && !(v instanceof Date)) {
           return JSON.stringify(v);
@@ -117,7 +117,7 @@ function createClientTableAdapter(client: PoolClient, tableName: string): DbTabl
   return {
     async findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null> {
       const entries = Object.entries(args.where);
-      const whereClauses = entries.map((_, i) => `${entries[i][0]} = $${i + 1}`);
+      const whereClauses = entries.map(([key], i) => `${key} = $${i + 1}`);
       const values = entries.map(([, v]) => v);
 
       const query = `SELECT id FROM ${tableName} WHERE ${whereClauses.join(' AND ')} LIMIT 1`;
@@ -145,7 +145,7 @@ function createClientTableAdapter(client: PoolClient, tableName: string): DbTabl
 
     async update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }> {
       const entries = Object.entries(args.data);
-      const setClauses = entries.map((_, i) => `${entries[i][0]} = $${i + 1}`);
+      const setClauses = entries.map(([key], i) => `${key} = $${i + 1}`);
       const values = entries.map(([, v]) => {
         if (typeof v === 'object' && v !== null && !(v instanceof Date)) {
           return JSON.stringify(v);
@@ -178,27 +178,29 @@ function setupBlockRegistry(): InMemoryBlockRegistry {
     category: BlockCategory;
     description: string;
   }> = [
-    { type: 'trellis.data-table', name: 'Data Table', category: 'layout', description: 'Table for displaying entity data' },
+    { type: 'trellis.data-table', name: 'Data Table', category: 'data', description: 'Table for displaying entity data' },
     { type: 'trellis.page-layout', name: 'Page Layout', category: 'layout', description: 'Page container with header and content' },
     { type: 'trellis.page-header', name: 'Page Header', category: 'layout', description: 'Page title and actions' },
-    { type: 'trellis.property-editor', name: 'Property Editor', category: 'form', description: 'Edit entity properties' },
-    { type: 'trellis.dashboard-widget', name: 'Dashboard Widget', category: 'display', description: 'Dashboard metric widget' },
+    { type: 'trellis.property-editor', name: 'Property Editor', category: 'input', description: 'Edit entity properties' },
+    { type: 'trellis.dashboard-widget', name: 'Dashboard Widget', category: 'visualization', description: 'Dashboard metric widget' },
     { type: 'trellis.card', name: 'Card', category: 'layout', description: 'Card container' },
     { type: 'trellis.button', name: 'Button', category: 'action', description: 'Action button' },
-    { type: 'trellis.detail', name: 'Detail', category: 'display', description: 'Entity detail view' },
-    { type: 'trellis.form', name: 'Form', category: 'form', description: 'Entity form' },
+    { type: 'trellis.detail', name: 'Detail', category: 'data', description: 'Entity detail view' },
+    { type: 'trellis.form', name: 'Form', category: 'input', description: 'Entity form' },
     { type: 'trellis.kanban', name: 'Kanban', category: 'layout', description: 'Kanban board' },
   ];
 
   for (const block of defaultBlocks) {
     const spec: BlockSpec = {
       type: asBlockType(block.type),
+      version: '1.0.0',
       name: block.name,
       category: block.category,
       description: block.description,
-      props: [],
-      slots: [],
-      events: [],
+      props: {},
+      emits: {},
+      receives: {},
+      slots: {},
     };
     registry.registerBlock(spec);
   }

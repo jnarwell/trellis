@@ -42,7 +42,7 @@ export async function updateEntityHandler(
   }
 
   const { id } = paramsResult.data;
-  const { version, set_properties, remove_properties } = bodyResult.data;
+  const { expected_version, set_properties, remove_properties } = bodyResult.data;
   const { tenantId, actorId } = request.auth;
 
   const service = createEntityService(request.server.pg, tenantId, actorId);
@@ -50,7 +50,7 @@ export async function updateEntityHandler(
   // Build update input, only including defined properties
   const updateInput: Parameters<typeof service.update>[0] = {
     id: id as EntityId,
-    version,
+    version: expected_version,
   };
   if (set_properties !== undefined) {
     updateInput.setProperties = set_properties as Record<string, PropertyInput>;

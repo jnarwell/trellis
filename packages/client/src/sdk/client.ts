@@ -302,10 +302,20 @@ export class TrellisClient {
     filter: SubscriptionFilter,
     callback: (event: KernelEvent) => void
   ): Promise<Subscription> {
-    if (!this.ws) {
-      await this.connect();
+    try {
+      if (!this.ws) {
+        await this.connect();
+      }
+      return await this.ws!.subscribe(filter, callback);
+    } catch (err) {
+      // WebSocket not available - return no-op subscription for graceful degradation
+      // This allows the app to work without real-time updates when WS isn't configured
+      console.warn('[Trellis] WebSocket unavailable, skipping subscription:', (err as Error).message);
+      return {
+        id: 'noop',
+        unsubscribe: () => {},
+      };
     }
-    return this.ws!.subscribe(filter, callback);
   }
 
   /**

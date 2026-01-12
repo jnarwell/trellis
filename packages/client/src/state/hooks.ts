@@ -269,7 +269,8 @@ export function useSubscription(
           onEventRef.current(event);
         });
       } catch (err) {
-        console.error('Subscription error:', err);
+        // Expected when WebSocket isn't configured - app continues without real-time updates
+        console.warn('[Trellis] Subscription unavailable:', (err as Error).message);
       }
     };
 

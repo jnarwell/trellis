@@ -253,15 +253,11 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
               ? handleDragLeave({ relatedTarget: null } as unknown as React.DragEvent, columnConfig.value)
               : undefined
           }
-          onDragStart={(entityId) => {
-            const entity = entities.find((e) => e.id === entityId);
-            if (entity) {
-              const fromColumn = String(getPropertyValue(entity, statusProperty) ?? '');
-              handleDragStart(
-                { dataTransfer: new DataTransfer(), currentTarget: document.body } as unknown as React.DragEvent,
-                entityId,
-                fromColumn
-              );
+          onDragStart={(e, entityId) => {
+            const ent = entities.find((ent) => ent.id === entityId);
+            if (ent) {
+              const fromColumn = String(getPropertyValue(ent, statusProperty) ?? '');
+              handleDragStart(e, entityId, fromColumn);
             }
           }}
           onDragEnd={handleDragEnd}
@@ -273,7 +269,7 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
 
   return (
     <div
-      className={`trellis-kanban ${className ?? ''}`}
+      className={`kanban-board trellis-kanban ${className ?? ''}`}
       style={{ ...kanbanTheme, ...styles.container }}
       data-source={source}
       data-status-property={statusProperty}

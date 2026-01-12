@@ -91,7 +91,7 @@ export interface KanbanColumnProps {
   /** Handle card click */
   onCardClick?: (entity: Entity) => void;
   /** Handle drag start */
-  onDragStart: (entityId: EntityId) => void;
+  onDragStart: (e: React.DragEvent, entityId: EntityId) => void;
   /** Handle drag end */
   onDragEnd: () => void;
 }

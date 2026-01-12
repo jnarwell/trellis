@@ -64,7 +64,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
   return (
     <div
-      className="trellis-kanban-column"
+      className={`kanban-column trellis-kanban-column${isDropTarget ? ' drop-target' : ''}`}
       style={columnStyle}
       data-column-value={config.value}
       onDragOver={handleDragOver}
@@ -72,16 +72,16 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       onDrop={handleDrop}
     >
       {/* Header */}
-      <header className="trellis-kanban-column-header" style={styles.columnHeader}>
-        <h3 className="trellis-kanban-column-title" style={styles.columnTitle}>
+      <header className="kanban-column-header trellis-kanban-column-header" style={styles.columnHeader}>
+        <div className="column-title trellis-kanban-column-title" style={styles.columnTitle}>
           <span
-            className="trellis-kanban-column-accent"
+            className="column-accent trellis-kanban-column-accent"
             style={{ ...styles.columnAccent, backgroundColor: color }}
           />
           {config.label}
-        </h3>
+        </div>
         <span
-          className="trellis-kanban-column-count"
+          className="column-count trellis-kanban-column-count"
           style={countStyle}
           title={
             config.limit !== undefined
@@ -96,11 +96,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
       {/* Content */}
       <div
-        className="trellis-kanban-column-content"
+        className="kanban-column-content trellis-kanban-column-content"
         style={styles.columnContent as React.CSSProperties}
       >
         {entities.length === 0 ? (
-          <div className="trellis-kanban-column-empty" style={styles.columnEmpty}>
+          <div className="kanban-column-empty trellis-kanban-column-empty" style={styles.columnEmpty}>
             No items
           </div>
         ) : (
@@ -115,7 +115,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 entity={entity}
                 config={cardConfig}
                 isDragging={false}
-                onDragStart={(e) => onDragStart(entity.id)}
+                onDragStart={(e) => onDragStart(e, entity.id)}
                 onDragEnd={onDragEnd}
                 {...(cardClickHandler ? { onClick: cardClickHandler } : {})}
               />

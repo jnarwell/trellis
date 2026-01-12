@@ -15,6 +15,13 @@ import type { GetEntityOptions, DeleteEntityOptions } from './types.js';
 import { TrellisError } from './types.js';
 
 /**
+ * Server response wrapper for entity endpoints.
+ */
+interface EntityResponse {
+  entity: Entity;
+}
+
+/**
  * Entity API client.
  */
 export class EntityApi {
@@ -24,7 +31,8 @@ export class EntityApi {
    * Create a new entity.
    */
   async create(input: CreateEntityInput): Promise<Entity> {
-    return this.http.post<Entity>('/entities', input);
+    const response = await this.http.post<EntityResponse>('/entities', input);
+    return response.entity;
   }
 
   /**
@@ -44,7 +52,8 @@ export class EntityApi {
     }
 
     try {
-      return await this.http.get<Entity>(`/entities/${id}`, params);
+      const response = await this.http.get<EntityResponse>(`/entities/${id}`, params);
+      return response.entity;
     } catch (error) {
       // Return null for 404
       if (error instanceof TrellisError && (error.code === 'NOT_FOUND' || error.code === 'HTTP_404')) {
@@ -59,7 +68,8 @@ export class EntityApi {
    */
   async update(input: UpdateEntityInput): Promise<Entity> {
     const { id, ...body } = input;
-    return this.http.put<Entity>(`/entities/${id}`, body);
+    const response = await this.http.put<EntityResponse>(`/entities/${id}`, body);
+    return response.entity;
   }
 
   /**

@@ -50,13 +50,25 @@ function getPropertyValue(entity: Entity, property: PropertyName): unknown {
 
 /**
  * Evaluate a simple template string with entity data.
- * Supports ${$entity.property} syntax.
+ * Supports multiple formats:
+ * - ${$entity.property} - full format
+ * - $entity.property - no braces
+ * - ${property} - simple format
  */
 function evaluateSimpleTemplate(template: string, entity: Entity): string {
-  return template.replace(/\$\{?\$?entity\.(\w+)\}?/g, (_, property) => {
+  // First try full format: ${$entity.property} or $entity.property
+  let result = template.replace(/\$\{?\$?entity\.(\w+)\}?/g, (_, property) => {
     const value = getPropertyValue(entity, property as PropertyName);
     return value !== undefined && value !== null ? String(value) : '';
   });
+
+  // Then try simple format: ${property}
+  result = result.replace(/\$\{(\w+)\}/g, (match, property) => {
+    const value = getPropertyValue(entity, property as PropertyName);
+    return value !== undefined && value !== null ? String(value) : match;
+  });
+
+  return result;
 }
 
 /**
@@ -105,7 +117,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 
   return (
     <div
-      className="trellis-kanban-card"
+      className={`kanban-card trellis-kanban-card${isDragging ? ' dragging' : ''}`}
       style={cardStyle}
       draggable
       onDragStart={onDragStart}
@@ -119,20 +131,20 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       data-entity-id={entity.id}
     >
       {/* Title */}
-      <h4 className="trellis-kanban-card-title" style={styles.cardTitle}>
+      <h4 className="kanban-card-title trellis-kanban-card-title" style={styles.cardTitle}>
         {title || 'Untitled'}
       </h4>
 
       {/* Subtitle */}
       {subtitle && (
-        <p className="trellis-kanban-card-subtitle" style={styles.cardSubtitle}>
+        <p className="kanban-card-subtitle trellis-kanban-card-subtitle" style={styles.cardSubtitle}>
           {subtitle}
         </p>
       )}
 
       {/* Badges */}
       {config.badges && config.badges.length > 0 && (
-        <div className="trellis-kanban-card-badges" style={styles.cardBadges}>
+        <div className="kanban-card-badges trellis-kanban-card-badges" style={styles.cardBadges}>
           {config.badges.map((badge, index) => {
             const value = getPropertyValue(entity, badge.property);
             if (value === undefined || value === null || value === '') {
@@ -144,7 +156,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
             return (
               <span
                 key={badge.property ?? index}
-                className="trellis-kanban-card-badge"
+                className="kanban-card-badge trellis-kanban-card-badge"
                 style={badgeStyle}
               >
                 {String(value)}

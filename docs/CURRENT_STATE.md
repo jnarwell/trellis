@@ -1,7 +1,7 @@
 # Trellis - Current State
 
 **Last Updated:** 2026-01-11
-**Status:** Phase 2.5 Complete - UI Layer
+**Status:** Phase 2.7 Complete - Full CRUD Demo
 
 ---
 
@@ -627,13 +627,22 @@ See [/specs/EXPRESSION-SYSTEMS.md](../specs/EXPRESSION-SYSTEMS.md) for authorita
 - [x] **Navigation** - Route between views
 - [x] **Real-time updates** - WebSocket subscription (with fallback)
 
-#### Fixes Applied
-- [x] DELETE requests without body
-- [x] Version conflict handling (refetch on edit)
-- [x] Entity undefined guards in FormBlock
-- [x] DataTransfer forwarding in Kanban
-- [x] Template resolution for `${property}` syntax
-- [x] WebSocket connection guards
+#### Bug Fixes
+
+| Bug | Fix |
+|-----|-----|
+| Response structure mismatch | Unwrap `{ entity }` in entities.ts |
+| expected_version field name | Aligned client/server schemas |
+| Edit button navigation | Added push() in DetailBlock |
+| Entity undefined crashes | Added null guards throughout |
+| Form not populating | Guards + reset logic in FormBlock |
+| Stale entity in submit | useRef for entity and version |
+| 409 Version Conflict | versionRef + refetch on mount |
+| No feedback after save | back() navigation after success |
+| DELETE empty body | Don't set Content-Type without body |
+| Kanban drag broken | Use real DataTransfer event |
+| Template resolution | Added ${property} regex format |
+| WebSocket loop | Connection guard before subscribe |
 
 **Run the Demo:**
 ```bash

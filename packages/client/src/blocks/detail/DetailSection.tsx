@@ -14,7 +14,8 @@ import { DetailField } from './DetailField.js';
  * Extract property value from entity.
  * Handles different property types (literal, inherited, computed, measured).
  */
-function getPropertyValue(entity: Entity, property: PropertyName): unknown {
+function getPropertyValue(entity: Entity | null | undefined, property: PropertyName): unknown {
+  if (!entity?.properties) return undefined;
   const prop = entity.properties[property];
   if (!prop) return undefined;
 
@@ -92,43 +93,14 @@ export const DetailSection: React.FC<DetailSectionProps & { isLast?: boolean }> 
 
   return (
     <section
-      className={`trellis-detail-section ${className ?? ''}`}
+      className={`detail-section trellis-detail-section ${className ?? ''}`}
       style={sectionStyle}
     >
-      <header
-        className="trellis-detail-section-header"
-        style={headerStyle}
-        onClick={handleHeaderClick}
-        role={collapsible ? 'button' : undefined}
-        tabIndex={collapsible ? 0 : undefined}
-        aria-expanded={collapsible ? !collapsed : undefined}
-        onKeyDown={
-          collapsible
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setCollapsed(!collapsed);
-                }
-              }
-            : undefined
-        }
-      >
-        <h3 className="trellis-detail-section-title" style={styles.sectionTitle}>
-          {title}
-        </h3>
-        {collapsible && (
-          <span
-            className="trellis-detail-section-toggle"
-            style={styles.sectionToggle}
-            aria-hidden="true"
-          >
-            {collapsed ? 'Show' : 'Hide'}
-          </span>
-        )}
-      </header>
-
+      <h3 className="detail-section-title trellis-detail-section-title" style={styles.sectionTitle}>
+        {title}
+      </h3>
       <div
-        className="trellis-detail-section-content"
+        className="detail-section-content trellis-detail-section-content"
         style={contentStyle}
         aria-hidden={collapsed}
       >

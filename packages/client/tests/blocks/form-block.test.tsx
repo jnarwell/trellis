@@ -16,6 +16,18 @@ vi.mock('../../src/state/hooks.js', () => ({
   useUpdateEntity: vi.fn(),
 }));
 
+// Mock navigation
+vi.mock('../../src/runtime/NavigationProvider.js', () => ({
+  useNavigation: vi.fn(() => ({
+    toView: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    state: { path: '/', params: {}, query: {} },
+  })),
+}));
+
 import { useEntity, useCreateEntity, useUpdateEntity } from '../../src/state/hooks.js';
 
 const mockUseEntity = useEntity as ReturnType<typeof vi.fn>;

@@ -2,9 +2,10 @@
  * Trellis ViewRenderer
  *
  * Renders views from ProductConfig based on current navigation state.
+ * Supports both single-block and multi-block page layouts.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { createScope, extendScope } from '../binding/scope.js';
 import type { BindingScope } from '../binding/index.js';
 import { BlockRenderer, SafeBlockRenderer } from '../blocks/BlockRenderer.js';
@@ -12,17 +13,34 @@ import type { BlockConfig } from '../blocks/BlockRenderer.js';
 import { createWiringManager } from './wiring.js';
 import type { WiringConfig } from '@trellis/server';
 import { useNavigationState } from './NavigationProvider.js';
+import type { Entity, EntityId } from '@trellis/kernel';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 /**
+ * Block configuration within a multi-block view.
+ */
+export interface MultiBlockConfig {
+  /** Unique block ID within the view */
+  readonly id: string;
+  /** Block type */
+  readonly type: string;
+  /** Block-specific configuration */
+  readonly config: Record<string, unknown>;
+}
+
+/**
  * View configuration from ProductConfig.
+ * Supports either a single block or multiple blocks.
  */
 export interface ViewConfig {
-  /** Block type (required) */
-  readonly block: string;
+  /** Block type (for single-block views) */
+  readonly block?: string | undefined;
+
+  /** Multiple blocks (for multi-block views) */
+  readonly blocks?: readonly MultiBlockConfig[] | undefined;
 
   /** View route pattern (e.g., '/products/:id') */
   readonly route?: string | undefined;
@@ -185,15 +203,32 @@ export function ViewRenderer({
     return <NotFound viewId={viewId} path={navState.path} />;
   }
 
-  // Build block config from view config
-  // Spread all view config except view-specific fields
-  const { route: _route, title: _title, wiring: _wiring, ...blockConfig } = viewConfig;
-
-  // Resolve any route parameter references in the config
-  const resolvedConfig = resolveRouteParams(blockConfig as BlockConfig, navState.params);
+  // Check if this is a multi-block view
+  const isMultiBlock = viewConfig.blocks && viewConfig.blocks.length > 0;
 
   // Choose renderer based on safe mode
   const Renderer = safeMode ? SafeBlockRenderer : BlockRenderer;
+
+  // Multi-block view
+  if (isMultiBlock) {
+    return (
+      <MultiBlockView
+        blocks={viewConfig.blocks!}
+        wiring={wiring}
+        scope={scope}
+        Renderer={Renderer}
+        params={navState.params}
+      />
+    );
+  }
+
+  // Single-block view (legacy format)
+  // Build block config from view config
+  // Spread all view config except view-specific fields
+  const { route: _route, title: _title, wiring: _wiring, blocks: _blocks, ...blockConfig } = viewConfig;
+
+  // Resolve any route parameter references in the config
+  const resolvedConfig = resolveRouteParams(blockConfig as BlockConfig, navState.params);
 
   return (
     <Renderer
@@ -201,6 +236,133 @@ export function ViewRenderer({
       wiring={wiring}
       scope={scope}
     />
+  );
+}
+
+// =============================================================================
+// MULTI-BLOCK VIEW
+// =============================================================================
+
+/**
+ * CSS styles for multi-block layout.
+ */
+const multiBlockStyles = {
+  container: {
+    display: 'grid',
+    gap: '1rem',
+    padding: '1rem',
+    minHeight: '400px',
+  } as React.CSSProperties,
+  containerSingle: {
+    gridTemplateColumns: '1fr',
+  } as React.CSSProperties,
+  containerMulti: {
+    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+  } as React.CSSProperties,
+  blockContainer: {
+    background: 'white',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    padding: '1rem',
+    overflow: 'auto',
+    minHeight: '300px',
+  } as React.CSSProperties,
+  blockTitle: {
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: '#374151',
+    marginBottom: '0.75rem',
+    paddingBottom: '0.5rem',
+    borderBottom: '1px solid #e5e7eb',
+  } as React.CSSProperties,
+};
+
+/**
+ * Props for MultiBlockView.
+ */
+interface MultiBlockViewProps {
+  blocks: readonly MultiBlockConfig[];
+  wiring: ReturnType<typeof createWiringManager>;
+  scope: BindingScope;
+  Renderer: typeof BlockRenderer | typeof SafeBlockRenderer;
+  params: Record<string, string>;
+}
+
+/**
+ * Renders multiple blocks in a grid layout with shared selection state.
+ */
+function MultiBlockView({
+  blocks,
+  wiring,
+  scope,
+  Renderer,
+  params,
+}: MultiBlockViewProps): React.ReactElement {
+  // Shared selection state for block communication
+  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
+
+  // Handler for entity selection from table blocks
+  const handleEntitySelect = useCallback((entity: Entity | null) => {
+    setSelectedEntity(entity);
+  }, []);
+
+  // Extend scope with selection context
+  const extendedScope = useMemo(() => {
+    return extendScope(scope, {
+      $selection: {
+        entity: selectedEntity,
+        entityId: selectedEntity?.id,
+        hasSelection: selectedEntity !== null,
+      },
+    });
+  }, [scope, selectedEntity]);
+
+  const containerStyle = {
+    ...multiBlockStyles.container,
+    ...(blocks.length === 1
+      ? multiBlockStyles.containerSingle
+      : multiBlockStyles.containerMulti),
+  };
+
+  return (
+    <div style={containerStyle} className="view-blocks">
+      {blocks.map((blockDef) => {
+        // Build block config with selection handlers
+        const blockConfig: BlockConfig = {
+          block: blockDef.type,
+          id: blockDef.id,
+          ...blockDef.config,
+          // Inject selection handlers for table blocks
+          ...(blockDef.type === 'table' && {
+            onRowClick: handleEntitySelect,
+          }),
+          // Inject selected entity ID for detail blocks
+          ...(blockDef.type === 'detail' && selectedEntity && {
+            entityId: selectedEntity.id,
+          }),
+        };
+
+        // Resolve route params in config
+        const resolvedConfig = resolveRouteParams(blockConfig, params);
+
+        const blockTitle = blockDef.config['title'] as string | undefined;
+
+        return (
+          <div key={blockDef.id} style={multiBlockStyles.blockContainer} className="block-container">
+            {blockTitle != null && (
+              <div style={multiBlockStyles.blockTitle}>
+                {blockTitle}
+              </div>
+            )}
+            <Renderer
+              config={resolvedConfig}
+              wiring={wiring}
+              scope={extendedScope}
+            />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

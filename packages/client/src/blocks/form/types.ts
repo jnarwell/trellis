@@ -244,7 +244,7 @@ export interface UseFormReturn {
   /** Mark field as touched */
   readonly touchField: (name: string) => void;
   /** Reset form to initial values */
-  readonly reset: (values?: Record<string, unknown>) => void;
+  readonly reset: (values?: Record<string, unknown>, version?: number | null) => void;
   /** Validate all fields */
   readonly validate: () => boolean;
   /** Submit the form */
@@ -495,9 +495,14 @@ function convertToValue(value: unknown, field: FieldConfig): Value | null {
  * Extract form values from an entity.
  */
 export function entityToValues(
-  entity: Entity,
+  entity: Entity | null | undefined,
   fields: readonly FieldConfig[]
 ): Record<string, unknown> {
+  // Guard against null/undefined entity
+  if (!entity?.properties) {
+    return {};
+  }
+
   const values: Record<string, unknown> = {};
 
   for (const field of fields) {

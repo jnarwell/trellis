@@ -40,26 +40,14 @@ export function FormField({
 
   return (
     <div
-      className={className}
-      style={{
-        marginBottom: '1rem',
-      }}
+      className={`form-field ${className ?? ''}`}
       data-field={config.property}
     >
       {/* Label (before input for non-boolean fields) */}
       {!isBoolean && (
-        <label
-          htmlFor={config.property}
-          style={{
-            display: 'block',
-            marginBottom: '0.25rem',
-            fontWeight: 500,
-          }}
-        >
+        <label htmlFor={config.property}>
           {label}
-          {config.required && (
-            <span style={{ color: '#dc3545', marginLeft: '0.25rem' }}>*</span>
-          )}
+          {config.required && <span className="required">*</span>}
         </label>
       )}
 
@@ -82,32 +70,16 @@ export function FormField({
 
         {/* Label (after input for boolean fields) */}
         {isBoolean && (
-          <label
-            htmlFor={config.property}
-            style={{
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
+          <label htmlFor={config.property}>
             {label}
-            {config.required && (
-              <span style={{ color: '#dc3545', marginLeft: '0.25rem' }}>*</span>
-            )}
+            {config.required && <span className="required">*</span>}
           </label>
         )}
       </div>
 
       {/* Help text */}
       {config.helpText && !showError && (
-        <div
-          style={{
-            marginTop: '0.25rem',
-            fontSize: '0.875rem',
-            color: '#6c757d',
-          }}
-        >
-          {config.helpText}
-        </div>
+        <div className="help-text">{config.helpText}</div>
       )}
 
       {/* Error message */}
@@ -115,11 +87,7 @@ export function FormField({
         <div
           id={`${config.property}-error`}
           role="alert"
-          style={{
-            marginTop: '0.25rem',
-            fontSize: '0.875rem',
-            color: '#dc3545',
-          }}
+          className="error-message"
         >
           {field.error}
         </div>

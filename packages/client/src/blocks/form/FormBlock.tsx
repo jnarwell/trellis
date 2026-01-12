@@ -4,9 +4,10 @@
  * Form block for creating and editing entities.
  */
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Entity, PropertyName, PropertyInput } from '@trellis/kernel';
 import { useEntity, useCreateEntity, useUpdateEntity } from '../../state/hooks.js';
+import { useNavigation } from '../../runtime/NavigationProvider.js';
 import type { FormBlockProps } from './types.js';
 import { entityToValues, valuesToProperties } from './types.js';
 import { useForm } from './hooks.js';
@@ -55,6 +56,9 @@ export function FormBlock({
   onCancel,
   className,
 }: FormBlockProps): React.ReactElement {
+  // Navigation
+  const { toView, back } = useNavigation();
+
   // Determine mode and entity ID
   const mode = propMode ?? config.mode;
   const entityId = propEntityId ?? config.entityId;
@@ -65,11 +69,30 @@ export function FormBlock({
     data: entity,
     loading: entityLoading,
     error: entityError,
+    refetch,
   } = useEntity(isEditMode ? entityId : null);
+
+  // Force fresh fetch on mount for edit mode to avoid stale cache
+  useEffect(() => {
+    if (isEditMode && entityId) {
+      void refetch();
+    }
+  }, [entityId]); // Only on mount/entityId change, not on refetch change
 
   // Mutations
   const createMutation = useCreateEntity();
   const updateMutation = useUpdateEntity();
+
+  // Use ref to track current entity for use in callbacks (avoids stale closure)
+  const entityRef = useRef<Entity | null>(null);
+  entityRef.current = entity;
+
+  // Track the current version for optimistic locking
+  // Update on every render when entity version changes to avoid stale version
+  const versionRef = useRef<number | undefined>(undefined);
+  if (entity?.version !== undefined && entity.version !== versionRef.current) {
+    versionRef.current = entity.version;
+  }
 
   // Extract initial values from entity
   const initialValues = useMemo(() => {
@@ -90,21 +113,28 @@ export function FormBlock({
         config.fields
       );
 
-      if (isEditMode && entity) {
-        // Update existing entity
+      // Use ref to get current entity (avoids stale closure)
+      const currentEntity = entityRef.current;
+
+      if (isEditMode && currentEntity && versionRef.current !== undefined) {
+        // Update existing entity - use versionRef for accurate version tracking
         const updatedEntity = await updateMutation.mutate({
-          id: entity.id,
-          expected_version: entity.version,
+          id: currentEntity.id,
+          expected_version: versionRef.current,
           set_properties: properties as Record<PropertyName, PropertyInput>,
         });
         onSubmit?.(updatedEntity);
-      } else {
+        // Navigate back to detail page after successful save
+        back();
+      } else if (!isEditMode) {
         // Create new entity
         const newEntity = await createMutation.mutate({
           type: config.source,
           properties: properties as Record<PropertyName, PropertyInput>,
         });
         onSubmit?.(newEntity);
+      } else {
+        console.error('[FormBlock] Cannot update: entity not loaded');
       }
     },
     onError: (error) => {
@@ -114,11 +144,34 @@ export function FormBlock({
 
   // Reset form when entity changes
   useEffect(() => {
-    if (entity) {
+    // Only reset if we have a valid entity with properties
+    if (entity?.id && entity?.properties) {
       const values = entityToValues(entity, config.fields);
-      form.reset(values);
+      // Only reset if we actually extracted values (don't reset with empty object)
+      if (Object.keys(values).length > 0) {
+        // Pass entity version to ensure form tracks current version for optimistic locking
+        form.reset(values, entity.version);
+        // Update version ref for use in onSubmit callback
+        versionRef.current = entity.version;
+      }
     }
   }, [entity?.id, entity?.version]);
+
+  // Handle cancel - navigate to target view or go back
+  const handleCancel = useCallback(() => {
+    if (onCancel) {
+      onCancel();
+    } else if (isEditMode) {
+      // In edit mode, go back to where we came from (usually detail page)
+      back();
+    } else if (config.actions?.cancel?.target) {
+      // In create mode, navigate to the target view
+      toView(config.actions.cancel.target);
+    } else {
+      // Fall back to browser back
+      back();
+    }
+  }, [onCancel, isEditMode, config.actions?.cancel?.target, toView, back]);
 
   // Loading state for edit mode
   if (isEditMode && entityLoading) {
@@ -160,7 +213,7 @@ export function FormBlock({
   }
 
   return (
-    <div className={className} data-testid="form-block">
+    <div className={`form-block ${className ?? ''}`} data-testid="form-block">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -200,7 +253,7 @@ export function FormBlock({
           form={form}
           submitAction={config.actions?.submit ?? { type: 'submit', label: 'Save', variant: 'primary' }}
           {...(config.actions?.cancel ? { cancelAction: config.actions.cancel } : {})}
-          {...(onCancel ? { onCancel } : {})}
+          onCancel={handleCancel}
         />
       </form>
 

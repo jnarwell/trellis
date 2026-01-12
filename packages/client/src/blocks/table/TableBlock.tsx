@@ -216,7 +216,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({
   const showActions = config.actions && config.actions.length > 0;
 
   return (
-    <div className={cn(tableContainer.base, config.bordered && tableContainer.bordered, className)}>
+    <div className={cn('table-block', tableContainer.base, config.bordered && tableContainer.bordered, className)}>
       {/* Filters */}
       {(showFilters || config.searchable) && (
         <TableFilters

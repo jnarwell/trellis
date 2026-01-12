@@ -136,8 +136,9 @@ export async function withTenantTransaction<T>(
   const pgClient = await pool.connect();
 
   try {
-    await setTenantContext(pgClient, tenantId);
+    // START TRANSACTION FIRST - set_config with local=true only works within a transaction
     await pgClient.query('BEGIN');
+    await setTenantContext(pgClient, tenantId);
 
     const client: TenantScopedClient = {
       tenantId,

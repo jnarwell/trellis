@@ -17,6 +17,7 @@ import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
 import { registerAuthRoutes } from './routes/auth/index.js';
+import { websocketPlugin } from './plugins/websocket.js';
 
 /**
  * Application configuration.
@@ -100,6 +101,9 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(entityRoutes);
   await app.register(relationshipRoutes);
   await app.register(queryRoutes);
+
+  // Register WebSocket for real-time subscriptions
+  await app.register(websocketPlugin, { path: '/ws' });
 
   // Health check endpoint
   app.get('/health', async () => {

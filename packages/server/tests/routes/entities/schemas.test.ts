@@ -230,7 +230,7 @@ describe('createEntityBodySchema', () => {
 describe('updateEntityBodySchema', () => {
   it('accepts valid update with set_properties', () => {
     const input = {
-      version: 1,
+      expected_version: 1,
       set_properties: {
         name: { source: 'literal', value: { type: 'text', value: 'Updated' } },
       },
@@ -241,7 +241,7 @@ describe('updateEntityBodySchema', () => {
 
   it('accepts valid update with remove_properties', () => {
     const input = {
-      version: 1,
+      expected_version: 1,
       remove_properties: ['deprecated_field'],
     };
     const result = updateEntityBodySchema.safeParse(input);
@@ -250,7 +250,7 @@ describe('updateEntityBodySchema', () => {
 
   it('accepts update with both set and remove', () => {
     const input = {
-      version: 2,
+      expected_version: 2,
       set_properties: {
         name: { source: 'literal', value: { type: 'text', value: 'New' } },
       },
@@ -260,7 +260,7 @@ describe('updateEntityBodySchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('rejects missing version', () => {
+  it('rejects missing expected_version', () => {
     const input = {
       set_properties: {
         name: { source: 'literal', value: { type: 'text', value: 'Updated' } },
@@ -270,18 +270,18 @@ describe('updateEntityBodySchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects zero version', () => {
+  it('rejects zero expected_version', () => {
     const input = {
-      version: 0,
+      expected_version: 0,
       set_properties: {},
     };
     const result = updateEntityBodySchema.safeParse(input);
     expect(result.success).toBe(false);
   });
 
-  it('rejects negative version', () => {
+  it('rejects negative expected_version', () => {
     const input = {
-      version: -1,
+      expected_version: -1,
       set_properties: {},
     };
     const result = updateEntityBodySchema.safeParse(input);

@@ -4,9 +4,10 @@
  * Displays a single entity with configurable sections and actions.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import type { Entity, PropertyName } from '@trellis/kernel';
-import { useEntity } from '../../state/hooks.js';
+import { useEntity, useDeleteEntity } from '../../state/hooks.js';
+import { useNavigation } from '../../runtime/NavigationProvider.js';
 import type { DetailBlockProps, DetailActionConfig, DetailBlockEvent } from './types.js';
 import { styles, detailTheme } from './styles.js';
 import { DetailSection } from './DetailSection.js';
@@ -125,6 +126,8 @@ export const DetailBlock: React.FC<DetailBlockProps> = ({
   className,
 }) => {
   const { data: entity, loading, error } = useEntity(entityId);
+  const { mutate: deleteEntity } = useDeleteEntity();
+  const { push, back } = useNavigation();
 
   // Emit entityLoaded event when data arrives
   useEffect(() => {
@@ -147,30 +150,41 @@ export const DetailBlock: React.FC<DetailBlockProps> = ({
   };
 
   // Handle action click
-  const handleAction = (action: DetailActionConfig) => {
-    if (!entity || !onEvent) return;
+  const handleAction = useCallback(
+    async (action: DetailActionConfig) => {
+      if (!entity) return;
 
-    // Handle navigate action with target template
-    if (action.event === 'navigate' && action.target) {
-      try {
-        const target = evaluateActionTarget(action.target, entity);
-        onEvent({ type: 'navigate', target, entity });
-      } catch (err) {
-        console.error('Failed to evaluate action target:', err);
-        onEvent({ type: 'navigate', target: action.target, entity });
+      // Handle navigate action with target template
+      if (action.event === 'navigate' && action.target) {
+        try {
+          const target = evaluateActionTarget(action.target, entity);
+          push(target);
+          onEvent?.({ type: 'navigate', target, entity });
+        } catch (err) {
+          console.error('Failed to evaluate action target:', err);
+        }
+        return;
       }
-      return;
-    }
 
-    // Handle delete action
-    if (action.event === 'delete') {
-      onEvent({ type: 'delete', entity });
-      return;
-    }
+      // Handle delete action - actually delete the entity
+      if (action.event === 'delete') {
+        try {
+          await deleteEntity(entity.id);
+          onEvent?.({ type: 'delete', entity });
+          // Navigate back after successful deletion
+          back();
+        } catch (err) {
+          console.error('Failed to delete entity:', err);
+          onEvent?.({ type: 'error', error: err as Error });
+        }
+        return;
+      }
 
-    // Generic action
-    onEvent({ type: 'actionClicked', action: action.event, entity });
-  };
+      // Generic action
+      onEvent?.({ type: 'actionClicked', action: action.event, entity });
+    },
+    [entity, onEvent, deleteEntity, push, back]
+  );
 
   // Render content based on state
   const renderContent = () => {
@@ -206,7 +220,7 @@ export const DetailBlock: React.FC<DetailBlockProps> = ({
 
   return (
     <div
-      className={`trellis-detail ${className ?? ''}`}
+      className={`detail-block trellis-detail ${className ?? ''}`}
       style={{ ...detailTheme, ...styles.container }}
       data-entity-id={entityId}
       data-entity-type={source}

@@ -136,7 +136,7 @@ export const DetailField: React.FC<DetailFieldProps & { isLast?: boolean }> = ({
 
   return (
     <div
-      className={`trellis-detail-field ${className ?? ''}`}
+      className={`detail-field trellis-detail-field ${className ?? ''}`}
       style={fieldStyle}
       onClick={handleClick}
       role={onClick ? 'button' : undefined}
@@ -152,10 +152,10 @@ export const DetailField: React.FC<DetailFieldProps & { isLast?: boolean }> = ({
           : undefined
       }
     >
-      <span className="trellis-detail-field-label" style={styles.fieldLabel}>
+      <span className="detail-field-label trellis-detail-field-label" style={styles.fieldLabel}>
         {displayLabel}
       </span>
-      <span className="trellis-detail-field-value" style={valueStyle}>
+      <span className={`detail-field-value trellis-detail-field-value${isEmpty ? ' empty' : ''}`} style={valueStyle}>
         {isEmpty ? emptyText : formatValue(value, format)}
       </span>
     </div>

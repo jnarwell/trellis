@@ -319,9 +319,10 @@ export function useForm(options: UseFormOptions = {}): UseFormReturn {
    * Reset form to initial values.
    */
   const reset = useCallback(
-    (values?: Record<string, unknown>) => {
+    (values?: Record<string, unknown>, newVersion?: number | null) => {
       const newDefaults = values || defaultValues;
-      setState(createInitialFormState(newDefaults, version));
+      const effectiveVersion = newVersion !== undefined ? newVersion : version;
+      setState(createInitialFormState(newDefaults, effectiveVersion));
     },
     [defaultValues, version]
   );
