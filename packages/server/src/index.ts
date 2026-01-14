@@ -52,9 +52,13 @@ async function start(): Promise<void> {
   const serverConfig = loadServerConfig();
   const databaseConfig = loadDatabaseConfig();
 
+  // Products directory from env or default to tests/fixtures/products
+  const productsDir = process.env['PRODUCTS_DIR'] ?? 'tests/fixtures/products';
+
   const app = await buildApp({
     server: serverConfig,
     database: databaseConfig,
+    productsDir,
   });
 
   try {

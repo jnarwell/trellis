@@ -1,0 +1,906 @@
+# Kitchen Sink Product Configuration
+# Demonstrates ALL 14 Trellis blocks in a single application
+
+name: Kitchen Sink Demo
+version: "1.0.0"
+description: Comprehensive demo of all Trellis blocks
+defaultView: dashboard
+
+# =============================================================================
+# ENTITY TYPES
+# =============================================================================
+
+entities:
+  # -------------------------------------------------------------------------
+  # Task Entity (for Kanban, Table, Form, Detail, Comments)
+  # -------------------------------------------------------------------------
+  - id: task
+    name: Task
+    description: A work item
+    icon: check-square
+
+    properties:
+      - name: title
+        type: text
+        required: true
+        description: Task title
+
+      - name: description
+        type: text
+        required: false
+        description: Task description
+
+      - name: status
+        type: text
+        required: true
+        default: todo
+        description: Task status (todo, in_progress, review, done)
+
+      - name: priority
+        type: text
+        required: false
+        description: Task priority (low, medium, high, urgent)
+
+      - name: assignee
+        type: text
+        required: false
+        description: Assigned user
+
+      - name: due_date
+        type: datetime
+        required: false
+        description: Due date
+
+      - name: estimate
+        type: number
+        required: false
+        description: Time estimate in hours
+
+      - name: tags
+        type: text
+        required: false
+        description: Comma-separated tags
+
+      - name: category
+        type: text
+        required: false
+        description: Task category
+
+  # -------------------------------------------------------------------------
+  # Event Entity (for Calendar, Timeline)
+  # -------------------------------------------------------------------------
+  - id: event
+    name: Event
+    description: A calendar event
+    icon: calendar
+
+    properties:
+      - name: title
+        type: text
+        required: true
+        description: Event title
+
+      - name: description
+        type: text
+        required: false
+        description: Event description
+
+      - name: date
+        type: datetime
+        required: true
+        description: Event date/time
+
+      - name: end_date
+        type: datetime
+        required: false
+        description: Event end date/time
+
+      - name: location
+        type: text
+        required: false
+        description: Event location
+
+      - name: type
+        type: text
+        required: false
+        description: Event type (meeting, deadline, reminder, holiday)
+
+      - name: color
+        type: text
+        required: false
+        description: Display color
+
+  # -------------------------------------------------------------------------
+  # Category Entity (for Tree View)
+  # -------------------------------------------------------------------------
+  - id: category
+    name: Category
+    description: A hierarchical category
+    icon: folder
+
+    properties:
+      - name: name
+        type: text
+        required: true
+        description: Category name
+
+      - name: description
+        type: text
+        required: false
+        description: Category description
+
+      - name: parent_id
+        type: reference
+        required: false
+        description: Parent category ID
+
+      - name: icon
+        type: text
+        required: false
+        description: Category icon
+
+  # -------------------------------------------------------------------------
+  # Comment Entity (for Comments block)
+  # -------------------------------------------------------------------------
+  - id: comment
+    name: Comment
+    description: A discussion comment
+    icon: message-square
+
+    properties:
+      - name: text
+        type: text
+        required: true
+        description: Comment text
+
+      - name: author
+        type: text
+        required: true
+        description: Comment author
+
+      - name: entity_id
+        type: reference
+        required: true
+        description: Entity this comment belongs to
+
+      - name: parent_comment_id
+        type: reference
+        required: false
+        description: Parent comment for threading
+
+  # -------------------------------------------------------------------------
+  # File Entity (for File Viewer/Uploader)
+  # -------------------------------------------------------------------------
+  - id: file
+    name: File
+    description: An uploaded file
+    icon: file
+
+    properties:
+      - name: name
+        type: text
+        required: true
+        description: File name
+
+      - name: url
+        type: text
+        required: true
+        description: File URL
+
+      - name: mime_type
+        type: text
+        required: false
+        description: MIME type
+
+      - name: size
+        type: number
+        required: false
+        description: File size in bytes
+
+      - name: entity_id
+        type: reference
+        required: false
+        description: Associated entity
+
+# =============================================================================
+# VIEWS
+# =============================================================================
+
+views:
+  # -------------------------------------------------------------------------
+  # Dashboard View - Stats + Chart blocks
+  # -------------------------------------------------------------------------
+  - id: dashboard
+    name: Dashboard
+    description: Overview with stats and charts
+    icon: home
+    route: /
+
+    layout:
+      type: stack
+      direction: vertical
+      gap: 24
+
+      children:
+        # Stats row
+        - id: stats-row
+          type: stats
+          props:
+            layout: row
+            stats:
+              - label: Total Tasks
+                entityType: task
+                aggregate: count
+                icon: "📋"
+              - label: Open Tasks
+                entityType: task
+                aggregate: count
+                filter:
+                  status:
+                    $ne: done
+                icon: "🔄"
+              - label: Completed
+                entityType: task
+                aggregate: count
+                filter:
+                  status: done
+                icon: "✅"
+              - label: Overdue
+                entityType: task
+                aggregate: count
+                filter:
+                  status:
+                    $ne: done
+                  due_date:
+                    $lt: "NOW()"
+                icon: "⚠️"
+                color: "#dc2626"
+
+        # Charts row
+        - id: charts-row
+          type: split
+          direction: horizontal
+          sizes: [50, 50]
+          children:
+            - id: status-chart
+              type: chart
+              props:
+                title: Tasks by Status
+                type: pie
+                entityType: task
+                labelProperty: status
+                aggregate: count
+                showLegend: true
+                colors:
+                  - "#6366f1"
+                  - "#8b5cf6"
+                  - "#22c55e"
+                  - "#94a3b8"
+
+            - id: priority-chart
+              type: chart
+              props:
+                title: Tasks by Priority
+                type: bar
+                entityType: task
+                labelProperty: priority
+                aggregate: count
+                showGrid: true
+
+  # -------------------------------------------------------------------------
+  # Tasks View - Table with row click navigation
+  # -------------------------------------------------------------------------
+  - id: tasks
+    name: Tasks
+    description: Task list with full CRUD
+    icon: list
+    route: /tasks
+
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16
+
+      children:
+        - id: task-table
+          type: table
+          props:
+            entityType: task
+            columns:
+              - property: title
+                label: Title
+                sortable: true
+              - property: status
+                label: Status
+                width: 120
+              - property: priority
+                label: Priority
+                width: 100
+              - property: assignee
+                label: Assignee
+                width: 150
+              - property: due_date
+                label: Due Date
+                format: date
+                width: 120
+            selectable: true
+            searchable: true
+            searchProperties:
+              - title
+              - description
+              - assignee
+            pagination:
+              pageSize: 25
+            onRowClick: navigate
+            rowClickTarget: task-detail
+
+  # -------------------------------------------------------------------------
+  # Task Detail View - Detail + Comments + Form
+  # -------------------------------------------------------------------------
+  - id: task-detail
+    name: Task Details
+    description: View and edit a single task
+    icon: file-text
+    route: /tasks/:id
+
+    layout:
+      type: split
+      direction: horizontal
+      sizes: [60, 40]
+
+      children:
+        - id: task-detail-panel
+          type: stack
+          direction: vertical
+          gap: 16
+          children:
+            - id: task-detail-block
+              type: detail
+              props:
+                entityId: $route.params.id
+                source: task
+                sections:
+                  - title: Task Information
+                    fields:
+                      - property: title
+                        label: Title
+                      - property: description
+                        label: Description
+                      - property: status
+                        label: Status
+                        format: badge
+                      - property: priority
+                        label: Priority
+                        format: badge
+                  - title: Assignment
+                    fields:
+                      - property: assignee
+                        label: Assignee
+                      - property: due_date
+                        label: Due Date
+                        format: datetime
+                      - property: estimate
+                        label: Estimate (hours)
+                  - title: Classification
+                    collapsible: true
+                    fields:
+                      - property: category
+                        label: Category
+                      - property: tags
+                        label: Tags
+                actions:
+                  - label: Edit
+                    event: navigate
+                    target: /tasks/$entity.id/edit
+                    variant: primary
+                  - label: Delete
+                    event: delete
+                    confirm: true
+                    confirmMessage: Are you sure you want to delete this task?
+                    variant: danger
+
+            - id: task-comments
+              type: comments
+              props:
+                entityId: $route.params.id
+                source: comment
+                title: Discussion
+                allowReplies: true
+                allowEdit: true
+                allowDelete: true
+
+        - id: task-timeline-panel
+          type: timeline
+          props:
+            source: events
+            entityId: $route.params.id
+            entityType: event
+            timestampProperty: date
+            titleProperty: title
+            descriptionProperty: description
+            groupBy: day
+            showTimestamp: true
+            limit: 20
+
+  # -------------------------------------------------------------------------
+  # Task Edit View - Form block
+  # -------------------------------------------------------------------------
+  - id: task-edit
+    name: Edit Task
+    description: Edit task form
+    icon: edit
+    route: /tasks/:id/edit
+
+    layout:
+      type: single
+      children:
+        - id: task-form
+          type: form
+          props:
+            source: task
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: title
+                label: Title
+                required: true
+                placeholder: Enter task title
+              - property: description
+                label: Description
+                type: textarea
+                rows: 4
+              - property: status
+                label: Status
+                type: select
+                options:
+                  - value: todo
+                    label: To Do
+                  - value: in_progress
+                    label: In Progress
+                  - value: review
+                    label: Review
+                  - value: done
+                    label: Done
+              - property: priority
+                label: Priority
+                type: select
+                options:
+                  - value: low
+                    label: Low
+                  - value: medium
+                    label: Medium
+                  - value: high
+                    label: High
+                  - value: urgent
+                    label: Urgent
+              - property: assignee
+                label: Assignee
+                placeholder: Enter assignee name
+              - property: due_date
+                label: Due Date
+                type: datetime
+              - property: estimate
+                label: Estimate (hours)
+                type: number
+                min: 0
+                step: 0.5
+              - property: category
+                label: Category
+              - property: tags
+                label: Tags
+                helpText: Comma-separated list of tags
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+                target: task-detail
+
+  # -------------------------------------------------------------------------
+  # Task Create View - Form block in create mode
+  # -------------------------------------------------------------------------
+  - id: task-create
+    name: Create Task
+    description: Create new task
+    icon: plus
+    route: /tasks/new
+
+    layout:
+      type: single
+      children:
+        - id: task-create-form
+          type: form
+          props:
+            source: task
+            mode: create
+            fields:
+              - property: title
+                label: Title
+                required: true
+                placeholder: Enter task title
+              - property: description
+                label: Description
+                type: textarea
+                rows: 4
+              - property: status
+                label: Status
+                type: select
+                options:
+                  - value: todo
+                    label: To Do
+                  - value: in_progress
+                    label: In Progress
+              - property: priority
+                label: Priority
+                type: select
+                options:
+                  - value: low
+                    label: Low
+                  - value: medium
+                    label: Medium
+                  - value: high
+                    label: High
+                  - value: urgent
+                    label: Urgent
+              - property: assignee
+                label: Assignee
+              - property: due_date
+                label: Due Date
+                type: datetime
+            actions:
+              submit:
+                type: submit
+                label: Create Task
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+                target: tasks
+
+  # -------------------------------------------------------------------------
+  # Kanban View - Kanban block
+  # -------------------------------------------------------------------------
+  - id: kanban
+    name: Kanban Board
+    description: Drag-and-drop task board
+    icon: columns
+    route: /kanban
+
+    layout:
+      type: single
+      children:
+        - id: task-kanban
+          type: kanban
+          props:
+            source: task
+            statusProperty: status
+            columns:
+              - value: todo
+                label: To Do
+                color: "#94a3b8"
+              - value: in_progress
+                label: In Progress
+                color: "#3b82f6"
+              - value: review
+                label: Review
+                color: "#8b5cf6"
+              - value: done
+                label: Done
+                color: "#22c55e"
+            card:
+              title: "${$entity.title}"
+              subtitle: "${$entity.assignee}"
+              badges:
+                - property: priority
+              onClick: true
+
+  # -------------------------------------------------------------------------
+  # Calendar View - Calendar block
+  # -------------------------------------------------------------------------
+  - id: calendar
+    name: Calendar
+    description: Event calendar view
+    icon: calendar
+    route: /calendar
+
+    layout:
+      type: single
+      children:
+        - id: event-calendar
+          type: calendar
+          props:
+            entityType: event
+            dateProperty: date
+            endDateProperty: end_date
+            labelProperty: title
+            colorProperty: color
+            view: month
+            selectable: true
+            onSelect:
+              action: navigate
+              view: event-create
+            onEventClick:
+              action: emit
+              event: eventSelected
+
+  # -------------------------------------------------------------------------
+  # Timeline View - Timeline block
+  # -------------------------------------------------------------------------
+  - id: timeline
+    name: Activity Timeline
+    description: Chronological activity feed
+    icon: clock
+    route: /timeline
+
+    layout:
+      type: single
+      children:
+        - id: activity-timeline
+          type: timeline
+          props:
+            source: entities
+            entityType: event
+            timestampProperty: date
+            titleProperty: title
+            descriptionProperty: description
+            typeProperty: type
+            groupBy: day
+            order: desc
+            showTimestamp: true
+            showActor: false
+            limit: 50
+
+  # -------------------------------------------------------------------------
+  # Categories View - Tree block
+  # -------------------------------------------------------------------------
+  - id: categories
+    name: Categories
+    description: Hierarchical category browser
+    icon: folder-tree
+    route: /categories
+
+    layout:
+      type: split
+      direction: horizontal
+      sizes: [40, 60]
+
+      children:
+        - id: category-tree
+          type: tree
+          props:
+            entityType: category
+            parentProperty: parent_id
+            labelProperty: name
+            iconProperty: icon
+            expandedByDefault: false
+            selectable: true
+            draggable: true
+            onSelect:
+              action: emit
+              event: categorySelected
+
+        - id: category-tasks
+          type: table
+          props:
+            entityType: task
+            columns:
+              - property: title
+                label: Title
+              - property: status
+                label: Status
+              - property: priority
+                label: Priority
+            pagination:
+              pageSize: 10
+
+  # -------------------------------------------------------------------------
+  # Tabs Demo View - Tabs container block
+  # -------------------------------------------------------------------------
+  - id: tabs-demo
+    name: Tabs Demo
+    description: Tabbed content container
+    icon: layout
+    route: /tabs-demo
+
+    layout:
+      type: single
+      children:
+        - id: demo-tabs
+          type: tabs
+          props:
+            variant: default
+            position: top
+            defaultTab: overview
+            tabs:
+              - id: overview
+                label: Overview
+                blocks:
+                  - block: stats
+                    stats:
+                      - label: Total Items
+                        value: 42
+                      - label: Active
+                        value: 28
+                      - label: Pending
+                        value: 14
+
+              - id: table-tab
+                label: Data Table
+                blocks:
+                  - block: table
+                    entityType: task
+                    columns:
+                      - property: title
+                        label: Title
+                      - property: status
+                        label: Status
+
+              - id: chart-tab
+                label: Charts
+                blocks:
+                  - block: chart
+                    type: doughnut
+                    entityType: task
+                    labelProperty: status
+                    aggregate: count
+                    showLegend: true
+
+  # -------------------------------------------------------------------------
+  # Modal Demo View - Modal container block
+  # -------------------------------------------------------------------------
+  - id: modal-demo
+    name: Modal Demo
+    description: Modal dialog demonstration
+    icon: layers
+    route: /modal-demo
+
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16
+
+      children:
+        - id: modal-intro
+          type: stats
+          props:
+            stats:
+              - label: Click button below to open modal
+                value: "👇"
+
+        - id: create-task-modal
+          type: modal
+          props:
+            trigger: button
+            triggerLabel: Create New Task
+            title: New Task
+            size: medium
+            closable: true
+            closeOnOverlay: true
+            blocks:
+              - block: form
+                source: task
+                mode: create
+                fields:
+                  - property: title
+                    required: true
+                  - property: description
+                    type: textarea
+                  - property: status
+                    type: select
+                    options:
+                      - value: todo
+                        label: To Do
+                      - value: in_progress
+                        label: In Progress
+            actions:
+              - label: Cancel
+                action: close
+                variant: secondary
+              - label: Create
+                action: submit
+                variant: primary
+
+  # -------------------------------------------------------------------------
+  # Files View - File Uploader + Viewer blocks
+  # -------------------------------------------------------------------------
+  - id: files
+    name: Files
+    description: File management
+    icon: file
+    route: /files
+
+    layout:
+      type: split
+      direction: horizontal
+      sizes: [50, 50]
+
+      children:
+        - id: file-upload
+          type: file-uploader
+          props:
+            accept: "image/*,.pdf,.doc,.docx"
+            maxSize: 10485760  # 10MB
+            maxFiles: 5
+            multiple: true
+            showPreview: true
+            autoUpload: false
+
+        - id: file-preview
+          type: file-viewer
+          props:
+            showToolbar: true
+            showDownload: true
+            maxWidth: 600
+            maxHeight: 400
+
+# =============================================================================
+# NAVIGATION
+# =============================================================================
+
+navigation:
+  items:
+    - label: Dashboard
+      view: dashboard
+      icon: "📊"
+    - label: Tasks
+      view: tasks
+      icon: "📋"
+    - label: Kanban
+      view: kanban
+      icon: "📌"
+    - label: Calendar
+      view: calendar
+      icon: "📅"
+    - label: Timeline
+      view: timeline
+      icon: "⏱️"
+    - label: Categories
+      view: categories
+      icon: "📁"
+    - label: Tabs Demo
+      view: tabs-demo
+      icon: "🗂️"
+    - label: Modal Demo
+      view: modal-demo
+      icon: "📤"
+    - label: Files
+      view: files
+      icon: "📎"
+
+# =============================================================================
+# WIRING
+# =============================================================================
+
+wiring:
+  # Dashboard chart click → navigate to filtered tasks
+  - from: status-chart
+    event: segmentClicked
+    to: task-table
+    receiver: setFilter
+    transform:
+      kind: expression
+      expr: "{ filter: { status: $payload.dataPoint.label } }"
+
+  # Task table selection → show detail
+  - from: task-table
+    event: rowClicked
+    to: task-detail-block
+    receiver: loadEntity
+
+  # Category tree selection → filter tasks
+  - from: category-tree
+    event: nodeSelected
+    to: category-tasks
+    receiver: setFilter
+    transform:
+      kind: expression
+      expr: "{ filter: { category: $payload.node.entity.name } }"
+
+  # Kanban card click → navigate to detail
+  - from: task-kanban
+    event: cardClicked
+    action: navigate
+    target: /tasks/${$payload.entity.id}
