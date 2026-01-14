@@ -1,17 +1,34 @@
 /**
  * Trellis BlockRenderer
  *
- * Renders blocks from configuration objects.
+ * Renders blocks from configuration objects using Connected wrappers
+ * that handle config normalization and runtime context resolution.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import type { BlockInstanceId } from '@trellis/kernel';
 import type { WiringManager } from '../runtime/wiring.js';
 import type { BindingScope } from '../binding/index.js';
 import { getBlockComponent, hasBlock } from './registry.js';
 import { BlockProvider } from './BlockProvider.js';
-import { ConnectedTableBlock } from './integration/ConnectedTableBlock.js';
-import { buildTableBlockConfig } from './integration/ConnectedTableBlock.js';
+
+// Import Connected wrappers
+import { ConnectedTableBlock, buildTableBlockConfig } from './integration/ConnectedTableBlock.js';
+import { ConnectedFormBlock } from './integration/ConnectedFormBlock.js';
+import { ConnectedDetailBlock } from './integration/ConnectedDetailBlock.js';
+import { ConnectedKanbanBlock } from './integration/ConnectedKanbanBlock.js';
+import {
+  ConnectedStatsBlock,
+  ConnectedChartBlock,
+  ConnectedCalendarBlock,
+  ConnectedTimelineBlock,
+  ConnectedCommentsBlock,
+  ConnectedTreeViewBlock,
+  ConnectedTabsBlock,
+  ConnectedModalBlock,
+  ConnectedFileUploaderBlock,
+  ConnectedFileViewerBlock,
+} from './integration/ConnectedBlocks.js';
 
 // =============================================================================
 // TYPES
@@ -56,7 +73,7 @@ interface UnknownBlockProps {
 }
 
 // =============================================================================
-// UNKNOWN BLOCK FALLBACK
+// FALLBACK COMPONENTS
 // =============================================================================
 
 /**
@@ -109,6 +126,104 @@ function BlockError({
   );
 }
 
+/**
+ * Loading fallback for lazy-loaded blocks.
+ */
+function BlockLoading(): React.ReactElement {
+  return (
+    <div
+      style={{
+        padding: '1rem',
+        textAlign: 'center',
+        color: '#6b7280',
+      }}
+    >
+      Loading...
+    </div>
+  );
+}
+
+// =============================================================================
+// CONNECTED BLOCK RENDERER
+// =============================================================================
+
+/**
+ * Get the Connected wrapper component for a block type.
+ * Returns null if no connected wrapper exists.
+ */
+function getConnectedBlock(blockType: string): React.ComponentType<{ config: Record<string, unknown>; className?: string }> | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  type AnyConnected = React.ComponentType<any>;
+
+  switch (blockType) {
+    // Core blocks
+    case 'table':
+    case 'trellis.data-table':
+      return ConnectedTableBlock as AnyConnected;
+
+    case 'form':
+    case 'trellis.property-editor':
+      return ConnectedFormBlock as AnyConnected;
+
+    case 'detail':
+    case 'trellis.detail-view':
+      return ConnectedDetailBlock as AnyConnected;
+
+    case 'kanban':
+    case 'trellis.kanban-board':
+      return ConnectedKanbanBlock as AnyConnected;
+
+    // Stats and visualization
+    case 'stats':
+    case 'trellis.stats':
+      return ConnectedStatsBlock as AnyConnected;
+
+    case 'chart':
+    case 'trellis.chart':
+      return ConnectedChartBlock as AnyConnected;
+
+    // Calendar and timeline
+    case 'calendar':
+    case 'trellis.calendar':
+      return ConnectedCalendarBlock as AnyConnected;
+
+    case 'timeline':
+    case 'trellis.timeline':
+      return ConnectedTimelineBlock as AnyConnected;
+
+    // Collaboration
+    case 'comments':
+    case 'trellis.comments':
+      return ConnectedCommentsBlock as AnyConnected;
+
+    // Hierarchical
+    case 'tree':
+    case 'trellis.tree-view':
+      return ConnectedTreeViewBlock as AnyConnected;
+
+    // Container blocks
+    case 'tabs':
+    case 'trellis.tabs':
+      return ConnectedTabsBlock as AnyConnected;
+
+    case 'modal':
+    case 'trellis.modal':
+      return ConnectedModalBlock as AnyConnected;
+
+    // File handling
+    case 'file-uploader':
+    case 'trellis.file-uploader':
+      return ConnectedFileUploaderBlock as AnyConnected;
+
+    case 'file-viewer':
+    case 'trellis.file-viewer':
+      return ConnectedFileViewerBlock as AnyConnected;
+
+    default:
+      return null;
+  }
+}
+
 // =============================================================================
 // BLOCK RENDERER
 // =============================================================================
@@ -122,6 +237,12 @@ function generateBlockId(): BlockInstanceId {
 
 /**
  * BlockRenderer renders a block component from its configuration.
+ *
+ * All blocks are rendered through Connected wrappers that:
+ * - Normalize config property names (entityType/source/entity)
+ * - Resolve route parameters ($route.params.id → actual UUID)
+ * - Resolve scope variables ($scope.selectedId → value)
+ * - Emit events through block context
  */
 export function BlockRenderer({
   config,
@@ -138,38 +259,32 @@ export function BlockRenderer({
   // Extract block type
   const blockType = config.block;
 
-  // Check if block type is registered
-  if (!hasBlock(blockType)) {
-    return <UnknownBlock type={blockType} />;
-  }
-
-  // Special handling for table blocks - use SDK-connected version
-  if (blockType === 'table' || blockType === 'trellis.data-table') {
-    // Build TableBlockConfig from the generic config
-    const tableConfig = buildTableBlockConfig(config as Record<string, unknown>);
-
-    // Build props, only including defined values
-    const connectedProps: {
-      config: typeof tableConfig;
-      instanceId: BlockInstanceId;
-      className?: string;
-    } = {
-      config: tableConfig,
-      instanceId,
+  // Check for Connected wrapper
+  const ConnectedBlock = getConnectedBlock(blockType);
+  if (ConnectedBlock) {
+    // Build props, conditionally including className to handle exactOptionalPropertyTypes
+    const connectedProps: { config: Record<string, unknown>; className?: string } = {
+      config: config as Record<string, unknown>,
     };
-
     if (className !== undefined) {
       connectedProps.className = className;
     }
 
     return (
       <BlockProvider instanceId={instanceId} wiring={wiring} scope={scope}>
-        <ConnectedTableBlock {...connectedProps} />
+        <Suspense fallback={<BlockLoading />}>
+          <ConnectedBlock {...connectedProps} />
+        </Suspense>
       </BlockProvider>
     );
   }
 
-  // Get block component from registry
+  // Check if block type is registered in the registry (for custom blocks)
+  if (!hasBlock(blockType)) {
+    return <UnknownBlock type={blockType} />;
+  }
+
+  // Get block component from registry (fallback for custom blocks)
   const BlockComponent = getBlockComponent(blockType);
   if (!BlockComponent) {
     return <UnknownBlock type={blockType} />;
@@ -181,12 +296,14 @@ export function BlockRenderer({
 
   return (
     <BlockProvider instanceId={instanceId} wiring={wiring} scope={scope}>
-      <BlockComponent
-        {...blockProps}
-        config={blockProps}
-        instanceId={instanceId}
-        className={className}
-      />
+      <Suspense fallback={<BlockLoading />}>
+        <BlockComponent
+          {...blockProps}
+          config={blockProps}
+          instanceId={instanceId}
+          className={className}
+        />
+      </Suspense>
     </BlockProvider>
   );
 }

@@ -17,6 +17,7 @@ import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
 import { registerAuthRoutes } from './routes/auth/index.js';
+import { createConfigRoutes } from './routes/config/index.js';
 import { websocketPlugin } from './plugins/websocket.js';
 
 /**
@@ -28,6 +29,9 @@ export interface AppConfig {
 
   /** Database configuration */
   readonly database: DatabaseConfig;
+
+  /** Directory containing product config files */
+  readonly productsDir?: string;
 }
 
 /**
@@ -101,6 +105,11 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(entityRoutes);
   await app.register(relationshipRoutes);
   await app.register(queryRoutes);
+
+  // Register config routes for serving product configurations
+  if (config.productsDir) {
+    await app.register(createConfigRoutes(config.productsDir));
+  }
 
   // Register WebSocket for real-time subscriptions
   await app.register(websocketPlugin, { path: '/ws' });
