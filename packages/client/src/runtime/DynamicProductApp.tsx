@@ -15,7 +15,7 @@
  * 4. Handle all block rendering through Connected wrappers
  */
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { TrellisProvider } from '../state/store.js';
 import { TrellisClient } from '../sdk/client.js';
 import { createScope, extendScope } from '../binding/scope.js';
@@ -102,7 +102,7 @@ function DefaultError({
 }
 
 /**
- * Default sidebar layout.
+ * Default sidebar layout with collapsible sidebar.
  */
 function DefaultLayout({
   children,
@@ -113,6 +113,7 @@ function DefaultLayout({
 }): React.ReactElement {
   const { push } = useNavigation();
   const navState = useNavigationState();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleNavClick = useCallback(
     (item: NavItemConfig) => {
@@ -130,14 +131,52 @@ function DefaultLayout({
   // Find active nav item
   const activeViewId = navState.viewId;
 
+  const collapsedSidebarStyle: React.CSSProperties = {
+    ...sidebarStyle,
+    width: sidebarCollapsed ? '48px' : '240px',
+    transition: 'width 0.2s ease',
+    overflow: 'hidden',
+  };
+
+  const toggleButtonStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '8px',
+    right: '-12px',
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    backgroundColor: '#374151',
+    border: '2px solid #1f2937',
+    color: '#9ca3af',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    zIndex: 10,
+  };
+
   return (
     <div style={appContainerStyle}>
       {/* Sidebar */}
-      <aside style={sidebarStyle}>
+      <aside style={{ ...collapsedSidebarStyle, position: 'relative' }}>
+        <button
+          type="button"
+          style={toggleButtonStyle}
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {sidebarCollapsed ? '▶' : '◀'}
+        </button>
+
         <div style={sidebarHeaderStyle}>
-          <h1 style={appTitleStyle}>{config.name}</h1>
-          {config.version && (
-            <span style={appVersionStyle}>v{config.version}</span>
+          {!sidebarCollapsed && (
+            <>
+              <h1 style={appTitleStyle}>{config.name}</h1>
+              {config.version && (
+                <span style={appVersionStyle}>v{config.version}</span>
+              )}
+            </>
           )}
         </div>
 
@@ -151,11 +190,14 @@ function DefaultLayout({
                 style={{
                   ...navItemStyle,
                   ...(isActive ? navItemActiveStyle : {}),
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  padding: sidebarCollapsed ? '0.75rem 0.5rem' : '0.75rem 1rem',
                 }}
                 onClick={() => handleNavClick(item)}
+                title={sidebarCollapsed ? item.label : undefined}
               >
                 {item.icon && <span style={navIconStyle}>{item.icon}</span>}
-                <span>{item.label}</span>
+                {!sidebarCollapsed && <span>{item.label}</span>}
               </button>
             );
           })}
@@ -340,6 +382,27 @@ function DynamicProductAppInner({
 }: Omit<DynamicProductAppProps, 'configBaseUrl'>): React.ReactElement {
   const { config, loading, error, reload } = useProductConfig(productId);
 
+  // Create TrellisClient for the provider - must be before any conditional returns
+  const client = useMemo(() => {
+    return new TrellisClient({ baseUrl: apiBaseUrl ?? '' });
+  }, [apiBaseUrl]);
+
+  // Build navigation manager from config - must be before any conditional returns
+  const navManager = useMemo(() => {
+    if (!config) {
+      // Return a placeholder manager when config isn't loaded yet
+      return new NavigationManager('/');
+    }
+    const defaultView = config.views.find((v) => v.id === config.defaultView);
+    const defaultPath = defaultView?.route ?? '/';
+    const manager = new NavigationManager(defaultPath);
+    // Register all view routes
+    for (const view of config.views) {
+      manager.registerRoute(view.id as Parameters<NavigationManager['registerRoute']>[0], view.route);
+    }
+    return manager;
+  }, [config]);
+
   if (loading) {
     return <LoadingComponent />;
   }
@@ -351,23 +414,6 @@ function DynamicProductAppInner({
   if (!config) {
     return <LoadingComponent />;
   }
-
-  // Build navigation manager from config
-  const navManager = useMemo(() => {
-    const defaultView = config.views.find((v) => v.id === config.defaultView);
-    const defaultPath = defaultView?.route ?? '/';
-    const manager = new NavigationManager(defaultPath);
-    // Register all view routes
-    for (const view of config.views) {
-      manager.registerRoute(view.id as Parameters<NavigationManager['registerRoute']>[0], view.route);
-    }
-    return manager;
-  }, [config.views, config.defaultView]);
-
-  // Create TrellisClient for the provider
-  const client = useMemo(() => {
-    return new TrellisClient({ baseUrl: apiBaseUrl ?? '' });
-  }, [apiBaseUrl]);
 
   return (
     <TrellisProvider client={client}>
@@ -551,23 +597,36 @@ function normalizeBlocks(
 
 /**
  * Normalize a single block from YAML format.
+ * Handles both formats:
+ * - Block format: { type, id, props: {...} }
+ * - Layout format: { type, columns, gap, rows, children, ... } (properties at top level)
  */
 function normalizeBlock(block: Record<string, unknown>): BlockPlacement {
-  // Kitchen sink format: { id, type, props: {...} }
   const blockType = block['type'] as string | undefined;
-  const props = (block['props'] as Record<string, unknown>) ?? {};
+  const explicitProps = (block['props'] as Record<string, unknown>) ?? {};
   const id = block['id'] as string | undefined;
 
   // The type might be in props.block for some formats
-  const effectiveType = blockType ?? (props['block'] as string) ?? 'unknown';
+  const effectiveType = blockType ?? (explicitProps['block'] as string) ?? 'unknown';
+
+  // Gather all top-level properties except reserved keys
+  const reservedKeys = new Set(['type', 'id', 'props']);
+  const topLevelProps: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(block)) {
+    if (!reservedKeys.has(key)) {
+      topLevelProps[key] = value;
+    }
+  }
 
   // Merge props, removing 'block' if it was there
-  const { block: _block, ...restProps } = props;
+  // Top-level props are base, explicit props override
+  const { block: _block, ...restExplicitProps } = explicitProps;
+  const finalProps = { ...topLevelProps, ...restExplicitProps };
 
   return {
     type: effectiveType,
     ...(id !== undefined && { id }),
-    props: restProps,
+    props: finalProps,
   };
 }
 
@@ -641,6 +700,7 @@ const mainStyle: React.CSSProperties = {
   flex: 1,
   padding: '1.5rem',
   overflow: 'auto',
+  minWidth: 0,
 };
 
 const viewContainerStyle: React.CSSProperties = {
@@ -649,6 +709,8 @@ const viewContainerStyle: React.CSSProperties = {
   padding: '1.5rem',
   minHeight: '400px',
   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+  overflow: 'hidden',
+  maxWidth: '100%',
 };
 
 const viewTitleStyle: React.CSSProperties = {

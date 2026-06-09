@@ -39,11 +39,14 @@ export interface ActionConfig {
   /** Action label */
   readonly label: string;
 
+  /** Built-in action kind ('edit' navigates, 'delete' mutates); custom actions emit `event` instead */
+  readonly type?: 'edit' | 'delete' | string;
+
   /** Icon name */
   readonly icon?: string;
 
-  /** Event to emit when clicked */
-  readonly event: string;
+  /** Event to emit when clicked (required for custom actions without a built-in `type`) */
+  readonly event?: string;
 
   /** Navigation target (template string) */
   readonly target?: string;

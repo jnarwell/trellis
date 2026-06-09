@@ -162,14 +162,17 @@ function getConnectedBlock(blockType: string): React.ComponentType<{ config: Rec
       return ConnectedTableBlock as AnyConnected;
 
     case 'form':
+    case 'trellis.form':
     case 'trellis.property-editor':
       return ConnectedFormBlock as AnyConnected;
 
     case 'detail':
+    case 'trellis.detail':
     case 'trellis.detail-view':
       return ConnectedDetailBlock as AnyConnected;
 
     case 'kanban':
+    case 'trellis.kanban':
     case 'trellis.kanban-board':
       return ConnectedKanbanBlock as AnyConnected;
 
@@ -235,6 +238,150 @@ function generateBlockId(): BlockInstanceId {
   return `block-${Math.random().toString(36).slice(2, 11)}` as BlockInstanceId;
 }
 
+// Layout types that should be delegated to LayoutRenderer
+const LAYOUT_TYPES = new Set(['split', 'stack', 'tabs', 'grid', 'single']);
+
+/**
+ * Check if a block type is actually a layout type.
+ */
+function isLayoutType(type: string): boolean {
+  return LAYOUT_TYPES.has(type);
+}
+
+/**
+ * Lazy import LayoutRenderer to avoid circular dependency.
+ */
+const LazyLayoutRenderer = React.lazy(() =>
+  import('../runtime/LayoutRenderer.js').then((m) => ({ default: m.LayoutRenderer }))
+);
+
+/**
+ * Normalize a raw layout config (from YAML) to the format expected by LayoutRenderer.
+ * Converts `children` to `panels` for splits, `blocks` for stacks, etc.
+ */
+function normalizeLayoutConfig(config: Record<string, unknown>): Record<string, unknown> {
+  const type = config['type'] as string;
+  const children = config['children'] as readonly Record<string, unknown>[] | undefined;
+
+  switch (type) {
+    case 'split': {
+      // Convert children to panels
+      const panels = children?.map((child) => {
+        const childType = child['type'] as string | undefined;
+        // Check if child is a nested layout
+        if (childType && LAYOUT_TYPES.has(childType)) {
+          return { layout: normalizeLayoutConfig(child) };
+        }
+        // Otherwise it's a block - wrap in blocks array
+        return { blocks: [normalizeBlockPlacement(child)] };
+      }) ?? [];
+
+      return {
+        type: 'split',
+        direction: config['direction'] ?? 'horizontal',
+        sizes: config['sizes'],
+        panels,
+      };
+    }
+
+    case 'stack': {
+      // Convert children to blocks (normalizing each)
+      const blocks = children?.map((child) => normalizeBlockPlacement(child)) ?? [];
+
+      return {
+        type: 'stack',
+        direction: config['direction'] ?? 'vertical',
+        gap: config['gap'],
+        blocks,
+      };
+    }
+
+    case 'tabs': {
+      // Tabs config might have tabs array directly
+      return config;
+    }
+
+    case 'grid': {
+      // Normalize grid rows and cells
+      const rows = config['rows'] as readonly Record<string, unknown>[] | undefined;
+      const normalizedRows = rows?.map((row) => {
+        const cells = row['cells'] as readonly Record<string, unknown>[] | undefined;
+        const normalizedCells = cells?.map((cell) => {
+          const cellBlock = cell['block'] as Record<string, unknown> | undefined;
+          const cellLayout = cell['layout'] as Record<string, unknown> | undefined;
+
+          if (cellLayout) {
+            return {
+              ...cell,
+              layout: normalizeLayoutConfig(cellLayout),
+            };
+          }
+          if (cellBlock) {
+            return {
+              ...cell,
+              block: normalizeBlockPlacement(cellBlock),
+            };
+          }
+          return cell;
+        }) ?? [];
+
+        return {
+          ...row,
+          cells: normalizedCells,
+        };
+      }) ?? [];
+
+      return {
+        type: 'grid',
+        columns: config['columns'] ?? 2,
+        gap: config['gap'],
+        rows: normalizedRows,
+      };
+    }
+
+    case 'single': {
+      const block = children?.[0] ? normalizeBlockPlacement(children[0]) : { type: 'unknown', props: {} };
+      return {
+        type: 'single',
+        block,
+      };
+    }
+
+    default:
+      return config;
+  }
+}
+
+/**
+ * Normalize a block placement from YAML format.
+ * Handles both formats:
+ * - Block format: { type, id, props: {...} }
+ * - Layout format: { type, columns, gap, rows, children, ... } (properties at top level)
+ */
+function normalizeBlockPlacement(block: Record<string, unknown>): { type: string; id?: string; props: Record<string, unknown> } {
+  const blockType = block['type'] as string | undefined;
+  const explicitProps = (block['props'] as Record<string, unknown>) ?? {};
+  const id = block['id'] as string | undefined;
+
+  // Gather all top-level properties except reserved keys
+  const reservedKeys = new Set(['type', 'id', 'props']);
+  const topLevelProps: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(block)) {
+    if (!reservedKeys.has(key)) {
+      topLevelProps[key] = value;
+    }
+  }
+
+  // Merge: explicit props take precedence over top-level props
+  const finalProps = { ...topLevelProps, ...explicitProps };
+
+  return {
+    type: blockType ?? 'unknown',
+    ...(id !== undefined && { id }),
+    props: finalProps,
+  };
+}
+
 /**
  * BlockRenderer renders a block component from its configuration.
  *
@@ -258,6 +405,29 @@ export function BlockRenderer({
 
   // Extract block type
   const blockType = config.block;
+
+  // Handle layout types by delegating to LayoutRenderer
+  if (isLayoutType(blockType)) {
+    // Convert BlockConfig back to LayoutConfig format and normalize
+    const { block: _block, id: _id, ...rest } = config;
+    const rawLayoutConfig = {
+      type: blockType,
+      ...rest,
+    };
+    const layoutConfig = normalizeLayoutConfig(rawLayoutConfig);
+
+    return (
+      <Suspense fallback={<BlockLoading />}>
+        <LazyLayoutRenderer
+          layout={layoutConfig as unknown as Parameters<typeof LazyLayoutRenderer>[0]['layout']}
+          wiring={wiring}
+          scope={scope}
+          safeMode={true}
+          {...(className !== undefined && { className })}
+        />
+      </Suspense>
+    );
+  }
 
   // Check for Connected wrapper
   const ConnectedBlock = getConnectedBlock(blockType);

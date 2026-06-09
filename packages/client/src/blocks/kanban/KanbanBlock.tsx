@@ -126,6 +126,13 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
   onEvent,
   className,
 }) => {
+  // Default card config if not provided
+  const cardConfig = card ?? {
+    title: '${title}',
+    subtitle: undefined,
+    badges: [],
+  };
+
   // Query entities
   const queryOptions = filter ? { filter, includeTotal: false } : { includeTotal: false };
   const { data: entities, loading, error, refetch } = useQuery(source, queryOptions);
@@ -238,7 +245,7 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
           key={columnConfig.value}
           config={columnConfig}
           entities={columnEntities}
-          cardConfig={card}
+          cardConfig={cardConfig}
           isDropTarget={isDropTarget}
           onDrop={(entityId) => {
             const entity = entities.find((e) => e.id === entityId);

@@ -127,9 +127,17 @@ export function FormBlock({
         // Navigate back to detail page after successful save
         back();
       } else if (!isEditMode) {
-        // Create new entity
+        // Create new entity. Fall back to entityType for raw (un-normalized)
+        // YAML configs so cache invalidation gets the correct type.
+        const entityType =
+          config.source ??
+          (config as { entityType?: typeof config.source }).entityType;
+        if (!entityType) {
+          console.error('[FormBlock] Cannot create: config has no source/entityType');
+          return;
+        }
         const newEntity = await createMutation.mutate({
-          type: config.source,
+          type: entityType,
           properties: properties as Record<PropertyName, PropertyInput>,
         });
         onSubmit?.(newEntity);

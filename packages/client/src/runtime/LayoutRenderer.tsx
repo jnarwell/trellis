@@ -385,6 +385,7 @@ function StackLayoutRenderer({
     flexDirection: isVertical ? 'column' : 'row',
     gap,
     width: '100%',
+    overflow: 'hidden',
   };
 
   return (
@@ -588,9 +589,10 @@ function GridLayoutRenderer({
 
   const containerStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
     gap,
     width: '100%',
+    overflow: 'hidden',
   };
 
   return (
@@ -601,6 +603,8 @@ function GridLayoutRenderer({
             gridColumn: cell.colspan ? `span ${cell.colspan}` : undefined,
             gridRow: cell.rowspan ? `span ${cell.rowspan}` : undefined,
             minHeight: row.height,
+            minWidth: 0,
+            overflow: 'hidden',
           };
 
           return (
@@ -726,6 +730,8 @@ const blockListStyle: React.CSSProperties = {
 
 const stackItemStyle: React.CSSProperties = {
   flex: '0 0 auto',
+  minWidth: 0,
+  overflow: 'hidden',
 };
 
 const tabContentStyle: React.CSSProperties = {

@@ -209,6 +209,27 @@ export const PieChart: React.FC<PieChartProps> = ({
         {innerRadius > 0 && (
           <circle cx={cx} cy={cy} r={innerR} fill="var(--chart-bg, #ffffff)" />
         )}
+
+        {/* Segment labels */}
+        {slices.map((slice) => {
+          // Only show label if segment is large enough (>8%)
+          if (slice.percentage < 8) return null;
+          return (
+            <text
+              key={`label-${slice.index}`}
+              x={slice.labelX}
+              y={slice.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#ffffff"
+              fontSize="12"
+              fontWeight="600"
+              style={{ pointerEvents: 'none', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+            >
+              {slice.dataPoint.label}
+            </text>
+          );
+        })}
       </svg>
 
       {/* Tooltip */}

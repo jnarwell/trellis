@@ -84,8 +84,17 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Evaluate templates
-  const title = evaluateSimpleTemplate(config.title, entity);
+  // Evaluate templates. If the template doesn't resolve (empty or leftover
+  // ${...} placeholders), fall back to common display properties.
+  const evaluatedTitle = evaluateSimpleTemplate(config.title, entity);
+  const title =
+    evaluatedTitle && !evaluatedTitle.includes('${')
+      ? evaluatedTitle
+      : String(
+          getPropertyValue(entity, 'title' as PropertyName) ??
+            getPropertyValue(entity, 'name' as PropertyName) ??
+            ''
+        );
   const subtitle = config.subtitle
     ? evaluateSimpleTemplate(config.subtitle, entity)
     : null;

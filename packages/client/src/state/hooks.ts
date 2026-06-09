@@ -23,6 +23,7 @@ import type {
   GetEntityOptions,
   QueryOptions,
   SubscriptionFilter,
+  SortOption,
   PaginationInfo,
   QueryResult,
 } from '../sdk/types.js';
@@ -138,10 +139,18 @@ export function useQuery(
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
 
   const offsetRef = useRef(0);
+  const fetchRef = useRef<(append?: boolean) => Promise<void>>();
+
+  // Stabilize options to prevent infinite loops from inline objects
+  const skip = options.skip;
+  const filterJson = JSON.stringify(options.filter ?? null);
+  const sortJson = JSON.stringify(options.sort ?? null);
+  const limit = options.limit;
+  const includeTotal = options.includeTotal;
 
   const fetch = useCallback(
     async (append = false) => {
-      if (options.skip) {
+      if (skip) {
         setLoading(false);
         return;
       }
@@ -150,8 +159,9 @@ export function useQuery(
       let query = client.query(type);
 
       // Apply filters
-      if (options.filter) {
-        for (const [path, value] of Object.entries(options.filter)) {
+      const filter = JSON.parse(filterJson) as Record<string, unknown> | null;
+      if (filter) {
+        for (const [path, value] of Object.entries(filter)) {
           if (typeof value === 'object' && value !== null && 'operator' in value && 'value' in value) {
             const condition = value as { operator: FilterOperator; value: unknown };
             query = query.where(path, condition.operator, condition.value);
@@ -162,20 +172,21 @@ export function useQuery(
       }
 
       // Apply sorting
-      if (options.sort) {
-        query = query.orderByMultiple(options.sort);
+      const sort = JSON.parse(sortJson) as SortOption[] | null;
+      if (sort) {
+        query = query.orderByMultiple(sort);
       }
 
       // Apply pagination
-      if (options.limit) {
-        query = query.limit(options.limit);
+      if (limit) {
+        query = query.limit(limit);
       }
 
       if (append) {
         query = query.offset(offsetRef.current);
       }
 
-      if (options.includeTotal) {
+      if (includeTotal) {
         query = query.includeTotal();
       }
 
@@ -204,8 +215,11 @@ export function useQuery(
         setLoading(false);
       }
     },
-    [client, cache, type, options]
+    [client, cache, type, skip, filterJson, sortJson, limit, includeTotal]
   );
+
+  // Keep fetchRef updated with the latest fetch function
+  fetchRef.current = fetch;
 
   const refetch = useCallback(async () => {
     offsetRef.current = 0;
@@ -223,6 +237,22 @@ export function useQuery(
     offsetRef.current = 0;
     void fetch(false);
   }, [fetch]);
+
+  // Subscribe to cache invalidation for this type
+  // Use fetchRef to avoid re-subscribing when fetch changes
+  useEffect(() => {
+    if (skip) return;
+
+    const unsubscribe = cache.onInvalidate((invalidatedType) => {
+      if (invalidatedType === type) {
+        // Refetch when cache is invalidated for this type
+        offsetRef.current = 0;
+        void fetchRef.current?.(false);
+      }
+    });
+
+    return unsubscribe;
+  }, [cache, type, skip]);
 
   return { data, loading, error, pagination, refetch, fetchMore };
 }
@@ -322,7 +352,12 @@ export function useCreateEntity(): UseMutationResult<Entity, CreateEntityInput> 
       try {
         const entity = await client.createEntity(input);
         cache.setEntity(entity);
-        cache.invalidateQueriesForType(input.type);
+        // Fall back to the server-assigned type so listeners still refetch
+        // when the input omitted it.
+        const invalidationType = input.type ?? entity.type;
+        if (invalidationType) {
+          cache.invalidateQueriesForType(invalidationType);
+        }
         setData(entity);
         return entity;
       } catch (err) {
@@ -382,6 +417,11 @@ export function useUpdateEntity(): UseMutationResult<Entity, UpdateEntityInput> 
       try {
         const entity = await client.updateEntity(input);
         cache.setEntity(entity);
+        // Refresh type-level queries (lists, stats, charts) that include
+        // the updated entity.
+        if (entity.type) {
+          cache.invalidateQueriesForType(entity.type);
+        }
         setData(entity);
         return entity;
       } catch (err) {
@@ -408,18 +448,20 @@ export function useUpdateEntity(): UseMutationResult<Entity, UpdateEntityInput> 
  *
  * @example
  * ```tsx
- * function DeleteButton({ id }: { id: EntityId }) {
+ * function DeleteButton({ id, type }: { id: EntityId; type: string }) {
  *   const { mutate, loading } = useDeleteEntity();
  *
  *   return (
- *     <Button onClick={() => mutate(id)} disabled={loading}>
+ *     <Button onClick={() => mutate(id, type)} disabled={loading}>
  *       Delete
  *     </Button>
  *   );
  * }
  * ```
  */
-export function useDeleteEntity(): UseMutationResult<void, EntityId> {
+export function useDeleteEntity(): UseMutationResult<void, EntityId> & {
+  mutate: (id: EntityId, type?: string) => Promise<void>;
+} {
   const client = useClient();
   const cache = useCache();
 
@@ -428,13 +470,17 @@ export function useDeleteEntity(): UseMutationResult<void, EntityId> {
   const [data, setData] = useState<void | null>(null);
 
   const mutate = useCallback(
-    async (id: EntityId): Promise<void> => {
+    async (id: EntityId, type?: string): Promise<void> => {
       setLoading(true);
       setError(null);
 
       try {
         await client.deleteEntity(id);
         cache.invalidateEntity(id);
+        // Also invalidate queries for the type if provided
+        if (type) {
+          cache.invalidateQueriesForType(type);
+        }
         setData(undefined);
       } catch (err) {
         setError(err as KernelError);

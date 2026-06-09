@@ -56,7 +56,7 @@ interface QueryState {
  * ConnectedTableBlock wraps TableBlock with SDK data fetching.
  */
 export function ConnectedTableBlock({
-  config,
+  config: rawConfig,
   instanceId,
   className,
   onRowClick,
@@ -64,6 +64,13 @@ export function ConnectedTableBlock({
 }: ConnectedTableBlockProps): React.ReactElement {
   const blockContext = useOptionalBlockContext();
   const { toView } = useNavigation();
+
+  // Normalize raw YAML configs (entityType → source). Idempotent for
+  // already-normalized configs.
+  const config = useMemo(
+    () => buildTableBlockConfig(rawConfig as unknown as Record<string, unknown>),
+    [rawConfig]
+  );
 
   // Track query state internally
   const [queryState, setQueryState] = React.useState<QueryState>({

@@ -7,9 +7,31 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useOptionalBlockContext } from '../BlockProvider.js';
-import { BlockRenderer } from '../BlockRenderer.js';
+import { BlockRenderer, type BlockConfig } from '../BlockRenderer.js';
 import type { TabsBlockProps, TabsBlockEvent, TabConfig } from './types.js';
 import { styles, tabsTheme } from './styles.js';
+
+/**
+ * Normalize a block spec from YAML to BlockConfig format.
+ * Handles both { type, props } and { block, ... } formats.
+ */
+function normalizeBlockConfig(block: Record<string, unknown>): BlockConfig {
+  // If already has 'block' property, assume it's already normalized
+  if ('block' in block) {
+    return block as BlockConfig;
+  }
+
+  // Convert from { type, props, ... } to { block, ... }
+  const { type, props, ...rest } = block;
+  const blockType = (type as string) ?? 'unknown';
+  const blockProps = (props as Record<string, unknown>) ?? {};
+
+  return {
+    block: blockType,
+    ...rest,
+    ...blockProps,
+  };
+}
 
 // =============================================================================
 // STATE COMPONENTS
@@ -328,14 +350,17 @@ export const TabsBlock: React.FC<TabsBlockProps> = ({
             >
               {isActive && (
                 <>
-                  {(tab.blocks ?? []).map((block, index) => (
-                    <BlockRenderer
-                      key={block.id ?? `block-${index}`}
-                      config={block}
-                      wiring={blockContext.wiring}
-                      scope={blockContext.scope}
-                    />
-                  ))}
+                  {(tab.blocks ?? []).map((block, index) => {
+                    const normalizedConfig = normalizeBlockConfig(block as Record<string, unknown>);
+                    return (
+                      <BlockRenderer
+                        key={normalizedConfig.id ?? `block-${index}`}
+                        config={normalizedConfig}
+                        wiring={blockContext.wiring}
+                        scope={blockContext.scope}
+                      />
+                    );
+                  })}
                 </>
               )}
             </div>

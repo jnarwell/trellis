@@ -110,8 +110,9 @@ export function ConnectedKanbanBlock({
   }
 
   // Build card config - required by KanbanBlockProps
-  // Default to using entity name if not specified
-  const card = (normalizedConfig.card as KanbanCardConfig | undefined) ?? { title: '${$entity.name}' };
+  // Default matches KanbanBlock's own default; KanbanCard falls back to
+  // title/name when the template doesn't resolve.
+  const card = (normalizedConfig.card as KanbanCardConfig | undefined) ?? { title: '${title}' };
 
   // Build props conditionally for exactOptionalPropertyTypes
   const props: {
@@ -154,8 +155,8 @@ export function buildKanbanBlockProps(
     return null;
   }
 
-  // card is required - default to entity name if not specified
-  const card = (normalized.card as KanbanCardConfig | undefined) ?? { title: '${$entity.name}' };
+  // card is required - default matches KanbanBlock's own default
+  const card = (normalized.card as KanbanCardConfig | undefined) ?? { title: '${title}' };
 
   const result: Omit<KanbanBlockProps, 'onEvent' | 'className'> = {
     source: normalized.source,

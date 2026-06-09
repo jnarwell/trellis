@@ -34,6 +34,11 @@ const LazyModalBlock = React.lazy(() =>
   import('./modal/index.js').then((m) => ({ default: m.ModalBlock }))
 );
 
+// Lazy-loaded CardBlock that can render nested blocks
+const LazyCardBlock = React.lazy(() =>
+  import('./CardBlock.js').then((m) => ({ default: m.CardBlock }))
+);
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -57,6 +62,38 @@ export type BlockRegistryMap = Record<string, ComponentType<any>>;
 // REGISTRY
 // =============================================================================
 
+// =============================================================================
+// SIMPLE PRESENTATIONAL BLOCKS
+// =============================================================================
+
+/**
+ * Simple page header block.
+ */
+function PageHeaderBlock({ config }: { config: Record<string, unknown> }): React.ReactElement {
+  const title = (config['title'] as string) ?? 'Page Title';
+  const subtitle = config['subtitle'] as string | undefined;
+
+  return (
+    <div style={{ marginBottom: '1.5rem' }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0, color: '#111827' }}>
+        {title}
+      </h1>
+      {subtitle && (
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0.25rem 0 0' }}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// CardBlock is lazy-loaded above to handle nested blocks
+
+/**
+ * Dashboard widget / stats block (alias for StatsBlock).
+ */
+const DashboardWidgetBlock = StatsBlock;
+
 /**
  * Default block registry with all built-in blocks.
  */
@@ -76,12 +113,16 @@ export const BlockRegistry: BlockRegistryMap = {
   chart: ChartBlock,
   'file-uploader': FileUploaderBlock,
   'file-viewer': FileViewerBlock,
+  'page-header': PageHeaderBlock,
+  card: LazyCardBlock, // Lazy-loaded to handle nested blocks
+  'dashboard-widget': DashboardWidgetBlock,
 
   // Qualified names (trellis namespace)
   'trellis.data-table': TableBlock,
   'trellis.property-editor': FormBlock,
   'trellis.detail-view': DetailBlock,
   'trellis.kanban-board': KanbanBlock,
+  'trellis.kanban': KanbanBlock, // Alias
   'trellis.stats': StatsBlock,
   'trellis.calendar': CalendarBlock,
   'trellis.timeline': TimelineBlock,
@@ -92,6 +133,11 @@ export const BlockRegistry: BlockRegistryMap = {
   'trellis.chart': ChartBlock,
   'trellis.file-uploader': FileUploaderBlock,
   'trellis.file-viewer': FileViewerBlock,
+  'trellis.form': FormBlock, // Alias
+  'trellis.detail': DetailBlock, // Alias
+  'trellis.page-header': PageHeaderBlock,
+  'trellis.card': LazyCardBlock, // Lazy-loaded to handle nested blocks
+  'trellis.dashboard-widget': DashboardWidgetBlock,
 };
 
 /**

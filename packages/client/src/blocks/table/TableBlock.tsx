@@ -10,6 +10,8 @@ import type { Entity, EntityId, BlockInstanceId } from '@trellis/kernel';
 import type { TableBlockProps, TableBlockConfig } from './types.js';
 import type { ActionConfig } from '../types.js';
 import { useTableState } from './hooks.js';
+import { useDeleteEntity } from '../../state/hooks.js';
+import { useNavigation } from '../../runtime/NavigationProvider.js';
 import { TableHeader } from './TableHeader.js';
 import { TableRow } from './TableRow.js';
 import { TablePagination } from './TablePagination.js';
@@ -134,6 +136,12 @@ export const TableBlock: React.FC<TableBlockProps> = ({
   error: externalError,
   totalCount: externalTotalCount,
 }) => {
+  // Navigation for edit action
+  const { toView } = useNavigation();
+
+  // Delete mutation
+  const { mutate: deleteEntity, loading: deleteLoading } = useDeleteEntity();
+
   // Initialize table state
   const {
     state,
@@ -174,13 +182,36 @@ export const TableBlock: React.FC<TableBlockProps> = ({
     [config.onRowClick, config.selectable, toggleRow, onRowClick]
   );
 
+  // Get entity type from config (could be source or entityType depending on config format)
+  const entityType = config.source || (config as unknown as { entityType?: string }).entityType;
+
   // Handle action click
   const handleAction = useCallback(
-    (action: ActionConfig, entity: Entity) => {
-      // In a full implementation, this would emit an event through the wiring system
-      console.log('Action clicked:', action.label, 'on entity:', entity.id);
+    async (action: ActionConfig, entity: Entity) => {
+      if (action.type === 'delete') {
+        // Confirm if action requires confirmation
+        if (action.confirm) {
+          const titleProp = entity.properties['title' as keyof typeof entity.properties] as
+            | { value?: { value?: unknown } }
+            | undefined;
+          const displayName = titleProp?.value?.value ?? entity.id;
+          const confirmed = window.confirm(`Delete "${String(displayName)}"?`);
+          if (!confirmed) return;
+        }
+        try {
+          await deleteEntity(entity.id, entityType);
+        } catch (err) {
+          console.error('Failed to delete entity:', err);
+        }
+      } else if (action.type === 'edit') {
+        // Navigate to edit view with entity ID
+        toView('edit', { id: entity.id });
+      } else {
+        // In a full implementation, this would emit an event through the wiring system
+        console.log('Action clicked:', action.label, 'on entity:', entity.id);
+      }
     },
-    []
+    [deleteEntity, entityType, toView]
   );
 
   // Handle select all

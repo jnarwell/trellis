@@ -24,6 +24,11 @@ function createQueryKey(type: string | undefined, filter: unknown): string {
 }
 
 /**
+ * Callback for cache invalidation events.
+ */
+export type CacheInvalidationCallback = (type: string) => void;
+
+/**
  * Entity cache with LRU eviction and TTL.
  */
 export class EntityCache {
@@ -31,9 +36,27 @@ export class EntityCache {
   private readonly entities = new Map<string, CacheEntry<Entity>>();
   private readonly queries = new Map<string, CacheEntry<QueryResult<Entity>>>();
   private readonly accessOrder: string[] = [];
+  private readonly invalidationListeners = new Set<CacheInvalidationCallback>();
 
   constructor(config: CacheConfig = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+  }
+
+  /**
+   * Subscribe to cache invalidation events.
+   */
+  onInvalidate(callback: CacheInvalidationCallback): () => void {
+    this.invalidationListeners.add(callback);
+    return () => this.invalidationListeners.delete(callback);
+  }
+
+  /**
+   * Notify listeners of invalidation.
+   */
+  private notifyInvalidation(type: string): void {
+    for (const listener of this.invalidationListeners) {
+      listener(type);
+    }
   }
 
   /**
@@ -169,6 +192,8 @@ export class EntityCache {
         this.queries.delete(key);
       }
     }
+    // Notify listeners so they can refetch
+    this.notifyInvalidation(type);
   }
 
   // ===========================================================================
