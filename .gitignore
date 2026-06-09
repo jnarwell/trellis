@@ -1,6 +1,8 @@
 # OS
 .DS_Store
 Thumbs.db
+# Windows reserved-name artifact (created by accidental `> nul` redirects)
+nul
 
 # IDE
 .idea/
