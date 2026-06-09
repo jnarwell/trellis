@@ -1,7 +1,7 @@
 # Trellis - Current State
 
-**Last Updated:** 2026-01-11
-**Status:** Phase 2.7 Complete - Full CRUD Demo
+**Last Updated:** 2026-06-09
+**Status:** Phase 2.8 In Progress - General-Purpose Runtime + Kitchen-Sink Demo working; production hardening next
 
 ---
 
@@ -661,11 +661,42 @@ pnpm dev
 # Browser: http://localhost:5173
 ```
 
-### Phase 2.8: Production (Next)
+### Phase 2.8: General-Purpose Runtime + Demo Infrastructure (In Progress)
+
+#### Runtime Infrastructure (committed 2026-01-14)
+- [x] `LayoutRenderer` - recursive layouts (single/split/stack/tabs/grid)
+- [x] `DynamicProductApp` - loads any product config from the API at runtime
+- [x] `GET /config/products[/:id]` server routes (flat `products/*.yaml` contract)
+- [x] 10 new block types (calendar, chart, comments, file-uploader, file-viewer, modal, stats, tabs, timeline, tree)
+- [x] Connected wrappers for all 14 block types (config normalization + SDK wiring)
+
+#### Kitchen-Sink Demo (2026-06-09)
+- [x] **Zero-dependency demo mode**: `pnpm --filter @trellis/client dev` runs the
+      kitchen-sink product against an in-memory mock API
+      (`packages/client/dev/mock-api-plugin.ts` + `entity-store.ts`), seeded from
+      `products/kitchen-sink/seed/*.json`. `TRELLIS_API=real` switches to proxying
+      a real server. See [RUNNING.md](./RUNNING.md).
+- [x] All 14 block types render on one config-driven dashboard
+- [x] Full CRUD verified in-browser: create/edit/delete/kanban-drag all propagate
+
+#### Bug Fixes (2026-06-09)
+| Bug | Fix |
+|-----|-----|
+| Blocks didn't refresh after mutations | Cache invalidation bus: `useQuery` subscribes via `cache.onInvalidate`; create/update/delete invalidate by entity type |
+| `trellis.form` / `trellis.kanban` / `trellis.detail` rendered un-wired | Added missing aliases to `getConnectedBlock` (BlockRenderer) |
+| FormBlock created entities with `type: undefined` | Normalizes `source ?? entityType`, guards when both missing |
+| ConnectedTableBlock queried `type: undefined` for raw YAML configs | Normalizes via `buildTableBlockConfig` internally |
+| Kanban cards showed "Untitled" | Connected default card template fixed to `${title}`; KanbanCard falls back to title/name |
+| `useUpdateEntity` didn't refresh lists/stats | Invalidates type queries from the updated entity |
+| Mock API returned `type_path` | Real server maps DB `type_path` → API `type`; mock + seeds now match |
+| Builds picked up tailwind postcss config from a parent directory | Empty `postcss.config.mjs` firewall at repo root (now documented) |
+
+### Phase 2.9: Production (Next)
 - [ ] Permission system (role-based access control)
 - [ ] Audit log UI (query event store)
 - [ ] Deployment configuration
 - [ ] Performance optimization
+- [ ] WebSocket support in mock dev API (real-time demo without backend)
 
 ### Future Phases
 - Multi-region support

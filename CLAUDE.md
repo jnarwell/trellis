@@ -2,20 +2,28 @@
 
 ## What is Trellis?
 
-A universal enterprise data platform for product and process data. Event-sourced architecture where entities hold properties and relate to each other through typed relationships. Currently in **specification phase** - no implementation code exists yet.
+A universal enterprise data platform for product and process data. Event-sourced architecture where entities hold properties and relate to each other through typed relationships. Any enterprise tool (PLM, CRM, ticketing) is defined purely as YAML configuration that the runtime renders into a working app.
 
 ## Project Status
 
-- **Phase**: Kernel Specification (specs complete, no implementation)
+- **Phase**: 2.8 — working full-stack implementation; production hardening next (see [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md))
+- **Implemented**: kernel (expression engine, block runtime), Fastify API (entities/relationships/queries/events, JWT, WebSockets), client SDK + React blocks (14 block types), product loader CLI, config-driven runtime (`DynamicProductApp`), demo products
+- **Tests**: 827 passing (kernel 134, server 423, client 270)
+- **Run the demo** (zero dependencies): `pnpm --filter @trellis/client dev` → http://localhost:5173 — see [docs/RUNNING.md](docs/RUNNING.md)
 - **Tech Stack**: TypeScript + Fastify + Prisma + React + PostgreSQL
 
 ## Where Things Are
 
 | Need | Location |
 |------|----------|
-| Type definitions | [specs/kernel/01-types.ts](specs/kernel/01-types.ts) |
-| Database schema | [specs/kernel/02-schema.sql](specs/kernel/02-schema.sql) |
-| API contract | [specs/kernel/03-api.md](specs/kernel/03-api.md) |
+| Implementation packages | `packages/` (kernel, server, client, shared) |
+| Demo products + seed data | `products/` (kitchen-sink, plm-demo) |
+| Mock dev API (demo mode) | [packages/client/dev/mock-api-plugin.ts](packages/client/dev/mock-api-plugin.ts) |
+| How to run locally | [docs/RUNNING.md](docs/RUNNING.md) |
+| Project status | [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) |
+| Type definitions (spec) | [specs/kernel/01-types.ts](specs/kernel/01-types.ts) |
+| Database schema (spec) | [specs/kernel/02-schema.sql](specs/kernel/02-schema.sql) |
+| API contract (spec) | [specs/kernel/03-api.md](specs/kernel/03-api.md) |
 | Query patterns | [specs/kernel/05-queries.md](specs/kernel/05-queries.md) |
 | Expression engine | [specs/kernel/06-expressions.md](specs/kernel/06-expressions.md) |
 | **Expression systems** | [specs/EXPRESSION-SYSTEMS.md](specs/EXPRESSION-SYSTEMS.md) |
