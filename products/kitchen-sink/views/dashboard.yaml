@@ -1,0 +1,599 @@
+# Kitchen Sink Dashboard - All 14 Blocks Interconnected
+# Demonstrates how all block types work together through wiring
+
+id: dashboard
+name: Kitchen Sink Demo
+description: All blocks connected - select items to see updates across all views
+route: /
+
+# Shared scope for block communication
+scope:
+  selectedItemId: null
+  filterStatus: null
+  filterParentId: null
+
+layout:
+  type: stack
+  direction: vertical
+  gap: 16px
+  blocks:
+    # =================================================================
+    # ROW 1: Page Header
+    # =================================================================
+    - type: trellis.page-header
+      id: page-header
+      props:
+        title: Kitchen Sink Demo
+        subtitle: All 14 blocks interconnected
+
+    # =================================================================
+    # ROW 2: Stats Cards (Block 1: Stats)
+    # =================================================================
+    - type: trellis.card
+      props:
+        padding: none
+      slots:
+        content:
+          - type: trellis.dashboard-widget
+            id: stats
+            props:
+              layout: grid
+              columns: 4
+              widgets:
+                - id: total
+                  label: Total Items
+                  icon: clipboard-list
+                  value:
+                    query:
+                      entityType: work_item
+                      aggregate: count
+                  color: blue
+
+                - id: in-progress
+                  label: In Progress
+                  icon: loader
+                  value:
+                    query:
+                      entityType: work_item
+                      filter: "#status == 'in_progress'"
+                      aggregate: count
+                  color: yellow
+
+                - id: review
+                  label: In Review
+                  icon: eye
+                  value:
+                    query:
+                      entityType: work_item
+                      filter: "#status == 'review'"
+                      aggregate: count
+                  color: purple
+
+                - id: done
+                  label: Completed
+                  icon: check-circle
+                  value:
+                    query:
+                      entityType: work_item
+                      filter: "#status == 'done'"
+                      aggregate: count
+                  color: green
+
+    # =================================================================
+    # ROW 3: Main Content - Tree + Tabs (Table/Kanban/Calendar)
+    # =================================================================
+    - type: trellis.grid
+      props:
+        columns: "1fr 3fr"
+        gap: 16px
+      slots:
+        content:
+          # Left Column: Tree View (Block 2: Tree)
+          - type: trellis.card
+            props:
+              title: Hierarchy
+              padding: small
+            slots:
+              content:
+                - type: trellis.tree-view
+                  id: tree
+                  props:
+                    entityType: work_item
+                    parentProperty: parent
+                    labelProperty: title
+                    expandedByDefault: true
+
+          # Right Column: Tabs with Table/Kanban/Calendar
+          - type: trellis.tabs
+            id: main-tabs
+            props:
+              tabs:
+                # Tab 1: Data Table (Block 3: Table)
+                - id: table-tab
+                  label: Table View
+                  icon: table
+
+                # Tab 2: Kanban Board (Block 4: Kanban)
+                - id: kanban-tab
+                  label: Kanban
+                  icon: columns
+
+                # Tab 3: Calendar (Block 5: Calendar)
+                - id: calendar-tab
+                  label: Calendar
+                  icon: calendar
+
+            slots:
+              table-tab:
+                - type: trellis.data-table
+                  id: items-table
+                  props:
+                    entityType: work_item
+                    columns:
+                      - property: title
+                        label: Title
+                        sortable: true
+                      - property: status
+                        label: Status
+                        width: 120
+                      - property: priority
+                        label: Priority
+                        width: 100
+                      - property: due_date
+                        label: Due Date
+                        width: 120
+                        format: date
+                      - property: assignee
+                        label: Assignee
+                        width: 120
+                      - property: progress
+                        label: Progress
+                        width: 100
+                    sort:
+                      - property: due_date
+                        direction: asc
+                    pageSize: 10
+                    searchable: true
+                    selectable: true
+
+              kanban-tab:
+                - type: trellis.kanban
+                  id: kanban
+                  props:
+                    entityType: work_item
+                    statusProperty: status
+                    columns:
+                      - value: backlog
+                        label: Backlog
+                        color: gray
+                      - value: todo
+                        label: To Do
+                        color: blue
+                      - value: in_progress
+                        label: In Progress
+                        color: yellow
+                      - value: review
+                        label: Review
+                        color: purple
+                      - value: done
+                        label: Done
+                        color: green
+                    cardTitle: title
+                    cardSubtitle: assignee
+                    cardBadges:
+                      - property: priority
+
+              calendar-tab:
+                - type: trellis.calendar
+                  id: calendar
+                  props:
+                    entityType: work_item
+                    dateProperty: due_date
+                    labelProperty: title
+                    colorProperty: priority
+
+    # =================================================================
+    # ROW 4: Detail + Chart
+    # =================================================================
+    - type: trellis.grid
+      props:
+        columns: "1fr 1fr"
+        gap: 16px
+      slots:
+        content:
+          # Left: Detail View (Block 6: Detail)
+          - type: trellis.card
+            props:
+              title: Item Details
+            slots:
+              content:
+                - type: trellis.detail
+                  id: detail
+                  props:
+                    entityType: work_item
+                    entityId: $scope.selectedItemId
+                    sections:
+                      - name: Overview
+                        properties:
+                          - title
+                          - description
+                          - status
+                          - priority
+                      - name: Schedule
+                        properties:
+                          - due_date
+                          - estimated_hours
+                          - actual_hours
+                          - progress
+                      - name: Assignment
+                        properties:
+                          - assignee
+                          - parent
+                          - tags
+                    actions:
+                      - label: Edit
+                        icon: pencil
+                        action: edit
+                      - label: Delete
+                        icon: trash
+                        action: delete
+                        variant: danger
+
+          # Right: Chart (Block 7: Chart)
+          - type: trellis.card
+            props:
+              title: Status Distribution
+            slots:
+              content:
+                - type: trellis.chart
+                  id: status-chart
+                  props:
+                    type: doughnut
+                    entityType: work_item
+                    groupBy: status
+                    aggregate: count
+                    colors:
+                      backlog: "#9CA3AF"
+                      todo: "#3B82F6"
+                      in_progress: "#F59E0B"
+                      review: "#8B5CF6"
+                      done: "#10B981"
+
+    # =================================================================
+    # ROW 5: Timeline + Comments
+    # =================================================================
+    - type: trellis.grid
+      props:
+        columns: "1fr 1fr"
+        gap: 16px
+      slots:
+        content:
+          # Left: Timeline (Block 8: Timeline)
+          - type: trellis.card
+            props:
+              title: Activity Timeline
+            slots:
+              content:
+                - type: trellis.timeline
+                  id: timeline
+                  props:
+                    entityType: work_item
+                    timestampProperty: created_at
+                    titleProperty: title
+                    subtitleProperty: status
+                    limit: 10
+
+          # Right: Comments (Block 9: Comments)
+          - type: trellis.card
+            props:
+              title: Comments
+            slots:
+              content:
+                - type: trellis.comments
+                  id: comments
+                  props:
+                    entityId: $scope.selectedItemId
+                    entityType: work_item
+                    allowReply: true
+
+    # =================================================================
+    # ROW 6: Files
+    # =================================================================
+    - type: trellis.grid
+      props:
+        columns: "1fr 1fr"
+        gap: 16px
+      slots:
+        content:
+          # Left: File Uploader (Block 10: FileUploader)
+          - type: trellis.card
+            props:
+              title: Upload Files
+            slots:
+              content:
+                - type: trellis.file-uploader
+                  id: uploader
+                  props:
+                    entityId: $scope.selectedItemId
+                    accept: "*/*"
+                    maxSize: 10485760
+                    multiple: true
+
+          # Right: File Viewer (Block 11: FileViewer)
+          - type: trellis.card
+            props:
+              title: Attachments
+            slots:
+              content:
+                - type: trellis.file-viewer
+                  id: file-viewer
+                  props:
+                    entityId: $scope.selectedItemId
+                    showPreview: true
+
+    # =================================================================
+    # ROW 7: Form in a Card (Block 12: Form)
+    # =================================================================
+    - type: trellis.card
+      props:
+        title: Quick Create / Edit
+        collapsed: true
+        collapsible: true
+      slots:
+        content:
+          - type: trellis.form
+            id: edit-form
+            props:
+              entityType: work_item
+              entityId: $scope.selectedItemId
+              mode: auto
+              fields:
+                - property: title
+                  required: true
+                - property: description
+                  widget: textarea
+                - property: status
+                - property: priority
+                - property: due_date
+                - property: assignee
+                - property: estimated_hours
+                - property: tags
+              actions:
+                - label: Save
+                  action: submit
+                  variant: primary
+                - label: Cancel
+                  action: reset
+                  variant: secondary
+
+    # =================================================================
+    # MODAL (Block 13: Modal + Block 14: Form inside)
+    # =================================================================
+    - type: trellis.modal
+      id: edit-modal
+      props:
+        title: Edit Work Item
+        size: large
+      slots:
+        content:
+          - type: trellis.form
+            id: modal-form
+            props:
+              entityType: work_item
+              entityId: $scope.selectedItemId
+              mode: edit
+
+# =================================================================
+# WIRING - How all blocks communicate
+# =================================================================
+wiring:
+  # --- Tree Selection ---
+  # Tree node selected -> update scope filter
+  - from: tree
+    event: nodeSelected
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ filterParentId: payload.entityId }"
+
+  # --- Table Selection ---
+  # Table row clicked -> set selected item ID
+  - from: items-table
+    event: rowClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ selectedItemId: payload.entityId }"
+
+  # Table row selected (checkbox) -> set selected item ID
+  - from: items-table
+    event: rowSelected
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ selectedItemId: payload.entityId }"
+
+  # --- Kanban Card Selection ---
+  # Kanban card clicked -> set selected item
+  - from: kanban
+    event: cardClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ selectedItemId: payload.entityId }"
+
+  # Kanban card moved -> refresh stats and chart
+  - from: kanban
+    event: cardMoved
+    to: stats
+    receiver: refresh
+
+  - from: kanban
+    event: cardMoved
+    to: status-chart
+    receiver: refresh
+
+  - from: kanban
+    event: cardMoved
+    to: items-table
+    receiver: refresh
+
+  # --- Calendar Selection ---
+  # Calendar event clicked -> set selected item
+  - from: calendar
+    event: eventClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ selectedItemId: payload.entityId }"
+
+  # --- Timeline Selection ---
+  # Timeline item clicked -> set selected item
+  - from: timeline
+    event: itemClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ selectedItemId: payload.entityId }"
+
+  # --- Chart Interaction ---
+  # Chart segment clicked -> filter table by status
+  - from: status-chart
+    event: segmentClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ filterStatus: payload.value }"
+
+  # --- Stats Interaction ---
+  # Stats card clicked -> filter based on stat
+  - from: stats
+    event: statClicked
+    to: $scope
+    receiver: set
+    transform:
+      kind: expression
+      expr: "{ filterStatus: payload.filterId }"
+
+  # --- Detail Actions ---
+  # Detail edit button -> open modal
+  - from: detail
+    event: actionClicked
+    to: edit-modal
+    receiver: open
+    condition: "payload.action == 'edit'"
+
+  # Detail delete -> confirm and refresh
+  - from: detail
+    event: entityDeleted
+    to: items-table
+    receiver: refresh
+
+  - from: detail
+    event: entityDeleted
+    to: kanban
+    receiver: refresh
+
+  - from: detail
+    event: entityDeleted
+    to: stats
+    receiver: refresh
+
+  - from: detail
+    event: entityDeleted
+    to: status-chart
+    receiver: refresh
+
+  # --- Form Submission ---
+  # Form submitted -> close modal and refresh all data views
+  - from: modal-form
+    event: submitted
+    to: edit-modal
+    receiver: close
+
+  - from: modal-form
+    event: submitted
+    to: items-table
+    receiver: refresh
+
+  - from: modal-form
+    event: submitted
+    to: kanban
+    receiver: refresh
+
+  - from: modal-form
+    event: submitted
+    to: stats
+    receiver: refresh
+
+  - from: modal-form
+    event: submitted
+    to: status-chart
+    receiver: refresh
+
+  - from: modal-form
+    event: submitted
+    to: detail
+    receiver: refresh
+
+  # Form cancelled -> close modal
+  - from: modal-form
+    event: cancelled
+    to: edit-modal
+    receiver: close
+
+  # Inline form submitted -> refresh views
+  - from: edit-form
+    event: submitted
+    to: items-table
+    receiver: refresh
+
+  - from: edit-form
+    event: submitted
+    to: kanban
+    receiver: refresh
+
+  - from: edit-form
+    event: submitted
+    to: stats
+    receiver: refresh
+
+  - from: edit-form
+    event: submitted
+    to: status-chart
+    receiver: refresh
+
+  # --- File Operations ---
+  # File uploaded -> refresh file viewer
+  - from: uploader
+    event: uploadComplete
+    to: file-viewer
+    receiver: refresh
+
+  # --- Comment Operations ---
+  # Comment created -> refresh timeline
+  - from: comments
+    event: commentCreated
+    to: timeline
+    receiver: refresh
+
+  # --- Navigation from Table ---
+  # Double-click table row -> navigate to detail page
+  - from: items-table
+    event: rowDoubleClicked
+    to: $navigate
+    receiver: push
+    transform:
+      kind: expression
+      expr: "{ path: '/items/' + payload.entityId }"
+
+meta:
+  title: Kitchen Sink Demo
+  description: All 14 block types working together

@@ -1,0 +1,250 @@
+# Work Item Entity Definition
+# Universal entity designed to support ALL block types in the kitchen sink demo
+
+id: work_item
+name: Work Item
+description: A flexible work item that demonstrates all property types and block interactions
+icon: clipboard-list
+
+properties:
+  # Basic text properties (Table, Detail, Form)
+  - name: title
+    label: Title
+    type: text
+    required: true
+    validation:
+      maxLength: 200
+    ui:
+      placeholder: "Enter work item title"
+
+  - name: description
+    label: Description
+    type:
+      type: text
+      maxLength: 4000
+    ui:
+      widget: textarea
+      helpText: "Detailed description of this work item"
+
+  # Status enum (Kanban columns)
+  - name: status
+    label: Status
+    type:
+      type: option
+      options:
+        - value: backlog
+          label: Backlog
+          color: gray
+          icon: inbox
+        - value: todo
+          label: To Do
+          color: blue
+          icon: circle
+        - value: in_progress
+          label: In Progress
+          color: yellow
+          icon: loader
+        - value: review
+          label: Review
+          color: purple
+          icon: eye
+        - value: done
+          label: Done
+          color: green
+          icon: check-circle
+    default: backlog
+
+  # Priority enum (Stats grouping, badges)
+  - name: priority
+    label: Priority
+    type:
+      type: option
+      options:
+        - value: low
+          label: Low
+          color: gray
+          icon: arrow-down
+        - value: medium
+          label: Medium
+          color: blue
+          icon: minus
+        - value: high
+          label: High
+          color: orange
+          icon: arrow-up
+        - value: critical
+          label: Critical
+          color: red
+          icon: alert-triangle
+    default: medium
+
+  # Datetime property (Calendar events)
+  - name: due_date
+    label: Due Date
+    type: datetime
+    ui:
+      widget: date-picker
+      helpText: "When this item should be completed"
+
+  # Number properties (Chart data)
+  - name: estimated_hours
+    label: Estimated Hours
+    type:
+      type: number
+      min: 0
+      max: 1000
+    default: 0
+    ui:
+      helpText: "Estimated hours to complete"
+
+  - name: actual_hours
+    label: Actual Hours
+    type:
+      type: number
+      min: 0
+      max: 1000
+    default: 0
+    ui:
+      helpText: "Actual hours spent"
+
+  # Text property for assignment
+  - name: assignee
+    label: Assignee
+    type: text
+    ui:
+      placeholder: "Person responsible"
+
+  # Self-reference (Tree hierarchy)
+  - name: parent
+    label: Parent Item
+    type:
+      type: reference
+      entityType: work_item
+      displayProperty: title
+    description: "Parent work item for hierarchical organization"
+
+  # List property (Badges, tags)
+  - name: tags
+    label: Tags
+    type:
+      type: list
+      element: text
+    ui:
+      helpText: "Add tags for categorization"
+
+# Computed properties demonstrating Expression Engine
+computed:
+  - name: progress
+    label: Progress %
+    expression: "IF(@self.estimated_hours > 0, ROUND(MIN(@self.actual_hours / @self.estimated_hours * 100, 100), 0), 0)"
+    description: "Percentage of estimated time used"
+
+  - name: is_overdue
+    label: Is Overdue
+    expression: "IF(@self.due_date != null && @self.status != 'done', @self.due_date < NOW(), false)"
+    description: "Whether the item is past due date"
+
+  - name: remaining_hours
+    label: Remaining Hours
+    expression: "MAX(@self.estimated_hours - @self.actual_hours, 0)"
+    description: "Hours remaining (cannot be negative)"
+
+# Lifecycle for status transitions
+lifecycle:
+  stateProperty: status
+  initialState: backlog
+
+  states:
+    - value: backlog
+      label: Backlog
+      color: gray
+      editable: true
+      deletable: true
+
+    - value: todo
+      label: To Do
+      color: blue
+      editable: true
+      deletable: true
+
+    - value: in_progress
+      label: In Progress
+      color: yellow
+      editable: true
+      deletable: false
+
+    - value: review
+      label: Review
+      color: purple
+      editable: true
+      deletable: false
+
+    - value: done
+      label: Done
+      color: green
+      editable: false
+      deletable: false
+
+  transitions:
+    - from: backlog
+      to: todo
+      action: start_planning
+      label: Start Planning
+
+    - from: todo
+      to: in_progress
+      action: start_work
+      label: Start Work
+
+    - from: in_progress
+      to: review
+      action: submit_review
+      label: Submit for Review
+
+    - from: review
+      to: done
+      action: approve
+      label: Approve
+
+    - from: review
+      to: in_progress
+      action: request_changes
+      label: Request Changes
+
+    - from: done
+      to: in_progress
+      action: reopen
+      label: Reopen
+
+# UI configuration
+ui:
+  displayProperty: title
+  listProperties: [title, status, priority, due_date, assignee]
+  searchProperties: [title, description, assignee, tags]
+  groups:
+    - name: basic
+      label: Basic Information
+      properties: [title, description]
+    - name: status
+      label: Status & Priority
+      properties: [status, priority]
+    - name: schedule
+      label: Schedule
+      properties: [due_date, estimated_hours, actual_hours, progress]
+    - name: assignment
+      label: Assignment
+      properties: [assignee, parent, tags]
+
+# Indexes for performance
+indexes:
+  - name: status_priority
+    properties: [status, priority]
+
+  - name: due_date
+    properties: [due_date]
+
+  - name: parent
+    properties: [parent]
+
+  - name: assignee
+    properties: [assignee]

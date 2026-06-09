@@ -1,0 +1,52 @@
+# Kitchen Sink Demo Product
+# Demonstrates ALL block types interconnected in a single view
+
+id: kitchen-sink
+version: 1.0.0
+name: Kitchen Sink Demo
+description: |
+  A comprehensive demo showcasing all Trellis block types on a single page,
+  with full event wiring to demonstrate how blocks communicate with each other.
+
+defaultView: dashboard
+
+features:
+  - work-item-management
+  - file-attachments
+  - comments
+  - kanban-board
+  - calendar-view
+  - timeline-view
+
+requires:
+  platformVersion: ">=1.0.0"
+  blocks:
+    - trellis.data-table
+    - trellis.form-block
+    - trellis.detail-block
+    - trellis.kanban-block
+    - trellis.calendar-block
+    - trellis.timeline-block
+    - trellis.chart-block
+    - trellis.stats-block
+    - trellis.tree-view-block
+    - trellis.tabs-block
+    - trellis.modal-block
+    - trellis.comments-block
+    - trellis.file-uploader-block
+    - trellis.file-viewer-block
+    - trellis.page-header
+    - trellis.card
+
+settings:
+  locale: en-US
+  theme:
+    primaryColor: "#8b5cf6"
+    colorMode: system
+  branding:
+    titleTemplate: "{{page}} | Kitchen Sink Demo"
+
+includes:
+  entities: entities/*.yaml
+  views: views/*.yaml
+  navigation: navigation.yaml

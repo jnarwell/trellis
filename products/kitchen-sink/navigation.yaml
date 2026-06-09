@@ -1,0 +1,39 @@
+# Kitchen Sink Navigation
+# Simple single-page navigation
+
+id: kitchen-sink-nav
+
+items:
+  - id: dashboard
+    label: All Blocks Demo
+    icon: layout-dashboard
+    path: /
+    view: dashboard
+
+  - id: divider-1
+    type: divider
+
+  - id: about
+    label: About This Demo
+    icon: info-circle
+    action: showAbout
+    description: |
+      This demo showcases all 14 Trellis block types interconnected on a single page.
+
+      Blocks included:
+      - Stats Block (4 metric cards)
+      - Tree View Block (hierarchical navigation)
+      - Tabs Block (Table/Kanban/Calendar switching)
+      - Data Table Block (sortable, filterable list)
+      - Kanban Block (drag-drop status board)
+      - Calendar Block (date-based view)
+      - Detail Block (selected item info)
+      - Chart Block (status breakdown)
+      - Timeline Block (activity feed)
+      - Comments Block (discussion thread)
+      - File Uploader Block (attachment upload)
+      - File Viewer Block (attachment list)
+      - Modal Block (edit form popup)
+      - Form Block (create/edit forms)
+
+      Try clicking different items and watch how all blocks react!

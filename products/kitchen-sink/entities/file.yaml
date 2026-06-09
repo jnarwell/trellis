@@ -1,0 +1,80 @@
+# File Entity Definition
+# Represents file attachments for work items
+
+id: file
+name: File
+description: File attachment for work items
+icon: paperclip
+
+properties:
+  - name: name
+    label: File Name
+    type: text
+    required: true
+    validation:
+      maxLength: 255
+
+  - name: original_name
+    label: Original Name
+    type: text
+    description: "Original filename as uploaded"
+
+  - name: mime_type
+    label: MIME Type
+    type: text
+    description: "File content type (e.g., image/png, application/pdf)"
+
+  - name: size
+    label: Size (bytes)
+    type:
+      type: integer
+      min: 0
+
+  - name: storage_path
+    label: Storage Path
+    type: text
+    description: "Path to file in storage system"
+
+  - name: work_item
+    label: Work Item
+    type:
+      type: reference
+      entityType: work_item
+      displayProperty: title
+    required: true
+    description: "The work item this file is attached to"
+
+  - name: uploaded_by
+    label: Uploaded By
+    type: text
+
+computed:
+  - name: size_display
+    label: Display Size
+    expression: |
+      IF(@self.size < 1024, CONCAT(@self.size, ' B'),
+        IF(@self.size < 1048576, CONCAT(ROUND(@self.size / 1024, 1), ' KB'),
+          CONCAT(ROUND(@self.size / 1048576, 1), ' MB')))
+    description: "Human-readable file size"
+
+  - name: is_image
+    label: Is Image
+    expression: "STARTS_WITH(@self.mime_type, 'image/')"
+    description: "Whether this file is an image"
+
+  - name: is_document
+    label: Is Document
+    expression: |
+      @self.mime_type == 'application/pdf' ||
+      STARTS_WITH(@self.mime_type, 'application/vnd.') ||
+      STARTS_WITH(@self.mime_type, 'text/')
+    description: "Whether this file is a document"
+
+ui:
+  displayProperty: name
+  listProperties: [name, mime_type, size_display, uploaded_by]
+  searchProperties: [name, original_name]
+
+indexes:
+  - name: work_item
+    properties: [work_item]
