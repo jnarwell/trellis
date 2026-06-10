@@ -34,4 +34,6 @@ COPY --from=build /app /app
 COPY products /app/products
 
 EXPOSE 3000
-CMD ["sh", "-c", "node packages/server/dist/main.js serve \"$PRODUCT_FILE\" --port \"$PORT\""]
+# --host 0.0.0.0: the CLI defaults to localhost, which is unreachable from
+# outside the container
+CMD ["sh", "-c", "node packages/server/dist/main.js serve \"$PRODUCT_FILE\" --port \"$PORT\" --host 0.0.0.0"]

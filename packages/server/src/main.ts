@@ -6,6 +6,7 @@
 
 import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
+import { pathToFileURL } from 'node:url';
 import { createBlockRegistry, InMemoryBlockRegistry, asBlockType } from '@trellis/kernel';
 import type { BlockSpec, BlockCategory, BlockType } from '@trellis/kernel';
 import { runCli, type CliConfig } from './cli/index.js';
@@ -255,8 +256,12 @@ async function main(): Promise<void> {
   }
 }
 
-// Run if executed directly
-const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+// Run if executed directly. pathToFileURL handles Windows paths, where the
+// naive `file://${argv[1]}` comparison never matches (backslashes, drive
+// letters) and silently skipped the CLI.
+const isMainModule =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMainModule) {
   main().catch((err) => {
     console.error('Fatal error:', err);
