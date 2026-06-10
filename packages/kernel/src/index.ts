@@ -133,3 +133,6 @@ export type { PropertyStaleEvent as ExprPropertyStaleEvent } from './expressions
 
 // Re-export block system
 export * from './blocks/index.js';
+
+// Re-export auth (roles and permissions - ADR-012)
+export * from './auth/index.js';

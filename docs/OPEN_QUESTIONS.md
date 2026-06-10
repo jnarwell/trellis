@@ -2,7 +2,7 @@
 
 This document tracks unresolved architectural and design questions. When a question is resolved, move it to the "Resolved" section with a link to the relevant ADR or decision.
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-06-09
 
 ---
 
@@ -80,25 +80,6 @@ This document tracks unresolved architectural and design questions. When a quest
 - Reconnection handling
 - Message ordering guarantees
 - Proxy/firewall compatibility
-
----
-
-### OQ-005: Permission Model Granularity
-**Status:** Open
-**Priority:** High
-**Context:** How fine-grained should permissions be?
-
-**Options:**
-1. Role-based (RBAC) - Users have roles, roles have permissions
-2. Attribute-based (ABAC) - Rules based on entity attributes
-3. Hybrid - Roles with attribute conditions
-4. Per-entity ACLs - Explicit access control lists
-
-**Considerations:**
-- Enterprise customers expect fine control
-- Performance of permission checks
-- Complexity of administration
-- Audit requirements
 
 ---
 
@@ -201,6 +182,16 @@ This document tracks unresolved architectural and design questions. When a quest
 ---
 
 ## Resolved Questions
+
+### RQ-006: Permission Model Granularity (was OQ-005)
+**Resolved:** 2026-06-09
+**Decision:** RBAC with `resource.action` permission strings as the enforcement
+unit; roles are permission bundles expanded at token issuance. Whole-resource
+granularity now; ABAC/per-entity policies can layer on later through the same
+`hasPermission()` mediation point.
+**ADR:** [012-rbac-permissions.md](./adr/012-rbac-permissions.md)
+
+---
 
 ### RQ-005: Monorepo Package Structure
 **Resolved:** 2026-01-10
