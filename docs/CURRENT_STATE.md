@@ -715,13 +715,30 @@ pnpm dev
 - [x] Demo: mock API records `audit_event` entities on every mutation;
       kitchen-sink gains an Audit Log view + nav item (live-updating table)
 
-#### Deployment Configuration (2026-06-09)
+#### Deployment Configuration (2026-06-09, verified 2026-06-10)
 - [x] `deploy/server.Dockerfile` - multi-stage pnpm workspace build
 - [x] `deploy/client.Dockerfile` + `deploy/nginx.conf` - static SPA + /api proxy
 - [x] `docker-compose.yml` - postgres (schema auto-applied) + server + client
 - [x] `pnpm --filter @trellis/client build:app` - production SPA build (vite,
       117 kB gzipped)
-- [ ] Compose stack unverified end-to-end (no Docker daemon on this machine)
+- [x] **Compose stack verified end-to-end**: SPA CRUD against Postgres through
+      nginx, RBAC 403s, audit events recorded and queryable
+
+#### Bugs Found by Compose Verification (2026-06-10)
+| Bug | Fix |
+|-----|-----|
+| CLI never ran on Windows (`pnpm cli` silently exited) | `isMainModule` now uses `pathToFileURL` (main.ts) |
+| Images missed `tsconfig.base.json` → tsc fell back to ES5 | Dockerfiles copy it |
+| `serve` bound to localhost (unreachable in containers) | `--host 0.0.0.0` in CMD |
+| Container restarts failed ("entity type already exists") | `--force` in CMD |
+| Production mode + disabled login = SPA can't bootstrap | Compose defaults to dev auth (`TRELLIS_ENV=production` for IdP setups) |
+| Server block registry missing 12 block types → loader rejected valid products | Registry synced with the client registry |
+| Old kitchen-sink directory dashboard used `trellis.grid` as a block | Rewritten with valid layout/block structure |
+| `serve` never passed `productsDir` → config routes 404 | productPath threaded through; `PRODUCTS_DIR` override |
+| **Events were never persisted** (emitter never injected into services) | Shared emitter decorated on the app, injected in entity routes |
+| EventStore SQL referenced nonexistent `created_at` column | Aligned with the schema (`occurred_at` is canonical) |
+| Demo-default auth hardcoded a tenant that doesn't exist in fresh DBs | Resolved from the loaded product's tenant (cached, hardcoded fallback) |
+| Product loader fails on Windows with an empty error | Tracked as a follow-up task (path/glob handling) |
 
 ### Phase 2.10: Next
 - [ ] Demo login flow + WebSocket support in mock dev API (real-time demo

@@ -7,7 +7,8 @@ FROM node:20-alpine AS build
 RUN corepack enable
 WORKDIR /app
 
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+# tsconfig.base.json is the extends target for every package's tsconfig
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/kernel/package.json packages/kernel/
 COPY packages/shared/package.json packages/shared/
 COPY packages/server/package.json packages/server/

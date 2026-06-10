@@ -35,7 +35,11 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-trellis}@db:5432/trellis
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      NODE_ENV: production
+      # development enables demo-default auth so the SPA works without an
+      # identity provider. Set TRELLIS_ENV=production behind a real IdP --
+      # production mode requires JWTs on every request and disables the
+      # dev login endpoint.
+      NODE_ENV: ${TRELLIS_ENV:-development}
       PORT: 3000
       PRODUCT_FILE: ${PRODUCT_FILE:-/app/products/kitchen-sink/product.yaml}
     depends_on:

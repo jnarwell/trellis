@@ -151,9 +151,17 @@ docker compose up --build
 - `client`: built from [deploy/client.Dockerfile](../deploy/client.Dockerfile);
   nginx serves the SPA and proxies `/api` to the server
 
-Set `JWT_SECRET` and `POSTGRES_PASSWORD` in the environment for anything
-beyond local evaluation. Note: this stack was authored without a local Docker
-daemon available, so treat the first `docker compose up` as a verification run.
+The stack is verified end-to-end: SPA at :8080 runs full CRUD against
+Postgres through the nginx proxy, RBAC returns 403s for missing permissions,
+and every mutation lands in the audit log (`GET /api/events`).
+
+Configuration:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `TRELLIS_ENV` | `development` | Dev mode resolves demo auth from the loaded tenant so the SPA works without an IdP. Set `production` behind a real identity provider — every request then requires a JWT. |
+| `PRODUCT_FILE` | kitchen-sink | Product the server loads and serves |
+| `POSTGRES_PASSWORD`, `JWT_SECRET` | dev values | Set real values for anything beyond local evaluation |
 
 ## Storybook
 

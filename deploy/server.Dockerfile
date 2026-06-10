@@ -11,7 +11,8 @@ RUN corepack enable
 WORKDIR /app
 
 # Install dependencies first (cached while sources change)
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+# tsconfig.base.json is the extends target for every package's tsconfig
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/kernel/package.json packages/kernel/
 COPY packages/shared/package.json packages/shared/
 COPY packages/server/package.json packages/server/
@@ -35,5 +36,6 @@ COPY products /app/products
 
 EXPOSE 3000
 # --host 0.0.0.0: the CLI defaults to localhost, which is unreachable from
-# outside the container
-CMD ["sh", "-c", "node packages/server/dist/main.js serve \"$PRODUCT_FILE\" --port \"$PORT\" --host 0.0.0.0"]
+# outside the container.
+# --force: container restarts must reload product schemas idempotently.
+CMD ["sh", "-c", "node packages/server/dist/main.js serve \"$PRODUCT_FILE\" --port \"$PORT\" --host 0.0.0.0 --force"]
