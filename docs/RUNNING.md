@@ -45,7 +45,22 @@ http://localhost:5173/?product=kitchen-sink
 
 Everything works: create via the form, edit/delete from the table, drag kanban
 cards — all blocks refresh through the client cache-invalidation bus.
-Mutations persist until the dev server restarts.
+Mutations persist until the dev server restarts, and every mutation is
+recorded in the **Audit Log** view.
+
+### Demo RBAC
+
+Switch the demo identity with a query param (ADR-012):
+
+```
+http://localhost:5173/?role=admin    # everything (default)
+http://localhost:5173/?role=editor   # full CRUD
+http://localhost:5173/?role=viewer   # read-only: no create form, no Edit/Delete
+```
+
+Gating is driven by config: `showWhen: "$can('entity.create')"` on blocks and
+`permission: entity.delete` on table actions. The real server enforces the
+same permission strings via route guards.
 
 ### Demo architecture
 
@@ -119,6 +134,26 @@ TRELLIS_API=real pnpm dev
 | `GET /config/products/:id` | Get product config as JSON |
 | `POST /auth/login` | Get JWT tokens |
 | `POST /auth/refresh` | Refresh access token |
+
+## Docker Deployment
+
+A full-stack deployment is defined in [docker-compose.yml](../docker-compose.yml):
+
+```bash
+docker compose up --build
+# Client: http://localhost:8080   API: http://localhost:3000
+```
+
+- `db`: postgres:16 — the kernel schema (`packages/kernel/src/schema/migrations/`)
+  is applied automatically on first boot via the init mount
+- `server`: built from [deploy/server.Dockerfile](../deploy/server.Dockerfile);
+  loads `PRODUCT_FILE` (default kitchen-sink) and serves the API
+- `client`: built from [deploy/client.Dockerfile](../deploy/client.Dockerfile);
+  nginx serves the SPA and proxies `/api` to the server
+
+Set `JWT_SECRET` and `POSTGRES_PASSWORD` in the environment for anything
+beyond local evaluation. Note: this stack was authored without a local Docker
+daemon available, so treat the first `docker compose up` as a verification run.
 
 ## Storybook
 

@@ -1,7 +1,7 @@
 # Trellis - Current State
 
 **Last Updated:** 2026-06-09
-**Status:** Phase 2.8 In Progress - General-Purpose Runtime + Kitchen-Sink Demo working; production hardening next
+**Status:** Phase 2.9 In Progress - RBAC + audit log + deployment config landed; demo fully working
 
 ---
 
@@ -340,6 +340,7 @@ into a Trellis product at products/[name]/
 | [009](./adr/009-multi-tenancy.md) | Multi-tenancy at query layer | Accepted |
 | [010](./adr/010-optimistic-locking.md) | Optimistic locking for conflicts | Accepted |
 | [011](./adr/011-monorepo-structure.md) | Monorepo with pnpm workspaces | Accepted |
+| [012](./adr/012-rbac-permissions.md) | RBAC: permission strings enforce, roles bundle (resolves OQ-005) | Accepted |
 
 ---
 
@@ -691,12 +692,43 @@ pnpm dev
 | Mock API returned `type_path` | Real server maps DB `type_path` → API `type`; mock + seeds now match |
 | Builds picked up tailwind postcss config from a parent directory | Empty `postcss.config.mjs` firewall at repo root (now documented) |
 
-### Phase 2.9: Production (Next)
-- [ ] Permission system (role-based access control)
-- [ ] Audit log UI (query event store)
-- [ ] Deployment configuration
-- [ ] Performance optimization
-- [ ] WebSocket support in mock dev API (real-time demo without backend)
+### Phase 2.9: Production Hardening (In Progress)
+
+#### RBAC Permission System (2026-06-09, ADR-012)
+- [x] `@trellis/kernel` auth module: `resource.action` permission strings,
+      role bundles (admin/editor/viewer), `expandRoles`/`hasPermission`
+      (wildcard + `resource.*` prefix), shared by server, client, and demo
+- [x] Server enforcement: `requirePermission()` preHandlers on entity,
+      relationship, query, and event routes; roles expand to permissions at
+      token issuance (`POST /auth/login`); legacy dev headers accept role
+      names (`x-permissions: viewer`) and default to full access when absent
+- [x] Client: `$can()` uses kernel semantics; `showWhen` evaluated in
+      BlockRenderer; `ActionConfig.permission` filters table actions;
+      `DynamicProductApp` accepts a `user` for the binding scope
+- [x] Demo: `?role=admin|editor|viewer` switches identity — viewer sees no
+      create form and no Edit/Delete actions
+- [x] Tests: 14 kernel + 6 server enforcement tests (847 total passing)
+
+#### Audit Log (2026-06-09)
+- [x] `GET /events` route - tenant-scoped, filterable event-store reads
+      (guarded by `event.read`)
+- [x] Demo: mock API records `audit_event` entities on every mutation;
+      kitchen-sink gains an Audit Log view + nav item (live-updating table)
+
+#### Deployment Configuration (2026-06-09)
+- [x] `deploy/server.Dockerfile` - multi-stage pnpm workspace build
+- [x] `deploy/client.Dockerfile` + `deploy/nginx.conf` - static SPA + /api proxy
+- [x] `docker-compose.yml` - postgres (schema auto-applied) + server + client
+- [x] `pnpm --filter @trellis/client build:app` - production SPA build (vite,
+      117 kB gzipped)
+- [ ] Compose stack unverified end-to-end (no Docker daemon on this machine)
+
+### Phase 2.10: Next
+- [ ] Demo login flow + WebSocket support in mock dev API (real-time demo
+      without backend; requires demo auth so WS credentials exist)
+- [ ] Performance optimization (query batching, virtualized tables)
+- [ ] Tenant-configurable roles (move role bundles from code to database)
+- [ ] Per-entity / per-property permission granularity
 
 ### Future Phases
 - Multi-region support
