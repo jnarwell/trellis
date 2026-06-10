@@ -5,6 +5,8 @@
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Permissions } from '@trellis/kernel';
+import { requirePermission } from '../../middleware/permissions.js';
 import { deleteRelationship } from '../../services/relationship-service.js';
 import {
   RelationshipIdParams,
@@ -20,6 +22,7 @@ export function registerDeleteRelationshipRoute(app: FastifyInstance): void {
   }>(
     '/relationships/:id',
     {
+      preHandler: requirePermission(Permissions.RelationshipWrite),
       schema: {
         params: RelationshipIdParams,
         response: {

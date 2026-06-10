@@ -6,6 +6,8 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { EntityId, RelationshipType } from '@trellis/kernel';
+import { Permissions } from '@trellis/kernel';
+import { requirePermission } from '../../middleware/permissions.js';
 import { listRelationships } from '../../services/relationship-service.js';
 import {
   EntityIdParams,
@@ -25,6 +27,7 @@ export function registerListRelationshipsRoute(app: FastifyInstance): void {
   }>(
     '/entities/:id/relationships',
     {
+      preHandler: requirePermission(Permissions.RelationshipRead),
       schema: {
         params: EntityIdParams,
         querystring: ListRelationshipsQuery,

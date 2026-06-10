@@ -7,6 +7,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { TenantId, ActorId } from '@trellis/kernel';
+import { PERMISSION_WILDCARD, normalizePermissions } from '@trellis/kernel';
 import type { AuthContext } from '../types/fastify.js';
 import { verifyAccessToken, createAuthError } from '../auth/index.js';
 
@@ -90,11 +91,14 @@ function extractLegacyAuthContext(request: FastifyRequest): AuthContext | null {
     return null;
   }
 
-  // Parse permissions from comma-separated string
+  // Parse permissions from comma-separated string. Role names in the list
+  // (e.g. `x-permissions: viewer`) expand to their permission bundles.
+  // Without the header, dev legacy auth gets full access (ADR-012) so the
+  // pre-RBAC dev/test flow keeps working.
   const permissions: string[] =
     typeof permissionsHeader === 'string' && permissionsHeader.length > 0
-      ? permissionsHeader.split(',').map((p) => p.trim())
-      : [];
+      ? normalizePermissions(permissionsHeader.split(',').map((p) => p.trim()))
+      : [PERMISSION_WILDCARD];
 
   return {
     tenantId: tenantId as TenantId,
@@ -170,7 +174,7 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
         request.auth = {
           tenantId: '019bae6d-b0e2-3790-8b1d-007fc3bee890' as TenantId,
           actorId: '019bae6d-b0e5-4abc-8f9f-00415fda79aa' as ActorId,
-          permissions: ['read', 'write', 'delete', 'admin'],
+          permissions: [PERMISSION_WILDCARD],
         };
         return;
       }

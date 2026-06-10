@@ -16,6 +16,7 @@ import { registerErrorHandler } from './middleware/error-handler.js';
 import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
+import { eventRoutes } from './routes/events/index.js';
 import { registerAuthRoutes } from './routes/auth/index.js';
 import { createConfigRoutes } from './routes/config/index.js';
 import { websocketPlugin } from './plugins/websocket.js';
@@ -105,6 +106,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(entityRoutes);
   await app.register(relationshipRoutes);
   await app.register(queryRoutes);
+  await app.register(eventRoutes);
 
   // Register config routes for serving product configurations
   if (config.productsDir) {

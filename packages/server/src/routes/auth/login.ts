@@ -7,6 +7,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
+import { expandRoles } from '@trellis/kernel';
 import { generateTokenPair, createAuthError } from '../../auth/index.js';
 
 /**
@@ -59,12 +60,18 @@ export function registerLoginRoute(fastify: FastifyInstance): void {
 
       const { tenant_id, actor_id, roles, permissions } = parseResult.data;
 
+      // Expand roles to permission strings at issuance (ADR-012):
+      // enforcement only ever checks permissions, never role names.
+      const effectivePermissions = [
+        ...new Set([...expandRoles(roles), ...permissions]),
+      ];
+
       // Generate token pair
       const tokenPair = generateTokenPair({
         tenantId: tenant_id,
         actorId: actor_id,
         roles,
-        permissions,
+        permissions: effectivePermissions,
       });
 
       request.log.info(

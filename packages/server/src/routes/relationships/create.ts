@@ -6,6 +6,8 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { EntityId, RelationshipType } from '@trellis/kernel';
+import { Permissions } from '@trellis/kernel';
+import { requirePermission } from '../../middleware/permissions.js';
 import { createRelationship } from '../../services/relationship-service.js';
 import {
   CreateRelationshipBody,
@@ -22,6 +24,7 @@ export function registerCreateRelationshipRoute(app: FastifyInstance): void {
   }>(
     '/relationships',
     {
+      preHandler: requirePermission(Permissions.RelationshipWrite),
       schema: {
         body: CreateRelationshipBody,
         response: {
