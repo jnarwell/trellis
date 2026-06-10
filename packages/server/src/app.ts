@@ -13,6 +13,8 @@ import { registerRequestIdMiddleware } from './middleware/request-id.js';
 import { registerAuthMiddleware } from './middleware/auth.js';
 import { registerTenantMiddleware } from './middleware/tenant.js';
 import { registerErrorHandler } from './middleware/error-handler.js';
+import { createEventEmitter } from './events/emitter.js';
+import { createEventStore } from './events/store.js';
 import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
@@ -77,6 +79,10 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
 
   // Register plugins
   await app.register(postgresPlugin, { config: config.database });
+
+  // Shared event emitter backed by the event store: services emit through
+  // this so every mutation lands in the immutable events table (audit log).
+  app.decorate('events', createEventEmitter(createEventStore(app.pg)));
 
   // Register CORS - allow dev server origin
   // Use 'onRequest' hook to handle preflight before route matching

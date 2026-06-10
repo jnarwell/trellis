@@ -45,7 +45,7 @@ export async function getEntityHandler(
   const { resolve_inherited, evaluate_computed } = queryResult.data;
   const { tenantId, actorId } = request.auth;
 
-  const service = createEntityService(request.server.pg, tenantId, actorId);
+  const service = createEntityService(request.server.pg, tenantId, actorId, request.server.events);
 
   const entity = await service.get(id as EntityId, {
     resolveInherited: resolve_inherited,

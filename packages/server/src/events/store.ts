@@ -30,7 +30,6 @@ interface EventRow {
   actor_id: string;
   occurred_at: Date;
   payload: Record<string, unknown>;
-  created_at: Date;
 }
 
 // =============================================================================
@@ -48,9 +47,11 @@ export class EventStore implements IEventStore {
    * Events are immutable once stored.
    */
   async save(event: KernelEvent): Promise<void> {
+    // Note: the events table has no created_at - events are immutable and
+    // occurred_at is canonical (see 001_initial.sql)
     await this.pool.query(
-      `INSERT INTO events (id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+      `INSERT INTO events (id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         event.id,
         event.tenant_id,
@@ -75,8 +76,8 @@ export class EventStore implements IEventStore {
 
       for (const event of events) {
         await client.query(
-          `INSERT INTO events (id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+          `INSERT INTO events (id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
             event.id,
             event.tenant_id,
@@ -140,7 +141,7 @@ export class EventStore implements IEventStore {
     const offset = options.offset ?? 0;
 
     const sql = `
-      SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at
+      SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload
       FROM events
       WHERE ${conditions.join(' AND ')}
       ORDER BY occurred_at ASC
@@ -161,7 +162,7 @@ export class EventStore implements IEventStore {
     limit = 100
   ): Promise<readonly KernelEvent[]> {
     const result = await this.pool.query<EventRow>(
-      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at
+      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload
        FROM events
        WHERE tenant_id = $1 AND entity_id = $2
        ORDER BY occurred_at DESC
@@ -181,7 +182,7 @@ export class EventStore implements IEventStore {
     limit = 100
   ): Promise<readonly KernelEvent[]> {
     const result = await this.pool.query<EventRow>(
-      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at
+      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload
        FROM events
        WHERE tenant_id = $1 AND occurred_at > $2
        ORDER BY occurred_at ASC
@@ -200,7 +201,7 @@ export class EventStore implements IEventStore {
     limit = 50
   ): Promise<readonly KernelEvent[]> {
     const result = await this.pool.query<EventRow>(
-      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload, created_at
+      `SELECT id, tenant_id, event_type, entity_id, actor_id, occurred_at, payload
        FROM events
        WHERE tenant_id = $1
        ORDER BY occurred_at DESC

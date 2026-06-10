@@ -45,7 +45,7 @@ export async function updateEntityHandler(
   const { expected_version, set_properties, remove_properties } = bodyResult.data;
   const { tenantId, actorId } = request.auth;
 
-  const service = createEntityService(request.server.pg, tenantId, actorId);
+  const service = createEntityService(request.server.pg, tenantId, actorId, request.server.events);
 
   // Build update input, only including defined properties
   const updateInput: Parameters<typeof service.update>[0] = {

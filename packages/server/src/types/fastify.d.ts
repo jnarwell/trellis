@@ -6,6 +6,7 @@
 
 import type { Pool } from 'pg';
 import type { TenantId, ActorId } from '@trellis/kernel';
+import type { EventEmitter } from '../events/emitter.js';
 
 /**
  * Authentication context extracted from request headers.
@@ -25,6 +26,9 @@ declare module 'fastify' {
   interface FastifyInstance {
     /** PostgreSQL connection pool */
     pg: Pool;
+
+    /** Shared event emitter (persists to the event store) */
+    events: EventEmitter;
   }
 
   interface FastifyRequest {

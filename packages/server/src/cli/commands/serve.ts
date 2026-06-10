@@ -27,6 +27,8 @@ export type StartServerFn = (options: {
   host: string;
   productId: string;
   tenantId: string;
+  /** Path to the product YAML that was loaded (for config route serving) */
+  productPath: string;
 }) => Promise<void>;
 
 /**
@@ -142,6 +144,7 @@ export async function executeServeCommand(
     host,
     productId,
     tenantId,
+    productPath,
   });
 }
 

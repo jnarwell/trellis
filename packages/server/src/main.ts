@@ -7,6 +7,7 @@
 import { Pool } from 'pg';
 import type { PoolClient } from 'pg';
 import { pathToFileURL } from 'node:url';
+import path from 'node:path';
 import { createBlockRegistry, InMemoryBlockRegistry, asBlockType } from '@trellis/kernel';
 import type { BlockSpec, BlockCategory, BlockType } from '@trellis/kernel';
 import { runCli, type CliConfig } from './cli/index.js';
@@ -187,8 +188,22 @@ function setupBlockRegistry(): InMemoryBlockRegistry {
     { type: 'trellis.card', name: 'Card', category: 'layout', description: 'Card container' },
     { type: 'trellis.button', name: 'Button', category: 'action', description: 'Action button' },
     { type: 'trellis.detail', name: 'Detail', category: 'data', description: 'Entity detail view' },
+    { type: 'trellis.detail-view', name: 'Detail View', category: 'data', description: 'Entity detail view (alias)' },
     { type: 'trellis.form', name: 'Form', category: 'input', description: 'Entity form' },
     { type: 'trellis.kanban', name: 'Kanban', category: 'layout', description: 'Kanban board' },
+    { type: 'trellis.kanban-board', name: 'Kanban Board', category: 'layout', description: 'Kanban board (alias)' },
+    // Block types added with the general-purpose runtime (kept in sync with
+    // the client registry in packages/client/src/blocks/registry.tsx)
+    { type: 'trellis.stats', name: 'Stats', category: 'visualization', description: 'Metric cards with aggregates' },
+    { type: 'trellis.chart', name: 'Chart', category: 'visualization', description: 'Bar, line, and pie charts' },
+    { type: 'trellis.calendar', name: 'Calendar', category: 'data', description: 'Date-based entity views' },
+    { type: 'trellis.timeline', name: 'Timeline', category: 'data', description: 'Chronological event display' },
+    { type: 'trellis.tree-view', name: 'Tree View', category: 'data', description: 'Hierarchical entity tree' },
+    { type: 'trellis.tabs', name: 'Tabs', category: 'layout', description: 'Tabbed container' },
+    { type: 'trellis.modal', name: 'Modal', category: 'layout', description: 'Modal dialog container' },
+    { type: 'trellis.comments', name: 'Comments', category: 'data', description: 'Threaded comments' },
+    { type: 'trellis.file-uploader', name: 'File Uploader', category: 'input', description: 'Drag & drop file uploads' },
+    { type: 'trellis.file-viewer', name: 'File Viewer', category: 'data', description: 'File preview and listing' },
   ];
 
   for (const block of defaultBlocks) {
@@ -232,6 +247,18 @@ async function main(): Promise<void> {
     getBlockRegistry: () => blockRegistry,
 
     startServer: async (options) => {
+      // Config routes (GET /config/products/:id) serve flat YAML files from
+      // the products directory. PRODUCTS_DIR overrides; otherwise derive it
+      // from the loaded product path: <dir>/products/foo.yaml -> <dir>/products,
+      // <dir>/products/foo/product.yaml -> <dir>/products.
+      const resolvedProduct = path.resolve(options.productPath);
+      const parentDir = path.dirname(resolvedProduct);
+      const productsDir =
+        process.env['PRODUCTS_DIR'] ??
+        (path.basename(resolvedProduct) === 'product.yaml'
+          ? path.dirname(parentDir)
+          : parentDir);
+
       const app = await buildApp({
         server: {
           ...serverConfig,
@@ -239,6 +266,7 @@ async function main(): Promise<void> {
           host: options.host,
         },
         database: databaseConfig,
+        productsDir,
       });
 
       await app.listen({ port: options.port, host: options.host });

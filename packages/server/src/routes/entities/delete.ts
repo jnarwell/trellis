@@ -45,7 +45,7 @@ export async function deleteEntityHandler(
   const { hard_delete } = queryResult.data;
   const { tenantId, actorId } = request.auth;
 
-  const service = createEntityService(request.server.pg, tenantId, actorId);
+  const service = createEntityService(request.server.pg, tenantId, actorId, request.server.events);
 
   await service.delete(id as EntityId, {
     hardDelete: hard_delete,

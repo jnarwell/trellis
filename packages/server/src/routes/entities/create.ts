@@ -29,7 +29,7 @@ export async function createEntityHandler(
   const { type, properties } = parseResult.data;
   const { tenantId, actorId } = request.auth;
 
-  const service = createEntityService(request.server.pg, tenantId, actorId);
+  const service = createEntityService(request.server.pg, tenantId, actorId, request.server.events);
 
   // Cast properties to PropertyInput - Zod validation ensures correct shape
   const entity = await service.create({

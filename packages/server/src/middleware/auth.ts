@@ -115,6 +115,56 @@ function isDevelopmentMode(): boolean {
 }
 
 /**
+ * Hardcoded last-resort demo identity (plm-demo seed data).
+ */
+const FALLBACK_DEMO_AUTH: AuthContext = {
+  tenantId: '019bae6d-b0e2-3790-8b1d-007fc3bee890' as TenantId,
+  actorId: '019bae6d-b0e5-4abc-8f9f-00415fda79aa' as ActorId,
+  permissions: [PERMISSION_WILDCARD],
+};
+
+/**
+ * Resolve demo-default auth from the database (dev mode only): the first
+ * tenant + actor pair, i.e. whatever product the server loaded. Cached after
+ * the first lookup; falls back to the hardcoded identity when no database is
+ * available (unit tests) or no tenant exists yet.
+ */
+let cachedDemoAuth: AuthContext | null = null;
+
+async function resolveDemoAuth(fastify: FastifyInstance): Promise<AuthContext> {
+  if (cachedDemoAuth) return cachedDemoAuth;
+
+  try {
+    const result = await fastify.pg.query<{ tenant_id: string; actor_id: string }>(
+      `SELECT t.id AS tenant_id, a.id AS actor_id
+       FROM tenants t
+       JOIN actors a ON a.tenant_id = t.id
+       ORDER BY t.created_at ASC
+       LIMIT 1`
+    );
+    const row = result.rows[0];
+    if (row) {
+      cachedDemoAuth = {
+        tenantId: row.tenant_id as TenantId,
+        actorId: row.actor_id as ActorId,
+        permissions: [PERMISSION_WILDCARD],
+      };
+      return cachedDemoAuth;
+    }
+  } catch {
+    // No pool (unit tests) or query failed - use the hardcoded fallback
+  }
+
+  cachedDemoAuth = FALLBACK_DEMO_AUTH;
+  return cachedDemoAuth;
+}
+
+/** Reset the cached demo auth (for tests). */
+export function resetDemoAuthCache(): void {
+  cachedDemoAuth = null;
+}
+
+/**
  * Register authentication middleware.
  *
  * In production: Requires JWT Bearer token in Authorization header.
@@ -166,16 +216,12 @@ export function registerAuthMiddleware(fastify: FastifyInstance): void {
           return;
         }
 
-        // No auth headers at all - use demo defaults in dev mode
-        // Use the plm-demo tenant and Product Loader actor from seed data
+        // No auth headers at all - use demo defaults in dev mode, resolved
+        // from whatever product/tenant the server actually loaded
         request.log.warn(
           'Using demo authentication defaults. This is only allowed in development mode.'
         );
-        request.auth = {
-          tenantId: '019bae6d-b0e2-3790-8b1d-007fc3bee890' as TenantId,
-          actorId: '019bae6d-b0e5-4abc-8f9f-00415fda79aa' as ActorId,
-          permissions: [PERMISSION_WILDCARD],
-        };
+        request.auth = await resolveDemoAuth(fastify);
         return;
       }
 
