@@ -1,0 +1,57 @@
+# Trellis full-stack deployment
+#
+#   docker compose up --build
+#   → client at http://localhost:8080, API at http://localhost:3000
+#
+# The kernel schema migration is applied automatically on first boot via the
+# postgres init mount. The server loads PRODUCT_FILE into the database and
+# serves the API.
+#
+# NOTE: written and reviewed without a local Docker daemon available — if a
+# build step fails, see deploy/*.Dockerfile comments and docs/RUNNING.md.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trellis}
+      POSTGRES_DB: trellis
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Apply the kernel schema on first boot
+      - ./packages/kernel/src/schema/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trellis"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  server:
+    build:
+      context: .
+      dockerfile: deploy/server.Dockerfile
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-trellis}@db:5432/trellis
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      NODE_ENV: production
+      PORT: 3000
+      PRODUCT_FILE: ${PRODUCT_FILE:-/app/products/kitchen-sink/product.yaml}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  client:
+    build:
+      context: .
+      dockerfile: deploy/client.Dockerfile
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+
+volumes:
+  db-data:

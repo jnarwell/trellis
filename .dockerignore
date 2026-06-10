@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/dist-app
+**/.turbo
+**/coverage
+.git
+.claude
+.claude-plugins
+docs
+specs
+*.log
+.env
+.env.local

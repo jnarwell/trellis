@@ -17,7 +17,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc",
-    "clean": "rm -rf dist",
+    "build:app": "vite build",
+    "clean": "rm -rf dist dist-app",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "test": "pnpm exec vitest run",

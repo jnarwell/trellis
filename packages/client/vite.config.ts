@@ -8,6 +8,11 @@ const useRealApi = process.env.TRELLIS_API === 'real';
 
 export default defineConfig({
   plugins: [react(), ...(useRealApi ? [] : [mockApiPlugin()])],
+  build: {
+    // The demo SPA builds to dist-app; plain `dist` is the tsc library output
+    outDir: 'dist-app',
+    emptyOutDir: true,
+  },
   server: {
     port: 5173,
     proxy: useRealApi
