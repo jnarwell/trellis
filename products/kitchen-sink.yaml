@@ -35,6 +35,7 @@ views:
                 - block:
                     type: trellis.form
                     id: form
+                    showWhen: "$can('entity.create')"
                     props:
                       entityType: work_item
                       mode: create
@@ -104,9 +105,11 @@ views:
             actions:
               - type: edit
                 label: Edit
+                permission: entity.update
               - type: delete
                 label: Delete
                 confirm: true
+                permission: entity.delete
 
         # Row 3: Charts side by side
         - type: grid
@@ -237,6 +240,33 @@ views:
 
     wiring: []
 
+  # Audit log view - reads the event store (audit_event entities in demo mode)
+  - id: audit-log
+    name: Audit Log
+    route: /audit
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.data-table
+          id: audit-table
+          props:
+            entityType: audit_event
+            compact: true
+            defaultSort:
+              column: occurred_at
+              direction: desc
+            columns:
+              - property: occurred_at
+                label: When
+              - property: event_type
+                label: Event
+              - property: summary
+                label: Summary
+              - property: actor
+                label: Actor
+
   # Edit view
   - id: edit
     name: Edit Item
@@ -290,3 +320,6 @@ navigation:
     - label: Dashboard
       view: dashboard
       icon: home
+    - label: Audit Log
+      view: audit-log
+      icon: history

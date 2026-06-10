@@ -4,6 +4,7 @@
  * Provides $can(), $hasRole(), $now, $setQuery(), etc.
  */
 
+import { hasPermission } from '@trellis/kernel';
 import type { BindingScope, UserContext } from './scope.js';
 
 // =============================================================================
@@ -64,9 +65,8 @@ function canFunction(
     return context.checkPermission(permission, scope.user);
   }
 
-  // Default implementation: check user.permissions array
-  const permissions = scope.user.permissions ?? [];
-  return permissions.includes(permission);
+  // Default implementation: kernel semantics (exact, `*`, and `resource.*`)
+  return hasPermission(scope.user.permissions ?? [], permission);
 }
 
 /**

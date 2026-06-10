@@ -91,6 +91,7 @@ export class EntityStore {
       created_by: MOCK_ACTOR_ID,
     };
     this.entities.set(entity.id, entity);
+    this.recordAudit('entity.created', entity);
     return entity;
   }
 
@@ -104,11 +105,49 @@ export class EntityStore {
       updated_at: new Date().toISOString(),
     };
     this.entities.set(id, updated);
+    this.recordAudit('property.changed', updated);
     return updated;
   }
 
   delete(id: string): boolean {
-    return this.entities.delete(id);
+    const existing = this.entities.get(id);
+    const deleted = this.entities.delete(id);
+    if (deleted && existing) {
+      this.recordAudit('entity.deleted', existing);
+    }
+    return deleted;
+  }
+
+  /**
+   * Record an audit event as a queryable `audit_event` entity, mirroring the
+   * real server's immutable event store (GET /events) for demo purposes.
+   * Audit entities are written directly to the map - no recursive auditing.
+   */
+  private recordAudit(eventType: string, subject: MockEntity): void {
+    if (subject.type === 'audit_event') return;
+    const now = new Date().toISOString();
+    const title = propertyValue(subject, 'title') ?? subject.id;
+    const literal = (value: unknown) => ({
+      source: 'literal',
+      value: { type: 'text', value },
+    });
+    const audit: MockEntity = {
+      id: generateId(),
+      tenant_id: MOCK_TENANT_ID,
+      type: 'audit_event',
+      version: 1,
+      properties: {
+        occurred_at: literal(now),
+        event_type: literal(eventType),
+        summary: literal(`${eventType}: ${String(title)}`),
+        actor: literal('demo-user'),
+        entity_id: literal(subject.id),
+      },
+      created_at: now,
+      updated_at: now,
+      created_by: MOCK_ACTOR_ID,
+    };
+    this.entities.set(audit.id, audit);
   }
 
   /** Execute an SDK-style query: conditions + sort + offset/limit. */

@@ -12,6 +12,8 @@ import type { ActionConfig } from '../types.js';
 import { useTableState } from './hooks.js';
 import { useDeleteEntity } from '../../state/hooks.js';
 import { useNavigation } from '../../runtime/NavigationProvider.js';
+import { useOptionalBlockContext } from '../BlockProvider.js';
+import { canPerform } from '../permissions.js';
 import { TableHeader } from './TableHeader.js';
 import { TableRow } from './TableRow.js';
 import { TablePagination } from './TablePagination.js';
@@ -142,6 +144,13 @@ export const TableBlock: React.FC<TableBlockProps> = ({
   // Delete mutation
   const { mutate: deleteEntity, loading: deleteLoading } = useDeleteEntity();
 
+  // Permission gating: hide actions the current user cannot perform (ADR-012)
+  const blockContext = useOptionalBlockContext();
+  const visibleActions = useMemo(
+    () => config.actions?.filter((action) => canPerform(blockContext?.scope, action.permission)),
+    [config.actions, blockContext?.scope]
+  );
+
   // Initialize table state
   const {
     state,
@@ -244,7 +253,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({
   const showFilters = config.filters && config.filters.length > 0;
   const showPagination = config.pagination !== undefined;
   const showSelection = config.selectable === true;
-  const showActions = config.actions && config.actions.length > 0;
+  const showActions = visibleActions && visibleActions.length > 0;
 
   return (
     <div className={cn('table-block', tableContainer.base, config.bordered && tableContainer.bordered, className)}>
@@ -312,7 +321,7 @@ export const TableBlock: React.FC<TableBlockProps> = ({
                       ? () => handleRowClick(entity, index)
                       : undefined
                   }
-                  actions={config.actions}
+                  actions={visibleActions}
                   onAction={
                     showActions
                       ? (action) => handleAction(action, entity)

@@ -654,6 +654,7 @@ function buildBlockConfig(
   const config: BlockConfig = {
     block: block.type,
     ...(block.id !== undefined && { id: block.id }),
+    ...(block.showWhen !== undefined && { showWhen: block.showWhen }),
     ...resolveRouteParams(block.props, params),
   };
   return config;

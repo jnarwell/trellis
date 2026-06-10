@@ -9,6 +9,7 @@ import React, { useMemo, Suspense } from 'react';
 import type { BlockInstanceId } from '@trellis/kernel';
 import type { WiringManager } from '../runtime/wiring.js';
 import type { BindingScope } from '../binding/index.js';
+import { evaluateString } from '../binding/evaluator.js';
 import { getBlockComponent, hasBlock } from './registry.js';
 import { BlockProvider } from './BlockProvider.js';
 
@@ -405,6 +406,19 @@ export function BlockRenderer({
 
   // Extract block type
   const blockType = config.block;
+
+  // Evaluate showWhen visibility (Data Binding, e.g. "$can('entity.create')").
+  // Fails open on evaluation errors so a typo never blanks a block.
+  const showWhen = config['showWhen'] as string | undefined;
+  if (showWhen) {
+    try {
+      if (!evaluateString(showWhen, scope)) {
+        return <></>;
+      }
+    } catch (err) {
+      console.warn(`[BlockRenderer] showWhen evaluation failed: ${showWhen}`, err);
+    }
+  }
 
   // Handle layout types by delegating to LayoutRenderer
   if (isLayoutType(blockType)) {

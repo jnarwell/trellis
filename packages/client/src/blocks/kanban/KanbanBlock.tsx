@@ -6,7 +6,10 @@
 
 import React, { useEffect, useCallback, useMemo } from 'react';
 import type { Entity, EntityId, PropertyName } from '@trellis/kernel';
+import { Permissions } from '@trellis/kernel';
 import { useQuery, useUpdateEntity, useSubscription } from '../../state/hooks.js';
+import { useOptionalBlockContext } from '../BlockProvider.js';
+import { canPerform } from '../permissions.js';
 import type { KanbanBlockProps, KanbanBlockEvent } from './types.js';
 import { styles, kanbanTheme } from './styles.js';
 import { useDragDrop } from './useDragDrop.js';
@@ -140,6 +143,11 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
   // Update mutation
   const { mutate: updateEntity } = useUpdateEntity();
 
+  // Drag gating: moving cards mutates status, so it requires entity.update
+  // (ADR-012). The server enforces regardless; this prevents doomed drags.
+  const blockContext = useOptionalBlockContext();
+  const canUpdate = canPerform(blockContext?.scope, Permissions.EntityUpdate);
+
   // Subscribe to real-time updates
   useSubscription({ entityType: source }, (event) => {
     // Refetch on any entity change
@@ -248,6 +256,7 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
           cardConfig={cardConfig}
           isDropTarget={isDropTarget}
           onDrop={(entityId) => {
+            if (!canUpdate) return;
             const entity = entities.find((e) => e.id === entityId);
             if (entity) {
               const fromColumn = String(getPropertyValue(entity, statusProperty) ?? '');
@@ -261,6 +270,10 @@ export const KanbanBlock: React.FC<KanbanBlockProps> = ({
               : undefined
           }
           onDragStart={(e, entityId) => {
+            if (!canUpdate) {
+              e.preventDefault();
+              return;
+            }
             const ent = entities.find((ent) => ent.id === entityId);
             if (ent) {
               const fromColumn = String(getPropertyValue(ent, statusProperty) ?? '');

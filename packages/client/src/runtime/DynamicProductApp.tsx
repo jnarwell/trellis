@@ -18,7 +18,7 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import { TrellisProvider } from '../state/store.js';
 import { TrellisClient } from '../sdk/client.js';
-import { createScope, extendScope } from '../binding/scope.js';
+import { createScope, extendScope, type UserContext } from '../binding/scope.js';
 import type { BindingScope } from '../binding/index.js';
 import { NavigationProvider, useNavigationState, useNavigation } from './NavigationProvider.js';
 import { NavigationManager } from './navigation.js';
@@ -61,7 +61,21 @@ export interface DynamicProductAppProps {
 
   /** Custom layout component */
   readonly LayoutComponent?: React.ComponentType<{ children: React.ReactNode; config: LoadedProductConfig }>;
+
+  /**
+   * Current user for the binding scope ($scope.user, $can(), action
+   * permission gating). Defaults to a full-access demo user.
+   */
+  readonly user?: UserContext;
 }
+
+/** Default demo identity: full access, mirroring the dev server defaults. */
+const DEFAULT_DEMO_USER: UserContext = {
+  id: 'demo-user',
+  name: 'Demo User',
+  roles: ['admin'],
+  permissions: ['*'],
+};
 
 // =============================================================================
 // DEFAULT COMPONENTS
@@ -220,9 +234,11 @@ function DefaultLayout({
 function ProductRenderer({
   config,
   LayoutComponent,
+  user = DEFAULT_DEMO_USER,
 }: {
   config: LoadedProductConfig;
   LayoutComponent: React.ComponentType<{ children: React.ReactNode; config: LoadedProductConfig }>;
+  user?: UserContext;
 }): React.ReactElement {
   const navState = useNavigationState();
 
@@ -271,6 +287,7 @@ function ProductRenderer({
     const baseScope = createScope({
       params: navState.params,
       query: navState.query,
+      user,
     });
 
     return extendScope(baseScope, {
@@ -379,6 +396,7 @@ function DynamicProductAppInner({
   LoadingComponent = DefaultLoading,
   ErrorComponent = DefaultError,
   LayoutComponent = DefaultLayout,
+  user,
 }: Omit<DynamicProductAppProps, 'configBaseUrl'>): React.ReactElement {
   const { config, loading, error, reload } = useProductConfig(productId);
 
@@ -418,7 +436,11 @@ function DynamicProductAppInner({
   return (
     <TrellisProvider client={client}>
       <NavigationProvider manager={navManager}>
-        <ProductRenderer config={config} LayoutComponent={LayoutComponent} />
+        <ProductRenderer
+          config={config}
+          LayoutComponent={LayoutComponent}
+          {...(user !== undefined && { user })}
+        />
       </NavigationProvider>
     </TrellisProvider>
   );
