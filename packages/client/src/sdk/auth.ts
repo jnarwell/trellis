@@ -147,7 +147,18 @@ export class AuthManager {
       credentials
     );
 
-    this.handleTokenPair(tokenPair, credentials.tenant_id, credentials.actor_id);
+    // The dev login endpoint echoes the resolved identity when the request
+    // omitted it (demo login without knowing tenant/actor ids).
+    const tenantId = tokenPair.tenant_id ?? credentials.tenant_id;
+    const actorId = tokenPair.actor_id ?? credentials.actor_id;
+    if (!tenantId || !actorId) {
+      throw new TrellisError(
+        'Login response missing tenant/actor identity',
+        'AUTH_FAILED'
+      );
+    }
+
+    this.handleTokenPair(tokenPair, tenantId, actorId);
   }
 
   /**

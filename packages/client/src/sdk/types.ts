@@ -72,6 +72,9 @@ export interface TokenPair {
   readonly refresh_token: string;
   readonly expires_in: number;
   readonly token_type: 'Bearer';
+  /** Resolved identity echoed by the dev login endpoint (when omitted from the request) */
+  readonly tenant_id?: string;
+  readonly actor_id?: string;
 }
 
 /**
@@ -86,8 +89,10 @@ export interface AuthError {
  * Login credentials for development mode.
  */
 export interface LoginCredentials {
-  readonly tenant_id: string;
-  readonly actor_id: string;
+  /** Omit to let the dev server resolve the loaded product's tenant */
+  readonly tenant_id?: string;
+  /** Omit to let the dev server resolve the loaded product's system actor */
+  readonly actor_id?: string;
   readonly roles?: readonly string[];
   readonly permissions?: readonly string[];
 }

@@ -27,7 +27,15 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
-import { EntityStore, type MockEntity, type QueryCondition, type SortSpec } from './entity-store.js';
+import {
+  EntityStore,
+  MOCK_TENANT_ID,
+  MOCK_ACTOR_ID,
+  type MockEntity,
+  type QueryCondition,
+  type SortSpec,
+} from './entity-store.js';
+import { attachMockWebSocket } from './mock-ws.js';
 
 // =============================================================================
 // HTTP HELPERS
@@ -143,6 +151,12 @@ export function mockApiPlugin(options: MockApiOptions = {}): Plugin {
       loadSeeds(productsDir, store);
       console.log(`[mock-api] Serving products from ${productsDir} (${store.size()} seed entities)`);
 
+      // Real-time: mock WebSocket endpoint at /ws broadcasting store mutations
+      if (server.httpServer) {
+        attachMockWebSocket(server.httpServer, store);
+        console.log('[mock-api] WebSocket endpoint registered at /ws');
+      }
+
       server.middlewares.use((req, res, next) => {
         const url = req.url ?? '';
         const method = req.method ?? 'GET';
@@ -167,6 +181,34 @@ async function handleApiRequest(
   store: EntityStore
 ): Promise<void> {
   try {
+    // --- Auth (mirror the dev login endpoint; tokens are opaque, never verified) ---
+
+    if (method === 'POST' && url === '/api/auth/login') {
+      await readJsonBody<Record<string, unknown>>(req); // drain body
+      sendJson(res, {
+        access_token: 'demo-access-token',
+        refresh_token: 'demo-refresh-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        tenant_id: MOCK_TENANT_ID,
+        actor_id: MOCK_ACTOR_ID,
+      });
+      return;
+    }
+
+    if (method === 'POST' && url === '/api/auth/refresh') {
+      await readJsonBody<Record<string, unknown>>(req);
+      sendJson(res, {
+        access_token: 'demo-access-token',
+        refresh_token: 'demo-refresh-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+        tenant_id: MOCK_TENANT_ID,
+        actor_id: MOCK_ACTOR_ID,
+      });
+      return;
+    }
+
     // --- Config routes (mirror packages/server/src/routes/config) ---
 
     if (method === 'GET' && url === '/api/config/products') {

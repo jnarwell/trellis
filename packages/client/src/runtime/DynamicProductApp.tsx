@@ -15,7 +15,7 @@
  * 4. Handle all block rendering through Connected wrappers
  */
 
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { TrellisProvider } from '../state/store.js';
 import { TrellisClient } from '../sdk/client.js';
 import { createScope, extendScope, type UserContext } from '../binding/scope.js';
@@ -405,6 +405,29 @@ function DynamicProductAppInner({
     return new TrellisClient({ baseUrl: apiBaseUrl ?? '' });
   }, [apiBaseUrl]);
 
+  // Demo login: authenticate with the user's roles so the server enforces
+  // the same RBAC the UI gates on, and WebSocket subscriptions get
+  // credentials. Fails soft - the dev fallback auth still works without it.
+  // Rendering waits for the attempt to settle so block subscriptions don't
+  // race the login.
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => {
+    if (client.isAuthenticated()) {
+      setAuthReady(true);
+      return;
+    }
+    const roles = user?.roles ?? ['admin'];
+    void client
+      .login({ roles })
+      .catch((err: unknown) => {
+        console.warn(
+          '[Trellis] Demo login unavailable, continuing unauthenticated:',
+          err instanceof Error ? err.message : err
+        );
+      })
+      .finally(() => setAuthReady(true));
+  }, [client, user]);
+
   // Build navigation manager from config - must be before any conditional returns
   const navManager = useMemo(() => {
     if (!config) {
@@ -421,7 +444,7 @@ function DynamicProductAppInner({
     return manager;
   }, [config]);
 
-  if (loading) {
+  if (loading || !authReady) {
     return <LoadingComponent />;
   }
 
