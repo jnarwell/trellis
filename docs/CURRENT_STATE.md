@@ -740,12 +740,41 @@ pnpm dev
 | Demo-default auth hardcoded a tenant that doesn't exist in fresh DBs | Resolved from the loaded product's tenant (cached, hardcoded fallback) |
 | Product loader fails on Windows with an empty error | Tracked as a follow-up task (path/glob handling) |
 
-### Phase 2.10: Next
-- [ ] Demo login flow + WebSocket support in mock dev API (real-time demo
-      without backend; requires demo auth so WS credentials exist)
+### Phase 2.10: Demo Auth + Real-Time (2026-06-10)
+
+#### Demo Login Flow
+- [x] `POST /auth/login` accepts requests without tenant_id/actor_id (dev
+      mode): resolves the loaded product's tenant + system actor and echoes
+      them in the response
+- [x] Mock dev API implements `/auth/login` + `/auth/refresh` (opaque tokens)
+- [x] `DynamicProductApp` auto-logs-in with the demo user's roles before
+      rendering blocks, so the server enforces the same RBAC the UI gates on
+      and WebSocket subscriptions have credentials
+
+#### Real-Time Subscriptions (both modes)
+- [x] Mock WebSocket server at /ws in the Vite plugin
+      (`packages/client/dev/mock-ws.ts`) speaking the real subscription
+      protocol; EntityStore mutations broadcast to matching subscribers
+- [x] Real server: the shared event emitter now feeds the WebSocket plugin -
+      every persisted event broadcasts to subscribers
+- [x] nginx proxies /ws (the client derives ws://host/ws, not under /api)
+- [x] `cache.handleEvent` also refreshes type-level queries on
+      entity_updated so remote status changes update lists live
+- [x] Verified in dev mode: curl create/update → page updates live, zero
+      interaction. Verified on the compose stack: WS client through nginx
+      received entity_created push (`packages/client/dev/verify-ws.mts`)
+
+#### Loader Fixes
+- [x] `trellis validate` is now database-free (dry runs validated before any
+      tenant access; previously it CREATED a tenant and crashed without a DB)
+- [x] AggregateError causes unwrapped in load failures (pg connection errors
+      surfaced as an empty message)
+
+### Phase 2.11: Next
 - [ ] Performance optimization (query batching, virtualized tables)
 - [ ] Tenant-configurable roles (move role bundles from code to database)
 - [ ] Per-entity / per-property permission granularity
+- [ ] Real-time presence + optimistic UI updates
 
 ### Future Phases
 - Multi-region support

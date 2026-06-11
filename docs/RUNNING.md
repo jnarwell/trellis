@@ -48,6 +48,19 @@ cards — all blocks refresh through the client cache-invalidation bus.
 Mutations persist until the dev server restarts, and every mutation is
 recorded in the **Audit Log** view.
 
+**Real-time**: the mock API includes a WebSocket endpoint at `/ws` speaking
+the real server's subscription protocol. Any mutation — from another tab or
+curl — pushes live updates to every open page:
+
+```bash
+curl -X POST http://localhost:5173/api/entities -H "Content-Type: application/json" \
+  -d '{"type":"work_item","properties":{"title":{"source":"literal","value":{"type":"text","value":"Pushed live"}},"status":{"source":"literal","value":{"type":"text","value":"todo"}}}}'
+# → watch the open page update without touching it
+```
+
+The app logs in automatically on load (demo login with the `?role=` roles),
+so the server enforces the same RBAC the UI gates on.
+
 ### Demo RBAC
 
 Switch the demo identity with a query param (ADR-012):
