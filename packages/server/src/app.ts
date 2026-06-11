@@ -119,8 +119,9 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
     await app.register(createConfigRoutes(config.productsDir));
   }
 
-  // Register WebSocket for real-time subscriptions
-  await app.register(websocketPlugin, { path: '/ws' });
+  // Register WebSocket for real-time subscriptions, broadcasting every
+  // persisted event to matching subscribers
+  await app.register(websocketPlugin, { path: '/ws', eventEmitter: app.events });
 
   // Health check endpoint
   app.get('/health', async () => {

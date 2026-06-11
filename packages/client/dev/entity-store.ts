@@ -39,6 +39,19 @@ export interface SortSpec {
   direction?: 'asc' | 'desc';
 }
 
+/** KernelEvent-shaped mutation event for the mock WebSocket broadcast. */
+export interface MockKernelEvent {
+  id: string;
+  tenant_id: string;
+  event_type: 'entity_created' | 'entity_updated' | 'entity_deleted';
+  entity_id: string;
+  actor_id: string;
+  occurred_at: string;
+  payload: { type: string };
+}
+
+export type MutationListener = (event: MockKernelEvent) => void;
+
 let nextId = 1000;
 
 function generateId(): string {
@@ -57,6 +70,31 @@ function propertyValue(entity: MockEntity, path: string): unknown {
 
 export class EntityStore {
   private readonly entities = new Map<string, MockEntity>();
+  private readonly mutationListeners = new Set<MutationListener>();
+
+  /** Subscribe to mutation events (used by the mock WebSocket broadcast). */
+  onMutation(listener: MutationListener): () => void {
+    this.mutationListeners.add(listener);
+    return () => this.mutationListeners.delete(listener);
+  }
+
+  private emitMutation(
+    eventType: MockKernelEvent['event_type'],
+    entity: MockEntity
+  ): void {
+    const event: MockKernelEvent = {
+      id: generateId(),
+      tenant_id: MOCK_TENANT_ID,
+      event_type: eventType,
+      entity_id: entity.id,
+      actor_id: MOCK_ACTOR_ID,
+      occurred_at: new Date().toISOString(),
+      payload: { type: entity.type },
+    };
+    for (const listener of this.mutationListeners) {
+      listener(event);
+    }
+  }
 
   seed(entities: readonly MockEntity[]): void {
     for (const entity of entities) {
@@ -92,6 +130,7 @@ export class EntityStore {
     };
     this.entities.set(entity.id, entity);
     this.recordAudit('entity.created', entity);
+    this.emitMutation('entity_created', entity);
     return entity;
   }
 
@@ -106,6 +145,7 @@ export class EntityStore {
     };
     this.entities.set(id, updated);
     this.recordAudit('property.changed', updated);
+    this.emitMutation('entity_updated', updated);
     return updated;
   }
 
@@ -114,6 +154,7 @@ export class EntityStore {
     const deleted = this.entities.delete(id);
     if (deleted && existing) {
       this.recordAudit('entity.deleted', existing);
+      this.emitMutation('entity_deleted', existing);
     }
     return deleted;
   }
@@ -148,6 +189,9 @@ export class EntityStore {
       created_by: MOCK_ACTOR_ID,
     };
     this.entities.set(audit.id, audit);
+    // Broadcast so audit-log views update live (no recursion: recordAudit
+    // writes directly to the map and skips audit_event subjects)
+    this.emitMutation('entity_created', audit);
   }
 
   /** Execute an SDK-style query: conditions + sort + offset/limit. */

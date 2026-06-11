@@ -210,12 +210,19 @@ export class EntityCache {
         this.invalidateQueriesForType(event.payload.type);
         break;
 
-      case 'entity_updated':
+      case 'entity_updated': {
         // Invalidate the entity and related queries
         if (event.entity_id) {
           this.invalidateEntity(event.entity_id);
         }
+        // Remote updates change list-visible data (e.g. kanban status):
+        // refresh type-level queries when the event names the type
+        const updatedType = (event.payload as { type?: string }).type;
+        if (updatedType) {
+          this.invalidateQueriesForType(updatedType);
+        }
         break;
+      }
 
       case 'entity_deleted':
         // Invalidate entity and queries
