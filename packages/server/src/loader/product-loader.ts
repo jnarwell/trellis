@@ -63,6 +63,28 @@ import {
 } from './seed-data.js';
 
 // =============================================================================
+// ERROR FORMATTING
+// =============================================================================
+
+/**
+ * Produce a human-readable message from any thrown value. AggregateError
+ * (e.g. pg connection failures across multiple addresses) has an EMPTY
+ * `message` - unwrap its causes so load failures are diagnosable.
+ */
+function describeLoadError(error: unknown): string {
+  if (error instanceof AggregateError) {
+    const parts = error.errors.map((e) =>
+      e instanceof Error ? e.message : String(e)
+    );
+    return [error.message, ...parts].filter(Boolean).join('; ') || 'AggregateError';
+  }
+  if (error instanceof Error) {
+    return error.message || error.name;
+  }
+  return String(error);
+}
+
+// =============================================================================
 // PRODUCT LOADER CLASS
 // =============================================================================
 
@@ -113,12 +135,11 @@ export class ProductLoader {
 
       this.emit({ type: 'load_started', productId: config.manifest.id });
 
-      // 2. Ensure tenant exists
-      const tenantId = options.tenantId ?? await this.ensureTenant(config.manifest.id);
-      const actorId = options.actorId ?? await this.ensureSystemActor(tenantId);
-
-      // 3. Validate configuration
-      const validation = validateProduct(config, this.blockRegistry, tenantId);
+      // 2. Validate configuration first. Validation never needs a real
+      // tenant, so dry runs (trellis validate) work without a database.
+      const validationTenantId =
+        options.tenantId ?? ('00000000-0000-0000-0000-000000000000' as TenantId);
+      const validation = validateProduct(config, this.blockRegistry, validationTenantId);
 
       this.emit({
         type: 'validation_complete',
@@ -146,7 +167,7 @@ export class ProductLoader {
         return this.buildResult(
           false,
           config.manifest.id,
-          tenantId,
+          validationTenantId,
           0,
           0,
           0,
@@ -156,12 +177,12 @@ export class ProductLoader {
         );
       }
 
-      // 4. Dry run - return success without writing
+      // 3. Dry run - return success without touching the database
       if (options.dryRun) {
         return this.buildResult(
           true,
           config.manifest.id,
-          tenantId,
+          validationTenantId,
           Object.keys(config.entities).length,
           0, // Would be relationships count
           0,
@@ -170,6 +191,10 @@ export class ProductLoader {
           startTime
         );
       }
+
+      // 4. Ensure tenant and system actor exist (first database access)
+      const tenantId = options.tenantId ?? await this.ensureTenant(config.manifest.id);
+      const actorId = options.actorId ?? await this.ensureSystemActor(tenantId);
 
       // 5. Execute in transaction
       const result = await this.executeLoad(
@@ -189,7 +214,7 @@ export class ProductLoader {
 
       return result;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = describeLoadError(error);
       this.emit({ type: 'load_error', error: message });
 
       return this.buildResult(
