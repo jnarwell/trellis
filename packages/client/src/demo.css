@@ -1,0 +1,220 @@
+/* =============================================================================
+   DEMO SHELL  (product / role switcher + config viewer)
+   Loaded after styles.css; depends on its CSS variables.
+   ============================================================================= */
+
+.demo-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--trellis-bg);
+}
+
+.demo-topbar {
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+  background: var(--trellis-surface);
+  border-bottom: 1px solid var(--trellis-border);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.demo-brand { display: flex; align-items: center; gap: 8px; }
+.demo-brand-mark { color: var(--trellis-primary); font-size: 20px; line-height: 1; transform: translateY(1px); }
+.demo-brand-name { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; color: var(--trellis-text); }
+.demo-brand-tag {
+  font-size: 11px; font-weight: 600; color: var(--trellis-primary);
+  background: var(--trellis-primary-soft); padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+}
+
+.demo-controls { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.demo-control { display: flex; align-items: center; gap: 6px; }
+.demo-control-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--trellis-text-muted);
+}
+
+.demo-select {
+  appearance: none; -webkit-appearance: none;
+  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--trellis-text);
+  background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border-strong); border-radius: var(--trellis-radius);
+  padding: 7px 28px 7px 10px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.demo-select:hover { border-color: var(--trellis-primary); }
+.demo-select:focus { outline: none; border-color: var(--trellis-primary); box-shadow: 0 0 0 3px var(--trellis-primary-soft); }
+
+.demo-config-btn {
+  font-family: var(--trellis-mono); font-size: 12px; font-weight: 600; color: var(--trellis-text);
+  background: var(--trellis-surface); border: 1px solid var(--trellis-border-strong);
+  border-radius: var(--trellis-radius); padding: 7px 12px; cursor: pointer; white-space: nowrap;
+  transition: all 0.15s;
+}
+.demo-config-btn:hover { border-color: var(--trellis-primary); color: var(--trellis-primary); background: var(--trellis-primary-soft); }
+
+.demo-live { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #137a47; }
+.demo-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #1ec27a;
+  box-shadow: 0 0 0 0 rgba(30, 194, 122, 0.5); animation: demo-pulse 2s infinite;
+}
+@keyframes demo-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(30, 194, 122, 0.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(30, 194, 122, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(30, 194, 122, 0); }
+}
+
+.demo-gh { font-size: 13px; font-weight: 600; color: var(--trellis-text-muted); text-decoration: none; white-space: nowrap; }
+.demo-gh:hover { color: var(--trellis-text); }
+
+.demo-subbar {
+  height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+  padding: 0 20px; background: var(--trellis-surface-alt);
+  border-bottom: 1px solid var(--trellis-border); font-size: 13px;
+}
+.demo-subbar-icon { font-size: 15px; }
+.demo-subbar-label { font-weight: 700; color: var(--trellis-text); }
+.demo-subbar-tag { color: var(--trellis-text-muted); }
+.demo-subbar-spacer { flex: 1; }
+.demo-subbar-hint { color: var(--trellis-text-muted); font-size: 12px; }
+.demo-subbar-hint code {
+  font-family: var(--trellis-mono); font-size: 11px; background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border); border-radius: 4px; padding: 1px 5px; color: var(--trellis-primary);
+}
+
+.demo-stage { flex: 1; min-height: 0; }
+
+/* Config slide-over */
+.demo-overlay {
+  position: fixed; inset: 0; background: rgba(16, 24, 40, 0.45);
+  z-index: 50; display: flex; justify-content: flex-end; animation: demo-fade 0.15s ease;
+}
+@keyframes demo-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.demo-config-panel {
+  width: min(640px, 92vw); height: 100%; background: #0f1117;
+  display: flex; flex-direction: column; box-shadow: var(--trellis-shadow-lg);
+  animation: demo-slide 0.2s ease;
+}
+@keyframes demo-slide { from { transform: translateX(24px); } to { transform: translateX(0); } }
+
+.demo-config-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 16px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.demo-config-title { font-family: var(--trellis-mono); font-size: 14px; font-weight: 600; color: #e6e8ec; }
+.demo-config-sub { font-size: 12px; color: #8b93a7; margin-top: 3px; }
+.demo-icon-btn {
+  background: none; border: none; color: #8b93a7; font-size: 16px; cursor: pointer;
+  padding: 4px 8px; border-radius: 4px;
+}
+.demo-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.demo-config-code {
+  flex: 1; margin: 0; padding: 18px; overflow: auto;
+  font-family: var(--trellis-mono); font-size: 12.5px; line-height: 1.65;
+  color: #c4cad6; white-space: pre; tab-size: 2;
+}
+
+/* =============================================================================
+   SEMANTIC STATUS BADGES
+   ============================================================================= */
+
+.trellis-badge {
+  display: inline-flex; align-items: center; padding: 3px 9px;
+  font-size: 12px; font-weight: 600; line-height: 1.4; border-radius: 999px;
+  text-transform: capitalize; white-space: nowrap; letter-spacing: 0.01em;
+  background: var(--tone-neutral-bg); color: var(--tone-neutral-fg);
+}
+.trellis-badge--positive { background: var(--tone-positive-bg); color: var(--tone-positive-fg); }
+.trellis-badge--progress { background: var(--tone-progress-bg); color: var(--tone-progress-fg); }
+.trellis-badge--warning  { background: var(--tone-warning-bg);  color: var(--tone-warning-fg); }
+.trellis-badge--danger   { background: var(--tone-danger-bg);   color: var(--tone-danger-fg); }
+.trellis-badge--neutral  { background: var(--tone-neutral-bg);  color: var(--tone-neutral-fg); }
+
+/* =============================================================================
+   POLISH — surfaces, stat cards, table, kanban tone
+   ============================================================================= */
+
+.view-container {
+  background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border);
+  border-radius: var(--trellis-radius-lg);
+  box-shadow: var(--trellis-shadow-sm);
+}
+
+.stats-block__card {
+  box-shadow: var(--trellis-shadow-sm) !important;
+  border: 1px solid var(--trellis-border) !important;
+  border-radius: var(--trellis-radius-lg) !important;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+.stats-block__card:hover { box-shadow: var(--trellis-shadow-md) !important; transform: translateY(-1px); }
+
+.table-block table { font-size: 13.5px; }
+.table-block th {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--trellis-text-muted); background: var(--trellis-surface-alt);
+  border-bottom: 1px solid var(--trellis-border);
+}
+.table-block tbody tr:hover { background: var(--trellis-primary-soft); }
+.table-block tbody tr:last-child td { border-bottom: none; }
+
+.kanban-column { border: 1px solid var(--trellis-border); }
+.kanban-column-header { border-bottom: 1px solid var(--trellis-border); padding-bottom: 10px; }
+
+.kanban-column[data-column-value="done"] .kanban-card,
+.kanban-column[data-column-value="won"] .kanban-card,
+.kanban-column[data-column-value="released"] .kanban-card,
+.kanban-column[data-column-value="hired"] .kanban-card,
+.kanban-column[data-column-value="resolved"] .kanban-card,
+.kanban-column[data-column-value="in_stock"] .kanban-card { border-left: 3px solid #1ec27a !important; }
+
+.kanban-column[data-column-value="in_progress"] .kanban-card,
+.kanban-column[data-column-value="in_review"] .kanban-card,
+.kanban-column[data-column-value="review"] .kanban-card,
+.kanban-column[data-column-value="proposal"] .kanban-card,
+.kanban-column[data-column-value="qualified"] .kanban-card,
+.kanban-column[data-column-value="interview"] .kanban-card,
+.kanban-column[data-column-value="screening"] .kanban-card,
+.kanban-column[data-column-value="pending"] .kanban-card { border-left: 3px solid #3b82f6 !important; }
+
+.kanban-column[data-column-value="offer"] .kanban-card,
+.kanban-column[data-column-value="low_stock"] .kanban-card,
+.kanban-column[data-column-value="on_order"] .kanban-card,
+.kanban-column[data-column-value="open"] .kanban-card { border-left: 3px solid #f0a020 !important; }
+
+.kanban-column[data-column-value="lost"] .kanban-card,
+.kanban-column[data-column-value="rejected"] .kanban-card,
+.kanban-column[data-column-value="obsolete"] .kanban-card,
+.kanban-column[data-column-value="out_of_stock"] .kanban-card { border-left: 3px solid #e05656 !important; }
+
+/* =============================================================================
+   TOASTS
+   ============================================================================= */
+
+.demo-toasts {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60;
+  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.demo-toast {
+  min-width: 240px; max-width: 360px; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--trellis-surface);
+  border: 1px solid var(--trellis-border); border-left: 3px solid var(--trellis-primary);
+  border-radius: var(--trellis-radius); box-shadow: var(--trellis-shadow-md);
+  font-size: 13px; font-weight: 500; color: var(--trellis-text); animation: demo-toast-in 0.2s ease;
+}
+.demo-toast--success { border-left-color: #1ec27a; }
+.demo-toast--info { border-left-color: var(--trellis-primary); }
+.demo-toast--danger { border-left-color: var(--trellis-danger); }
+.demo-toast-icon { font-size: 15px; }
+@keyframes demo-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

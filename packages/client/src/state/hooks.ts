@@ -29,6 +29,16 @@ import type {
 } from '../sdk/types.js';
 import { useTrellis, useClient, useCache } from './store.js';
 
+/**
+ * Emit a toast notification via a window event. Decoupled from any UI: a host
+ * (e.g. the demo shell) listens for 'trellis:toast'. No-op outside a browser.
+ */
+function emitToast(kind: 'success' | 'info' | 'danger', message: string): void {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('trellis:toast', { detail: { kind, message } }));
+  }
+}
+
 // =============================================================================
 // ENTITY HOOKS
 // =============================================================================
@@ -358,6 +368,7 @@ export function useCreateEntity(): UseMutationResult<Entity, CreateEntityInput> 
         if (invalidationType) {
           cache.invalidateQueriesForType(invalidationType);
         }
+        emitToast('success', 'Created');
         setData(entity);
         return entity;
       } catch (err) {
@@ -422,6 +433,7 @@ export function useUpdateEntity(): UseMutationResult<Entity, UpdateEntityInput> 
         if (entity.type) {
           cache.invalidateQueriesForType(entity.type);
         }
+        emitToast('success', 'Saved');
         setData(entity);
         return entity;
       } catch (err) {
@@ -481,6 +493,7 @@ export function useDeleteEntity(): UseMutationResult<void, EntityId> & {
         if (type) {
           cache.invalidateQueriesForType(type);
         }
+        emitToast('info', 'Deleted');
         setData(undefined);
       } catch (err) {
         setError(err as KernelError);

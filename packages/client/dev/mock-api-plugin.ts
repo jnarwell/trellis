@@ -222,6 +222,22 @@ async function handleApiRequest(
       return;
     }
 
+    // Raw YAML source for the "view config" panel — shows the file that
+    // generated the current app
+    const sourceMatch = url.match(/^\/api\/config\/products\/([^/?]+)\/source$/);
+    if (method === 'GET' && sourceMatch) {
+      const productId = sourceMatch[1]!;
+      for (const ext of ['.yaml', '.yml']) {
+        const yamlPath = path.join(productsDir, `${productId}${ext}`);
+        if (fs.existsSync(yamlPath)) {
+          sendJson(res, { id: productId, source: fs.readFileSync(yamlPath, 'utf-8') });
+          return;
+        }
+      }
+      sendJson(res, { error: 'Product not found' }, 404);
+      return;
+    }
+
     const configMatch = url.match(/^\/api\/config\/products\/([^/?]+)$/);
     if (method === 'GET' && configMatch) {
       const productId = configMatch[1]!;

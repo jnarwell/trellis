@@ -10,20 +10,45 @@
    ============================================================================= */
 
 :root {
+  --trellis-bg: #f4f5f7;
   --trellis-surface: #ffffff;
-  --trellis-surface-alt: #f8f9fa;
-  --trellis-border: #e9ecef;
-  --trellis-text: #212529;
-  --trellis-text-muted: #868e96;
-  --trellis-primary: #228be6;
-  --trellis-primary-hover: #1c7ed6;
-  --trellis-danger: #c92a2a;
-  --trellis-danger-bg: #fff5f5;
-  --trellis-danger-border: #ffc9c9;
-  --trellis-radius: 4px;
-  --trellis-radius-lg: 8px;
-  --trellis-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --trellis-surface-alt: #f7f8fa;
+  --trellis-border: #e6e8ec;
+  --trellis-border-strong: #d7dae0;
+  --trellis-text: #1a1d23;
+  --trellis-text-muted: #6b7280;
+  --trellis-primary: #6d5cf5;
+  --trellis-primary-hover: #5b49e0;
+  --trellis-primary-soft: #efedfe;
+  --trellis-danger: #d23b3b;
+  --trellis-danger-bg: #fdeded;
+  --trellis-danger-border: #f6cccc;
+  --trellis-radius: 6px;
+  --trellis-radius-lg: 10px;
+  --trellis-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --trellis-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --trellis-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
+  --trellis-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --trellis-mono: 'SF Mono', 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
+
+  /* Semantic badge tones */
+  --tone-positive-bg: #e7f7ee;   --tone-positive-fg: #137a47;
+  --tone-progress-bg: #e8f0fe;   --tone-progress-fg: #1c5fd6;
+  --tone-warning-bg:  #fff3df;   --tone-warning-fg:  #b06a06;
+  --tone-danger-bg:   #fdeaea;   --tone-danger-fg:   #c0392b;
+  --tone-neutral-bg:  #eef0f3;   --tone-neutral-fg:  #586072;
 }
+
+html, body {
+  margin: 0;
+  background: var(--trellis-bg);
+  color: var(--trellis-text);
+  font-family: var(--trellis-font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
 
 /* =============================================================================
    TABLE BLOCK

@@ -210,7 +210,7 @@ function DefaultLayout({
                 onClick={() => handleNavClick(item)}
                 title={sidebarCollapsed ? item.label : undefined}
               >
-                {item.icon && <span style={navIconStyle}>{item.icon}</span>}
+                {item.icon && <span style={navIconStyle}>{navIcon(item.icon)}</span>}
                 {!sidebarCollapsed && <span>{item.label}</span>}
               </button>
             );
@@ -355,7 +355,11 @@ function ViewRenderer({
 
   return (
     <div className="view-container" style={viewContainerStyle}>
-      {view.name && <h2 style={viewTitleStyle}>{view.name}</h2>}
+      {/* View title is provided by the product's page-header block; only
+          fall back to the view name when the view has no page-header. */}
+      {view.name && !viewHasPageHeader(view) && (
+        <h2 style={viewTitleStyle}>{view.name}</h2>
+      )}
       <LayoutRenderer
         layout={layout}
         wiring={wiring}
@@ -494,6 +498,31 @@ export function DynamicProductApp({
 // =============================================================================
 // HELPERS
 // =============================================================================
+
+/** Map common icon names (lucide-style) to emoji; pass emoji through. */
+const NAV_ICONS: Record<string, string> = {
+  home: '🏠',
+  history: '🕘',
+  dashboard: '📊',
+  'layout-dashboard': '📊',
+  settings: '⚙️',
+  users: '👥',
+  box: '📦',
+  inbox: '📥',
+  calendar: '📅',
+  chart: '📈',
+};
+
+function navIcon(icon: string): string {
+  // Already an emoji / symbol (non-ascii) — render as-is
+  if (/[^ -]/.test(icon)) return icon;
+  return NAV_ICONS[icon.toLowerCase()] ?? '•';
+}
+
+/** Whether a view's layout contains a page-header block (so we skip the auto title). */
+function viewHasPageHeader(view: ViewConfig): boolean {
+  return JSON.stringify(view.layout ?? {}).includes('page-header');
+}
 
 /**
  * Match a route pattern against a path.

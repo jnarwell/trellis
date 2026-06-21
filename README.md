@@ -16,11 +16,16 @@ pnpm --filter @trellis/client dev
 Backed by an in-memory mock API (no database). See [docs/RUNNING.md](docs/RUNNING.md)
 for full-stack mode (Fastify + PostgreSQL).
 
+The demo opens in a **guided shell**: switch tools and roles from the top bar,
+and click **`</> View config`** to see the exact YAML that generated the app
+you're looking at. Create/edit/delete are live (with toasts), and changes push
+to other open tabs over WebSockets.
+
 ## Demo products — same engine, different tools
 
 This is the whole point of Trellis: each of these is a **complete, working app
 defined by a single YAML file** in [`products/`](products/) — no per-product
-code. Open any of them and switch with the `?product=` query param:
+code. Switch between them in the top bar (or with the `?product=` query param):
 
 | Tool | What it emulates | URL | Config |
 |------|------------------|-----|--------|

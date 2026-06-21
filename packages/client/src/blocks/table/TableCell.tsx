@@ -6,7 +6,8 @@ import React from 'react';
 import type { Entity } from '@trellis/kernel';
 import type { CellProps, ColumnConfig } from './types.js';
 import type { CellFormat } from '../types.js';
-import { cell, badge, cn } from './styles.js';
+import { cell } from './styles.js';
+import { statusTone, statusLabel, STATUS_LIKE_PROPERTIES } from '../status-tone.js';
 
 // =============================================================================
 // CELL VALUE EXTRACTION
@@ -193,15 +194,16 @@ const BooleanCell: React.FC<CellProps> = ({ value }) => {
   );
 };
 
-const BadgeCell: React.FC<CellProps> = ({ value, column }) => {
-  const displayValue = String(value ?? '');
-  const colors = column.formatOptions?.colors ?? {};
-  const colorKey = displayValue.toLowerCase();
-  const colorClass = colors[colorKey] ?? badge.colors.gray;
-
+const BadgeCell: React.FC<CellProps> = ({ value }) => {
+  if (value === null || value === undefined || value === '') {
+    return <span className={cell.text}></span>;
+  }
+  // Semantic tone derived from the value (done=green, urgent=red, etc.) —
+  // consistent across every product without per-column color config.
+  const tone = statusTone(value);
   return (
-    <span className={cn(badge.base, colorClass)}>
-      {displayValue}
+    <span className={`trellis-badge trellis-badge--${tone}`}>
+      {statusLabel(value)}
     </span>
   );
 };
@@ -287,8 +289,11 @@ export const TableCell: React.FC<TableCellProps> = ({
     ? evaluatedValue
     : getPropertyValue(entity, column.property);
 
-  // Determine format
-  const format = column.format ?? 'text';
+  // Determine format. Status-like columns (status/priority/stage/...) render
+  // as semantic badges automatically unless an explicit format is set.
+  const propName = String(column.property ?? '').toLowerCase();
+  const format: CellFormat =
+    column.format ?? (STATUS_LIKE_PROPERTIES.has(propName) ? 'badge' : 'text');
 
   // Get renderer
   const Renderer = CellRenderers[format] ?? TextCell;
