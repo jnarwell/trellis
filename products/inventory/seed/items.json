@@ -1,0 +1,130 @@
+[
+  {
+    "id": "01234567-89ab-7def-8004-000000000001",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "M3 hex bolt (50mm)" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Fasteners" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 1840 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Aisle A-3" } }
+    },
+    "created_at": "2026-05-01T08:00:00Z",
+    "updated_at": "2026-06-10T09:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000002",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Aluminum sheet 2mm" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Raw material" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "low_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 12 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Rack B-1" } }
+    },
+    "created_at": "2026-05-03T08:00:00Z",
+    "updated_at": "2026-06-12T11:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000003",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "PLA filament (black, 1kg)" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Consumables" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "out_of_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 0 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Shelf C-2" } }
+    },
+    "created_at": "2026-05-05T08:00:00Z",
+    "updated_at": "2026-06-13T08:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000004",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Stepper motor NEMA 17" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Electronics" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "on_order" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 8 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Bin D-4" } }
+    },
+    "created_at": "2026-05-08T08:00:00Z",
+    "updated_at": "2026-06-11T14:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000005",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Ball bearing 608ZZ" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Components" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 430 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Aisle A-5" } }
+    },
+    "created_at": "2026-05-10T08:00:00Z",
+    "updated_at": "2026-06-09T10:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000006",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Heat-set inserts M3" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Fasteners" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "low_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 35 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Aisle A-3" } }
+    },
+    "created_at": "2026-05-12T08:00:00Z",
+    "updated_at": "2026-06-12T16:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000007",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Polycarbonate sheet 3mm" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Raw material" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_stock" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 64 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Rack B-2" } }
+    },
+    "created_at": "2026-05-15T08:00:00Z",
+    "updated_at": "2026-06-08T09:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8004-000000000008",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "item",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Cooling fan 40mm" } },
+      "category": { "source": "literal", "value": { "type": "text", "value": "Electronics" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "on_order" } },
+      "quantity": { "source": "literal", "value": { "type": "number", "value": 20 } },
+      "location": { "source": "literal", "value": { "type": "text", "value": "Bin D-2" } }
+    },
+    "created_at": "2026-05-18T08:00:00Z",
+    "updated_at": "2026-06-13T10:00:00Z"
+  }
+]

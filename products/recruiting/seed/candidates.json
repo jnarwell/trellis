@@ -1,0 +1,130 @@
+[
+  {
+    "id": "01234567-89ab-7def-8003-000000000001",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Jordan Avery" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Senior Frontend Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "interview" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "4" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Referral" } }
+    },
+    "created_at": "2026-06-02T10:00:00Z",
+    "updated_at": "2026-06-12T14:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000002",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Priya Nair" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Product Designer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "offer" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "5" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "LinkedIn" } }
+    },
+    "created_at": "2026-05-28T09:00:00Z",
+    "updated_at": "2026-06-13T11:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000003",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Marcus Webb" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Backend Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "screening" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "3" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Job board" } }
+    },
+    "created_at": "2026-06-09T13:00:00Z",
+    "updated_at": "2026-06-11T10:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000004",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Sofia Romano" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Senior Frontend Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "applied" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "3" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Referral" } }
+    },
+    "created_at": "2026-06-12T08:00:00Z",
+    "updated_at": "2026-06-12T08:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000005",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Dev Patel" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Product Designer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "hired" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "5" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "LinkedIn" } }
+    },
+    "created_at": "2026-05-10T09:00:00Z",
+    "updated_at": "2026-06-01T16:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000006",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Lena Fischer" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Backend Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "rejected" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "2" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Job board" } }
+    },
+    "created_at": "2026-05-25T11:00:00Z",
+    "updated_at": "2026-06-04T10:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000007",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Omar Haddad" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Data Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "interview" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "4" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Referral" } }
+    },
+    "created_at": "2026-06-06T10:00:00Z",
+    "updated_at": "2026-06-13T09:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8003-000000000008",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "candidate",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "name": { "source": "literal", "value": { "type": "text", "value": "Grace Kim" } },
+      "role": { "source": "literal", "value": { "type": "text", "value": "Data Engineer" } },
+      "stage": { "source": "literal", "value": { "type": "text", "value": "screening" } },
+      "rating": { "source": "literal", "value": { "type": "text", "value": "4" } },
+      "source": { "source": "literal", "value": { "type": "text", "value": "Job board" } }
+    },
+    "created_at": "2026-06-10T12:00:00Z",
+    "updated_at": "2026-06-12T15:00:00Z"
+  }
+]

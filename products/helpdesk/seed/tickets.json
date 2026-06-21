@@ -1,0 +1,130 @@
+[
+  {
+    "id": "01234567-89ab-7def-8005-000000000001",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Cannot reset my password" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "open" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "high" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Acme Corp" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "email" } }
+    },
+    "created_at": "2026-06-13T09:00:00Z",
+    "updated_at": "2026-06-13T09:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000002",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Invoice shows wrong tax rate" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "pending" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "normal" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Globex" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "email" } }
+    },
+    "created_at": "2026-06-12T11:00:00Z",
+    "updated_at": "2026-06-13T08:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000003",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "App crashes on file upload" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "open" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "urgent" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Initech" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "chat" } }
+    },
+    "created_at": "2026-06-13T07:30:00Z",
+    "updated_at": "2026-06-13T10:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000004",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "How do I export my data?" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "resolved" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "low" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Soylent Co" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "chat" } }
+    },
+    "created_at": "2026-06-10T14:00:00Z",
+    "updated_at": "2026-06-11T09:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000005",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Request: bulk user import" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "pending" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "normal" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Umbrella Inc" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "email" } }
+    },
+    "created_at": "2026-06-09T10:00:00Z",
+    "updated_at": "2026-06-12T13:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000006",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Billing charged twice this month" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "open" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "high" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Wonka Industries" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "phone" } }
+    },
+    "created_at": "2026-06-12T16:00:00Z",
+    "updated_at": "2026-06-13T08:30:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000007",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Dashboard widget not loading" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "closed" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "normal" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Stark Industries" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "chat" } }
+    },
+    "created_at": "2026-06-05T09:00:00Z",
+    "updated_at": "2026-06-08T12:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8005-000000000008",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "ticket",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "subject": { "source": "literal", "value": { "type": "text", "value": "Feature works differently than docs say" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "resolved" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "low" } },
+      "customer": { "source": "literal", "value": { "type": "text", "value": "Hooli" } },
+      "channel": { "source": "literal", "value": { "type": "text", "value": "email" } }
+    },
+    "created_at": "2026-06-07T13:00:00Z",
+    "updated_at": "2026-06-10T15:00:00Z"
+  }
+]

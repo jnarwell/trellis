@@ -1,0 +1,130 @@
+[
+  {
+    "id": "01234567-89ab-7def-8002-000000000001",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Login page 500s on expired session" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_progress" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "urgent" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "bug" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Mei Tanaka" } }
+    },
+    "created_at": "2026-06-10T09:00:00Z",
+    "updated_at": "2026-06-13T10:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000002",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Add dark mode toggle" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "todo" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "medium" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "feature" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Leo Park" } }
+    },
+    "created_at": "2026-06-09T14:00:00Z",
+    "updated_at": "2026-06-09T14:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000003",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Upgrade to Node 22 in CI" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "backlog" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "low" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "chore" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Mei Tanaka" } }
+    },
+    "created_at": "2026-06-08T11:00:00Z",
+    "updated_at": "2026-06-08T11:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000004",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Export to CSV missing columns" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_review" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "high" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "bug" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Ana Sousa" } }
+    },
+    "created_at": "2026-06-07T10:00:00Z",
+    "updated_at": "2026-06-12T16:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000005",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Keyboard shortcuts for navigation" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "done" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "medium" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "feature" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Leo Park" } }
+    },
+    "created_at": "2026-05-30T09:00:00Z",
+    "updated_at": "2026-06-06T15:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000006",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Search returns stale results" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "todo" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "high" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "bug" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Ana Sousa" } }
+    },
+    "created_at": "2026-06-11T13:00:00Z",
+    "updated_at": "2026-06-11T13:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000007",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Document the webhooks API" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "backlog" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "low" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "chore" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Mei Tanaka" } }
+    },
+    "created_at": "2026-06-05T08:00:00Z",
+    "updated_at": "2026-06-05T08:00:00Z"
+  },
+  {
+    "id": "01234567-89ab-7def-8002-000000000008",
+    "tenant_id": "00000000-0000-7000-8000-000000000001",
+    "type": "issue",
+    "created_by": "00000000-0000-7000-8000-0000000000aa",
+    "version": 1,
+    "properties": {
+      "title": { "source": "literal", "value": { "type": "text", "value": "Mobile layout overflow on dashboard" } },
+      "status": { "source": "literal", "value": { "type": "text", "value": "in_progress" } },
+      "priority": { "source": "literal", "value": { "type": "text", "value": "high" } },
+      "type": { "source": "literal", "value": { "type": "text", "value": "bug" } },
+      "assignee": { "source": "literal", "value": { "type": "text", "value": "Leo Park" } }
+    },
+    "created_at": "2026-06-12T10:00:00Z",
+    "updated_at": "2026-06-13T09:00:00Z"
+  }
+]

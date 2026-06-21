@@ -1,0 +1,231 @@
+# Inventory — Stock & Assets
+# Trellis emulating an inventory / asset tracker from config.
+
+name: Inventory — Stock & Assets
+version: 1.0.0
+description: Track stock levels across locations
+defaultView: dashboard
+
+entities:
+  - id: item
+    name: Item
+    properties:
+      - name: name
+        type: text
+      - name: category
+        type: text
+      - name: status
+        type: option
+        options: [in_stock, low_stock, out_of_stock, on_order]
+      - name: quantity
+        type: number
+      - name: location
+        type: text
+
+views:
+  - id: dashboard
+    name: Stock
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Inventory
+            subtitle: Track stock levels across locations
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-item
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: item
+                      mode: create
+                      fields:
+                        - property: name
+                          type: text
+                          placeholder: Item name...
+                        - property: category
+                          type: text
+                          placeholder: Category...
+                        - property: quantity
+                          type: number
+                          placeholder: "0"
+                        - property: status
+                          type: select
+                          options:
+                            - value: in_stock
+                              label: In Stock
+                            - value: low_stock
+                              label: Low Stock
+                            - value: out_of_stock
+                              label: Out of Stock
+                            - value: on_order
+                              label: On Order
+                        - property: location
+                          type: text
+                          placeholder: Location...
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: Total SKUs
+                          entityType: item
+                          aggregate: count
+                        - label: In Stock
+                          entityType: item
+                          aggregate: count
+                          filter:
+                            status: in_stock
+                        - label: Low Stock
+                          entityType: item
+                          aggregate: count
+                          filter:
+                            status: low_stock
+                        - label: Out of Stock
+                          entityType: item
+                          aggregate: count
+                          filter:
+                            status: out_of_stock
+
+        - type: trellis.data-table
+          id: items-table
+          props:
+            entityType: item
+            compact: true
+            columns:
+              - property: name
+                label: Item
+              - property: category
+                label: Category
+              - property: quantity
+                label: Qty
+              - property: status
+                label: Status
+              - property: location
+                label: Location
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-status
+                    props:
+                      type: doughnut
+                      entityType: item
+                      labelProperty: status
+                      aggregate: count
+                      title: By Stock Status
+                      height: 200
+                      showLegend: true
+                - block:
+                    type: trellis.chart
+                    id: by-category
+                    props:
+                      type: bar
+                      entityType: item
+                      labelProperty: category
+                      aggregate: count
+                      title: By Category
+                      height: 200
+
+        - type: trellis.kanban
+          id: board
+          props:
+            entityType: item
+            statusProperty: status
+            card:
+              title: "${name}"
+              subtitle: "${location}"
+            columns:
+              - id: in_stock
+                label: In Stock
+                value: in_stock
+              - id: low_stock
+                label: Low Stock
+                value: low_stock
+              - id: out_of_stock
+                label: Out of Stock
+                value: out_of_stock
+              - id: on_order
+                label: On Order
+                value: on_order
+    wiring: []
+
+  - id: edit
+    name: Edit Item
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-item
+          props:
+            entityType: item
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: name
+                type: text
+                label: Item
+              - property: category
+                type: text
+                label: Category
+              - property: quantity
+                type: number
+                label: Quantity
+              - property: status
+                type: select
+                label: Status
+                options:
+                  - value: in_stock
+                    label: In Stock
+                  - value: low_stock
+                    label: Low Stock
+                  - value: out_of_stock
+                    label: Out of Stock
+                  - value: on_order
+                    label: On Order
+              - property: location
+                type: text
+                label: Location
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Stock
+      view: dashboard
+      icon: home

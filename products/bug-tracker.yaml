@@ -1,0 +1,270 @@
+# Bug Tracker — Issues
+# Trellis emulating an issue tracker (Linear / Jira / GitHub Issues) from config.
+
+name: Bug Tracker — Issues
+version: 1.0.0
+description: Track bugs and features across a workflow
+defaultView: dashboard
+
+entities:
+  - id: issue
+    name: Issue
+    properties:
+      - name: title
+        type: text
+      - name: status
+        type: option
+        options: [backlog, todo, in_progress, in_review, done]
+      - name: priority
+        type: option
+        options: [low, medium, high, urgent]
+      - name: type
+        type: option
+        options: [bug, feature, chore]
+      - name: assignee
+        type: text
+
+views:
+  - id: dashboard
+    name: Board
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Issues
+            subtitle: Track bugs and features across the team
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-issue
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: issue
+                      mode: create
+                      fields:
+                        - property: title
+                          type: text
+                          placeholder: Issue title...
+                        - property: type
+                          type: select
+                          options:
+                            - value: bug
+                              label: Bug
+                            - value: feature
+                              label: Feature
+                            - value: chore
+                              label: Chore
+                        - property: priority
+                          type: select
+                          options:
+                            - value: low
+                              label: Low
+                            - value: medium
+                              label: Medium
+                            - value: high
+                              label: High
+                            - value: urgent
+                              label: Urgent
+                        - property: status
+                          type: select
+                          options:
+                            - value: backlog
+                              label: Backlog
+                            - value: todo
+                              label: Todo
+                            - value: in_progress
+                              label: In Progress
+                            - value: in_review
+                              label: In Review
+                            - value: done
+                              label: Done
+                        - property: assignee
+                          type: text
+                          placeholder: Assignee...
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: Total
+                          entityType: issue
+                          aggregate: count
+                        - label: In Progress
+                          entityType: issue
+                          aggregate: count
+                          filter:
+                            status: in_progress
+                        - label: Urgent
+                          entityType: issue
+                          aggregate: count
+                          filter:
+                            priority: urgent
+                        - label: Done
+                          entityType: issue
+                          aggregate: count
+                          filter:
+                            status: done
+
+        - type: trellis.data-table
+          id: issues-table
+          props:
+            entityType: issue
+            compact: true
+            columns:
+              - property: title
+                label: Title
+              - property: type
+                label: Type
+              - property: priority
+                label: Priority
+              - property: status
+                label: Status
+              - property: assignee
+                label: Assignee
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-priority
+                    props:
+                      type: bar
+                      entityType: issue
+                      labelProperty: priority
+                      aggregate: count
+                      title: By Priority
+                      height: 200
+                - block:
+                    type: trellis.chart
+                    id: by-type
+                    props:
+                      type: doughnut
+                      entityType: issue
+                      labelProperty: type
+                      aggregate: count
+                      title: By Type
+                      height: 200
+                      showLegend: true
+
+        - type: trellis.kanban
+          id: board
+          props:
+            entityType: issue
+            statusProperty: status
+            card:
+              title: "${title}"
+              subtitle: "${assignee}"
+            columns:
+              - id: backlog
+                label: Backlog
+                value: backlog
+              - id: todo
+                label: Todo
+                value: todo
+              - id: in_progress
+                label: In Progress
+                value: in_progress
+              - id: in_review
+                label: In Review
+                value: in_review
+              - id: done
+                label: Done
+                value: done
+    wiring: []
+
+  - id: edit
+    name: Edit Issue
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-issue
+          props:
+            entityType: issue
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: title
+                type: text
+                label: Title
+              - property: type
+                type: select
+                label: Type
+                options:
+                  - value: bug
+                    label: Bug
+                  - value: feature
+                    label: Feature
+                  - value: chore
+                    label: Chore
+              - property: priority
+                type: select
+                label: Priority
+                options:
+                  - value: low
+                    label: Low
+                  - value: medium
+                    label: Medium
+                  - value: high
+                    label: High
+                  - value: urgent
+                    label: Urgent
+              - property: status
+                type: select
+                label: Status
+                options:
+                  - value: backlog
+                    label: Backlog
+                  - value: todo
+                    label: Todo
+                  - value: in_progress
+                    label: In Progress
+                  - value: in_review
+                    label: In Review
+                  - value: done
+                    label: Done
+              - property: assignee
+                type: text
+                label: Assignee
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Board
+      view: dashboard
+      icon: home

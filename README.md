@@ -13,9 +13,31 @@ pnpm --filter @trellis/client dev
 # Open http://localhost:5173
 ```
 
-This serves the **kitchen-sink demo** — all 14 UI block types on one
-config-driven dashboard, backed by an in-memory mock API. See
-[docs/RUNNING.md](docs/RUNNING.md) for full-stack mode (Fastify + PostgreSQL).
+Backed by an in-memory mock API (no database). See [docs/RUNNING.md](docs/RUNNING.md)
+for full-stack mode (Fastify + PostgreSQL).
+
+## Demo products — same engine, different tools
+
+This is the whole point of Trellis: each of these is a **complete, working app
+defined by a single YAML file** in [`products/`](products/) — no per-product
+code. Open any of them and switch with the `?product=` query param:
+
+| Tool | What it emulates | URL | Config |
+|------|------------------|-----|--------|
+| CRM | Salesforce / HubSpot / Pipedrive | `?product=crm` | [crm.yaml](products/crm.yaml) |
+| Bug Tracker | Linear / Jira / GitHub Issues | `?product=bug-tracker` | [bug-tracker.yaml](products/bug-tracker.yaml) |
+| Recruiting (ATS) | Greenhouse / Lever / Ashby | `?product=recruiting` | [recruiting.yaml](products/recruiting.yaml) |
+| Inventory | Stock / asset tracking | `?product=inventory` | [inventory.yaml](products/inventory.yaml) |
+| Help Desk | Zendesk / Freshdesk | `?product=helpdesk` | [helpdesk.yaml](products/helpdesk.yaml) |
+| PLM | Hardware part lifecycle (the original domain) | `?product=plm` | [plm.yaml](products/plm.yaml) |
+| Kitchen Sink | All 14 block types on one page (component showcase) | `?product=kitchen-sink` | [kitchen-sink.yaml](products/kitchen-sink.yaml) |
+
+Each gives you a stats row, a create form, a sortable table with edit/delete,
+charts, and a drag-and-drop pipeline board — generated entirely from its config.
+To build a new tool, copy a YAML file and change the entities and fields.
+
+Add `&role=viewer` to any URL to see role-based access control: the create form
+and edit/delete actions disappear for read-only users (enforced server-side too).
 
 ## Project Structure
 

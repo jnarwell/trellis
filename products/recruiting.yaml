@@ -1,0 +1,254 @@
+# Recruiting — Applicant Tracking
+# Trellis emulating an ATS (Greenhouse / Lever / Ashby) from config.
+
+name: Recruiting — Applicant Tracking
+version: 1.0.0
+description: Move candidates through the hiring pipeline
+defaultView: dashboard
+
+entities:
+  - id: candidate
+    name: Candidate
+    properties:
+      - name: name
+        type: text
+      - name: role
+        type: text
+      - name: stage
+        type: option
+        options: [applied, screening, interview, offer, hired, rejected]
+      - name: rating
+        type: option
+        options: ["1", "2", "3", "4", "5"]
+      - name: source
+        type: text
+
+views:
+  - id: dashboard
+    name: Pipeline
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Candidates
+            subtitle: Move applicants through the hiring pipeline
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-candidate
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: candidate
+                      mode: create
+                      fields:
+                        - property: name
+                          type: text
+                          placeholder: Candidate name...
+                        - property: role
+                          type: text
+                          placeholder: Role applied for...
+                        - property: stage
+                          type: select
+                          options:
+                            - value: applied
+                              label: Applied
+                            - value: screening
+                              label: Screening
+                            - value: interview
+                              label: Interview
+                            - value: offer
+                              label: Offer
+                            - value: hired
+                              label: Hired
+                            - value: rejected
+                              label: Rejected
+                        - property: source
+                          type: text
+                          placeholder: Source...
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: Total
+                          entityType: candidate
+                          aggregate: count
+                        - label: Interviewing
+                          entityType: candidate
+                          aggregate: count
+                          filter:
+                            stage: interview
+                        - label: Offers Out
+                          entityType: candidate
+                          aggregate: count
+                          filter:
+                            stage: offer
+                        - label: Hired
+                          entityType: candidate
+                          aggregate: count
+                          filter:
+                            stage: hired
+
+        - type: trellis.data-table
+          id: candidates-table
+          props:
+            entityType: candidate
+            compact: true
+            columns:
+              - property: name
+                label: Name
+              - property: role
+                label: Role
+              - property: stage
+                label: Stage
+              - property: rating
+                label: Rating
+              - property: source
+                label: Source
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-stage
+                    props:
+                      type: bar
+                      entityType: candidate
+                      labelProperty: stage
+                      aggregate: count
+                      title: Candidates by Stage
+                      height: 200
+                - block:
+                    type: trellis.chart
+                    id: by-source
+                    props:
+                      type: doughnut
+                      entityType: candidate
+                      labelProperty: source
+                      aggregate: count
+                      title: By Source
+                      height: 200
+                      showLegend: true
+
+        - type: trellis.kanban
+          id: pipeline
+          props:
+            entityType: candidate
+            statusProperty: stage
+            card:
+              title: "${name}"
+              subtitle: "${role}"
+            columns:
+              - id: applied
+                label: Applied
+                value: applied
+              - id: screening
+                label: Screening
+                value: screening
+              - id: interview
+                label: Interview
+                value: interview
+              - id: offer
+                label: Offer
+                value: offer
+              - id: hired
+                label: Hired
+                value: hired
+              - id: rejected
+                label: Rejected
+                value: rejected
+    wiring: []
+
+  - id: edit
+    name: Edit Candidate
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-candidate
+          props:
+            entityType: candidate
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: name
+                type: text
+                label: Name
+              - property: role
+                type: text
+                label: Role
+              - property: stage
+                type: select
+                label: Stage
+                options:
+                  - value: applied
+                    label: Applied
+                  - value: screening
+                    label: Screening
+                  - value: interview
+                    label: Interview
+                  - value: offer
+                    label: Offer
+                  - value: hired
+                    label: Hired
+                  - value: rejected
+                    label: Rejected
+              - property: rating
+                type: select
+                label: Rating
+                options:
+                  - value: "1"
+                    label: "1"
+                  - value: "2"
+                    label: "2"
+                  - value: "3"
+                    label: "3"
+                  - value: "4"
+                    label: "4"
+                  - value: "5"
+                    label: "5"
+              - property: source
+                type: text
+                label: Source
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Pipeline
+      view: dashboard
+      icon: home

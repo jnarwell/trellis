@@ -1,0 +1,263 @@
+# Help Desk — Support Tickets
+# Trellis emulating a support desk (Zendesk / Freshdesk / Intercom) from config.
+
+name: Help Desk — Support Tickets
+version: 1.0.0
+description: Triage and resolve customer tickets
+defaultView: dashboard
+
+entities:
+  - id: ticket
+    name: Ticket
+    properties:
+      - name: subject
+        type: text
+      - name: status
+        type: option
+        options: [open, pending, resolved, closed]
+      - name: priority
+        type: option
+        options: [low, normal, high, urgent]
+      - name: customer
+        type: text
+      - name: channel
+        type: option
+        options: [email, chat, phone]
+
+views:
+  - id: dashboard
+    name: Queue
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Support Queue
+            subtitle: Triage and resolve customer tickets
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-ticket
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: ticket
+                      mode: create
+                      fields:
+                        - property: subject
+                          type: text
+                          placeholder: Ticket subject...
+                        - property: customer
+                          type: text
+                          placeholder: Customer...
+                        - property: priority
+                          type: select
+                          options:
+                            - value: low
+                              label: Low
+                            - value: normal
+                              label: Normal
+                            - value: high
+                              label: High
+                            - value: urgent
+                              label: Urgent
+                        - property: channel
+                          type: select
+                          options:
+                            - value: email
+                              label: Email
+                            - value: chat
+                              label: Chat
+                            - value: phone
+                              label: Phone
+                        - property: status
+                          type: select
+                          options:
+                            - value: open
+                              label: Open
+                            - value: pending
+                              label: Pending
+                            - value: resolved
+                              label: Resolved
+                            - value: closed
+                              label: Closed
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: All Tickets
+                          entityType: ticket
+                          aggregate: count
+                        - label: Open
+                          entityType: ticket
+                          aggregate: count
+                          filter:
+                            status: open
+                        - label: Urgent
+                          entityType: ticket
+                          aggregate: count
+                          filter:
+                            priority: urgent
+                        - label: Resolved
+                          entityType: ticket
+                          aggregate: count
+                          filter:
+                            status: resolved
+
+        - type: trellis.data-table
+          id: tickets-table
+          props:
+            entityType: ticket
+            compact: true
+            columns:
+              - property: subject
+                label: Subject
+              - property: customer
+                label: Customer
+              - property: priority
+                label: Priority
+              - property: channel
+                label: Channel
+              - property: status
+                label: Status
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-priority
+                    props:
+                      type: bar
+                      entityType: ticket
+                      labelProperty: priority
+                      aggregate: count
+                      title: By Priority
+                      height: 200
+                - block:
+                    type: trellis.chart
+                    id: by-channel
+                    props:
+                      type: doughnut
+                      entityType: ticket
+                      labelProperty: channel
+                      aggregate: count
+                      title: By Channel
+                      height: 200
+                      showLegend: true
+
+        - type: trellis.kanban
+          id: queue
+          props:
+            entityType: ticket
+            statusProperty: status
+            card:
+              title: "${subject}"
+              subtitle: "${customer}"
+            columns:
+              - id: open
+                label: Open
+                value: open
+              - id: pending
+                label: Pending
+                value: pending
+              - id: resolved
+                label: Resolved
+                value: resolved
+              - id: closed
+                label: Closed
+                value: closed
+    wiring: []
+
+  - id: edit
+    name: Edit Ticket
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-ticket
+          props:
+            entityType: ticket
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: subject
+                type: text
+                label: Subject
+              - property: customer
+                type: text
+                label: Customer
+              - property: priority
+                type: select
+                label: Priority
+                options:
+                  - value: low
+                    label: Low
+                  - value: normal
+                    label: Normal
+                  - value: high
+                    label: High
+                  - value: urgent
+                    label: Urgent
+              - property: channel
+                type: select
+                label: Channel
+                options:
+                  - value: email
+                    label: Email
+                  - value: chat
+                    label: Chat
+                  - value: phone
+                    label: Phone
+              - property: status
+                type: select
+                label: Status
+                options:
+                  - value: open
+                    label: Open
+                  - value: pending
+                    label: Pending
+                  - value: resolved
+                    label: Resolved
+                  - value: closed
+                    label: Closed
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Queue
+      view: dashboard
+      icon: home

@@ -1,0 +1,233 @@
+# PLM — Hardware Parts
+# Trellis emulating Product Lifecycle Management for hardware. This is the
+# domain Trellis was originally designed for: engineering data with materials,
+# physical quantities (mass), and a part lifecycle.
+
+name: PLM — Hardware Parts
+version: 1.0.0
+description: Manage parts through the engineering lifecycle
+defaultView: dashboard
+
+entities:
+  - id: part
+    name: Part
+    properties:
+      - name: name
+        type: text
+      - name: part_number
+        type: text
+      - name: status
+        type: option
+        options: [design, review, released, obsolete]
+      - name: material
+        type: text
+      - name: mass_g
+        type: number
+
+views:
+  - id: dashboard
+    name: Parts
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Parts Catalog
+            subtitle: Manage parts through the engineering lifecycle
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-part
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: part
+                      mode: create
+                      fields:
+                        - property: name
+                          type: text
+                          placeholder: Part name...
+                        - property: part_number
+                          type: text
+                          placeholder: "PN-0000"
+                        - property: material
+                          type: text
+                          placeholder: Material...
+                        - property: mass_g
+                          type: number
+                          placeholder: Mass (g)
+                        - property: status
+                          type: select
+                          options:
+                            - value: design
+                              label: Design
+                            - value: review
+                              label: Review
+                            - value: released
+                              label: Released
+                            - value: obsolete
+                              label: Obsolete
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: Total Parts
+                          entityType: part
+                          aggregate: count
+                        - label: Released
+                          entityType: part
+                          aggregate: count
+                          filter:
+                            status: released
+                        - label: In Review
+                          entityType: part
+                          aggregate: count
+                          filter:
+                            status: review
+                        - label: In Design
+                          entityType: part
+                          aggregate: count
+                          filter:
+                            status: design
+
+        - type: trellis.data-table
+          id: parts-table
+          props:
+            entityType: part
+            compact: true
+            columns:
+              - property: part_number
+                label: PN
+              - property: name
+                label: Name
+              - property: material
+                label: Material
+              - property: mass_g
+                label: Mass (g)
+              - property: status
+                label: Status
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-status
+                    props:
+                      type: doughnut
+                      entityType: part
+                      labelProperty: status
+                      aggregate: count
+                      title: By Lifecycle
+                      height: 200
+                      showLegend: true
+                - block:
+                    type: trellis.chart
+                    id: by-material
+                    props:
+                      type: bar
+                      entityType: part
+                      labelProperty: material
+                      aggregate: count
+                      title: By Material
+                      height: 200
+
+        - type: trellis.kanban
+          id: lifecycle
+          props:
+            entityType: part
+            statusProperty: status
+            card:
+              title: "${name}"
+              subtitle: "${material}"
+            columns:
+              - id: design
+                label: Design
+                value: design
+              - id: review
+                label: Review
+                value: review
+              - id: released
+                label: Released
+                value: released
+              - id: obsolete
+                label: Obsolete
+                value: obsolete
+    wiring: []
+
+  - id: edit
+    name: Edit Part
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-part
+          props:
+            entityType: part
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: name
+                type: text
+                label: Name
+              - property: part_number
+                type: text
+                label: Part Number
+              - property: material
+                type: text
+                label: Material
+              - property: mass_g
+                type: number
+                label: Mass (g)
+              - property: status
+                type: select
+                label: Lifecycle
+                options:
+                  - value: design
+                    label: Design
+                  - value: review
+                    label: Review
+                  - value: released
+                    label: Released
+                  - value: obsolete
+                    label: Obsolete
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Parts
+      view: dashboard
+      icon: home

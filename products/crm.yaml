@@ -1,0 +1,236 @@
+# CRM — Sales Pipeline
+# Demonstrates Trellis emulating a CRM (Salesforce / HubSpot / Pipedrive)
+# entirely from configuration. Same engine as every other product here.
+
+name: CRM — Sales Pipeline
+version: 1.0.0
+description: Track deals from first contact to close
+defaultView: dashboard
+
+entities:
+  - id: deal
+    name: Deal
+    properties:
+      - name: name
+        type: text
+      - name: company
+        type: text
+      - name: stage
+        type: option
+        options: [lead, qualified, proposal, won, lost]
+      - name: amount
+        type: number
+      - name: owner
+        type: text
+
+views:
+  - id: dashboard
+    name: Pipeline
+    route: /
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.page-header
+          id: header
+          props:
+            title: Sales Pipeline
+            subtitle: Track deals from first contact to close
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.form
+                    id: new-deal
+                    showWhen: "$can('entity.create')"
+                    props:
+                      entityType: deal
+                      mode: create
+                      fields:
+                        - property: name
+                          type: text
+                          placeholder: Deal name...
+                        - property: company
+                          type: text
+                          placeholder: Company...
+                        - property: amount
+                          type: number
+                          placeholder: "0"
+                        - property: stage
+                          type: select
+                          options:
+                            - value: lead
+                              label: Lead
+                            - value: qualified
+                              label: Qualified
+                            - value: proposal
+                              label: Proposal
+                            - value: won
+                              label: Won
+                            - value: lost
+                              label: Lost
+                        - property: owner
+                          type: text
+                          placeholder: Owner...
+                - block:
+                    type: trellis.stats
+                    id: stats
+                    props:
+                      layout: grid
+                      columns: 2
+                      stats:
+                        - label: Total Deals
+                          entityType: deal
+                          aggregate: count
+                        - label: Won
+                          entityType: deal
+                          aggregate: count
+                          filter:
+                            stage: won
+                        - label: In Proposal
+                          entityType: deal
+                          aggregate: count
+                          filter:
+                            stage: proposal
+                        - label: Lost
+                          entityType: deal
+                          aggregate: count
+                          filter:
+                            stage: lost
+
+        - type: trellis.data-table
+          id: deals-table
+          props:
+            entityType: deal
+            compact: true
+            columns:
+              - property: name
+                label: Deal
+              - property: company
+                label: Company
+              - property: stage
+                label: Stage
+              - property: amount
+                label: Amount
+              - property: owner
+                label: Owner
+            onRowClick: navigate
+            rowClickTarget: edit
+            actions:
+              - type: edit
+                label: Edit
+                permission: entity.update
+              - type: delete
+                label: Delete
+                confirm: true
+                permission: entity.delete
+
+        - type: grid
+          columns: 2
+          gap: 16px
+          rows:
+            - cells:
+                - block:
+                    type: trellis.chart
+                    id: by-stage
+                    props:
+                      type: bar
+                      entityType: deal
+                      labelProperty: stage
+                      aggregate: count
+                      title: Deals by Stage
+                      height: 200
+                - block:
+                    type: trellis.chart
+                    id: by-owner
+                    props:
+                      type: doughnut
+                      entityType: deal
+                      labelProperty: owner
+                      aggregate: count
+                      title: Deals by Owner
+                      height: 200
+                      showLegend: true
+
+        - type: trellis.kanban
+          id: pipeline
+          props:
+            entityType: deal
+            statusProperty: stage
+            columns:
+              - id: lead
+                label: Lead
+                value: lead
+              - id: qualified
+                label: Qualified
+                value: qualified
+              - id: proposal
+                label: Proposal
+                value: proposal
+              - id: won
+                label: Won
+                value: won
+              - id: lost
+                label: Lost
+                value: lost
+    wiring: []
+
+  - id: edit
+    name: Edit Deal
+    route: /edit/:id
+    layout:
+      type: stack
+      direction: vertical
+      gap: 16px
+      children:
+        - type: trellis.form
+          id: edit-deal
+          props:
+            entityType: deal
+            entityId: $route.params.id
+            mode: edit
+            fields:
+              - property: name
+                type: text
+                label: Deal
+              - property: company
+                type: text
+                label: Company
+              - property: amount
+                type: number
+                label: Amount
+              - property: stage
+                type: select
+                label: Stage
+                options:
+                  - value: lead
+                    label: Lead
+                  - value: qualified
+                    label: Qualified
+                  - value: proposal
+                    label: Proposal
+                  - value: won
+                    label: Won
+                  - value: lost
+                    label: Lost
+              - property: owner
+                type: text
+                label: Owner
+            actions:
+              submit:
+                type: submit
+                label: Save Changes
+                variant: primary
+              cancel:
+                type: cancel
+                label: Cancel
+
+navigation:
+  items:
+    - label: Pipeline
+      view: dashboard
+      icon: home
