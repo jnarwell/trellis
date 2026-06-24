@@ -1,7 +1,37 @@
 # Trellis - Current State
 
-**Last Updated:** 2026-06-21
-**Status:** Phase 2.11 - polished, self-demonstrating product (guided shell, live config editor, computed KPIs)
+**Last Updated:** 2026-06-24
+**Status:** Phase 2.12 - differentiator hardening (the PLM-grade engine features are now real, not aspirational)
+
+---
+
+## Differentiator Hardening (Phase 2.12)
+
+A research/verification pass found that the features distinguishing Trellis from
+a generic config-driven CRUD tool were declared but inert. These four rounds
+made them real, each with tests:
+
+- **Dimensional analysis** (`packages/kernel/src/expressions/units.ts`): the
+  expression engine treats numbers as physical quantities. Incompatible
+  dimensions error (`5_m + 3_s` throws `DIMENSION_MISMATCH`); compatible units
+  convert (`1_m + 300_mm = 1.3_m`); results carry their dimension/unit;
+  scaling/ratios behave. (kernel +14 tests)
+- **Measured uncertainty**: the engine propagates uncertainty through arithmetic
+  (quadrature for ±, relative for ×/÷, across unit conversion), and the data
+  table renders `value ± uncertainty unit` (PLM part mass, e.g. `84.5 ± 0.5 g`).
+  (kernel +6 tests)
+- **Seed loading** (`packages/server/src/loader/seed-data.ts`): the product
+  loader actually inserts seed data now — `loadSeedData` was a stub, so
+  `trellis serve` produced an empty app. It reads `<product>/seed/*.json` (the
+  same format the demo mock consumes) and inserts entities + relationships under
+  the loaded tenant. (server +6 tests)
+- **Read-time inheritance** (`packages/server/src/services/inheritance-resolver.ts`):
+  `inherited` properties resolve their `from_entity`/`from_property` pointer to
+  the source's effective value (chains, overrides, missing-source errors, cycle
+  detection). The `resolveInherited` read option was previously a no-op.
+  (server +10 tests)
+
+**Tests:** 883 passing (kernel 168, server 445, client 270).
 
 ---
 
