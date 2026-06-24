@@ -227,6 +227,48 @@ function ToastHost(): React.ReactElement {
 }
 
 // =============================================================================
+// WELCOME HINT — first-visit callout explaining the demo
+// =============================================================================
+
+const HINT_KEY = 'trellis-demo-hint-dismissed';
+
+function WelcomeHint(): React.ReactElement {
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(HINT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  if (dismissed) return <></>;
+
+  const close = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(HINT_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <div className="demo-hint">
+      <span className="demo-hint-icon">👋</span>
+      <span className="demo-hint-text">
+        Every app here is generated from <strong>one YAML file</strong> — no per-app code.
+        Switch the <strong>Tool</strong> dropdown, change your <strong>Role</strong> to see
+        access control, or click <code>{'</>'} View config</code> to <strong>edit the config and
+        watch the app re-render live</strong>.
+      </span>
+      <button className="demo-hint-close" onClick={close} aria-label="Dismiss">
+        ✕
+      </button>
+    </div>
+  );
+}
+
+// =============================================================================
 // SHELL
 // =============================================================================
 
@@ -387,6 +429,8 @@ export function DemoShell(): React.ReactElement {
           </span>
         )}
       </div>
+
+      <WelcomeHint />
 
       <main className="demo-stage">
         {/* key remounts the app cleanly when product, role, or config changes */}

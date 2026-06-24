@@ -1,7 +1,28 @@
 # Trellis - Current State
 
-**Last Updated:** 2026-06-09
-**Status:** Phase 2.9 In Progress - RBAC + audit log + deployment config landed; demo fully working
+**Last Updated:** 2026-06-21
+**Status:** Phase 2.11 - polished, self-demonstrating product (guided shell, live config editor, computed KPIs)
+
+---
+
+## Demo Highlights (Phase 2.11)
+
+The demo is now a self-explanatory product tour at `pnpm --filter @trellis/client dev`:
+
+- **Guided shell** (`packages/client/src/DemoShell.tsx`): top-bar switchers for
+  all 7 products and 3 roles; a first-visit welcome hint; live connection dot.
+- **Live config editor**: `</> View config` opens the product YAML in an
+  editor — edit it, Apply, and the app re-renders from the parsed config
+  (`DynamicProductApp` `configOverride` prop). Parse errors inline; revert to
+  file. The clearest possible demonstration of "config IS the app."
+- **Design system**: modern theme tokens, semantic status badges (auto-colored
+  by value via `blocks/status-tone.ts`), polished KPI cards / tables / kanban.
+- **Computed KPIs**: dashboards aggregate, not just count — CRM pipeline value
+  = `SUM(amount)` as currency, inventory units on hand, PLM total mass — all
+  from the stats block's `aggregate: sum` + `format`.
+- **Functional feedback**: toasts on create/update/delete; real-time pushes.
+- **6 recognizable products** (CRM, bug tracker, ATS, inventory, help desk,
+  PLM) + kitchen-sink, each one YAML file with KPI-row dashboards.
 
 ---
 

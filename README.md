@@ -17,9 +17,13 @@ Backed by an in-memory mock API (no database). See [docs/RUNNING.md](docs/RUNNIN
 for full-stack mode (Fastify + PostgreSQL).
 
 The demo opens in a **guided shell**: switch tools and roles from the top bar,
-and click **`</> View config`** to see the exact YAML that generated the app
-you're looking at. Create/edit/delete are live (with toasts), and changes push
-to other open tabs over WebSockets.
+and click **`</> View config`** to open a live editor — **edit the YAML, click
+Apply, and the app re-renders from your changes** (no reload, no server). That's
+the whole thesis you can touch: the config *is* the app.
+
+Create/edit/delete are live (with toasts) and push to other open tabs over
+WebSockets. Dashboards show real computed KPIs (e.g. CRM's pipeline value is
+`SUM(amount)` formatted as currency) — also pure config.
 
 ## Demo products — same engine, different tools
 
