@@ -36,7 +36,7 @@ export function registerDeleteRelationshipRoute(app: FastifyInstance): void {
     ) => {
       const { id } = request.params;
 
-      await deleteRelationship(request.server.pg, request.auth, id);
+      await deleteRelationship(request.server.pg, request.auth, id, request.server.events);
 
       return reply.status(204).send();
     }

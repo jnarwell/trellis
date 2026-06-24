@@ -51,7 +51,12 @@ export function registerCreateRelationshipRoute(app: FastifyInstance): void {
         (input as { metadata: typeof metadata }).metadata = metadata;
       }
 
-      const relationship = await createRelationship(request.server.pg, request.auth, input);
+      const relationship = await createRelationship(
+        request.server.pg,
+        request.auth,
+        input,
+        request.server.events
+      );
 
       return reply.status(201).send(relationship);
     }

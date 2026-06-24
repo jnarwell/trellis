@@ -16,6 +16,7 @@ import type {
   KernelError,
 } from '@trellis/kernel';
 import type { AuthContext } from '../types/fastify.js';
+import { type EventEmitter, createEventFactory } from '../events/emitter.js';
 import {
   insertRelationship,
   findRelationshipById,
@@ -242,9 +243,10 @@ async function emitEvent(
 export async function createRelationship(
   pool: Pool,
   auth: AuthContext,
-  input: CreateRelationshipInput
+  input: CreateRelationshipInput,
+  emitter?: EventEmitter
 ): Promise<Relationship> {
-  return withTenantTransaction(pool, auth.tenantId, async (client) => {
+  const relationship = await withTenantTransaction(pool, auth.tenantId, async (client) => {
     // 1. Validate relationship type exists
     const schema = await findRelationshipSchemaByType(client, input.type);
     if (schema === null) {
@@ -291,11 +293,31 @@ export async function createRelationship(
       await insertRelationship(client, { ...inverseBaseInput, ...optionalInputProps });
     }
 
-    // 7. Emit event
-    await emitEvent(client, 'relationship_created', relationship, auth.actorId);
+    // 7. Persist the event in-transaction only when there's no emitter to do
+    // it (the emitter both persists AND broadcasts over WebSocket).
+    if (!emitter) {
+      await emitEvent(client, 'relationship_created', relationship, auth.actorId);
+    }
 
     return relationship;
   });
+
+  // Broadcast (and persist) through the emitter after the tx commits so the
+  // relationship change reaches WebSocket subscribers.
+  if (emitter) {
+    const factory = createEventFactory({ tenantId: auth.tenantId, actorId: auth.actorId });
+    await emitter.emit(
+      factory.relationshipCreated({
+        relationshipId: relationship.id,
+        type: relationship.type,
+        fromEntity: relationship.from_entity,
+        toEntity: relationship.to_entity,
+        metadata: relationship.metadata ?? {},
+      })
+    );
+  }
+
+  return relationship;
 }
 
 /**
@@ -304,9 +326,10 @@ export async function createRelationship(
 export async function deleteRelationship(
   pool: Pool,
   auth: AuthContext,
-  id: string
+  id: string,
+  emitter?: EventEmitter
 ): Promise<void> {
-  await withTenantTransaction(pool, auth.tenantId, async (client) => {
+  const deleted = await withTenantTransaction(pool, auth.tenantId, async (client) => {
     // 1. Find the relationship
     const relationship = await findRelationshipById(client, id);
     if (relationship === null) {
@@ -335,9 +358,26 @@ export async function deleteRelationship(
       }
     }
 
-    // 5. Emit event
-    await emitEvent(client, 'relationship_deleted', relationship, auth.actorId);
+    // 5. Persist the event in-transaction only when there's no emitter.
+    if (!emitter) {
+      await emitEvent(client, 'relationship_deleted', relationship, auth.actorId);
+    }
+
+    return relationship;
   });
+
+  // Broadcast (and persist) through the emitter after the tx commits.
+  if (emitter) {
+    const factory = createEventFactory({ tenantId: auth.tenantId, actorId: auth.actorId });
+    await emitter.emit(
+      factory.relationshipDeleted({
+        relationshipId: deleted.id,
+        type: deleted.type,
+        fromEntity: deleted.from_entity,
+        toEntity: deleted.to_entity,
+      })
+    );
+  }
 }
 
 /**
