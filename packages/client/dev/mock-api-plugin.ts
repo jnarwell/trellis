@@ -64,6 +64,74 @@ function readJsonBody<T>(req: IncomingMessage): Promise<T> {
   });
 }
 
+function readRawBody(req: IncomingMessage): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+// --- In-memory file store so the FileUploader/FileViewer blocks actually work
+//     in demo mode (uploads are kept as data URLs, viewable per entity). ---
+interface MockFile {
+  id: string;
+  entityId: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  uploadedAt: string;
+}
+const mockFiles: MockFile[] = [];
+let mockFileSeq = 0;
+
+function splitBuffer(buf: Buffer, delimiter: Buffer): Buffer[] {
+  const out: Buffer[] = [];
+  let start = 0;
+  let idx = buf.indexOf(delimiter, start);
+  while (idx !== -1) {
+    out.push(buf.subarray(start, idx));
+    start = idx + delimiter.length;
+    idx = buf.indexOf(delimiter, start);
+  }
+  out.push(buf.subarray(start));
+  return out;
+}
+
+/** Minimal multipart/form-data parser — enough for one file + simple fields. */
+function parseMultipart(
+  body: Buffer,
+  boundary: string
+): { fields: Record<string, string>; file?: { filename: string; mimeType: string; content: Buffer } } {
+  const fields: Record<string, string> = {};
+  let file: { filename: string; mimeType: string; content: Buffer } | undefined;
+
+  for (const seg of splitBuffer(body, Buffer.from(`--${boundary}`))) {
+    const headerEnd = seg.indexOf('\r\n\r\n');
+    if (headerEnd === -1) continue;
+    const headerText = seg.subarray(0, headerEnd).toString('utf8');
+    const nameMatch = headerText.match(/name="([^"]*)"/);
+    if (!nameMatch) continue;
+
+    let content = seg.subarray(headerEnd + 4);
+    // strip the trailing CRLF that precedes the next boundary
+    if (content.length >= 2 && content[content.length - 2] === 0x0d && content[content.length - 1] === 0x0a) {
+      content = content.subarray(0, content.length - 2);
+    }
+
+    const fileMatch = headerText.match(/filename="([^"]*)"/);
+    if (fileMatch && fileMatch[1]) {
+      const ctMatch = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
+      file = { filename: fileMatch[1], mimeType: ctMatch?.[1]?.trim() ?? 'application/octet-stream', content };
+    } else {
+      fields[nameMatch[1]!] = content.toString('utf8');
+    }
+  }
+  return { fields, file };
+}
+
 function paginatedResponse(data: MockEntity[], total: number, offset = 0, limit = 50) {
   return {
     data,
@@ -350,8 +418,54 @@ async function handleApiRequest(
       return;
     }
 
-    if (url.startsWith('/api/files')) {
-      sendJson(res, []);
+    // File upload — store the file as a data URL keyed by entity.
+    if (method === 'POST' && url.startsWith('/api/files')) {
+      const contentType = req.headers['content-type'] ?? '';
+      const boundary = /boundary=(.+)$/.exec(contentType)?.[1];
+      const raw = await readRawBody(req);
+      let record: MockFile;
+      if (boundary) {
+        const { fields, file } = parseMultipart(raw, boundary.replace(/^"|"$/g, ''));
+        const mimeType = file?.mimeType ?? 'application/octet-stream';
+        record = {
+          id: `file-${++mockFileSeq}`,
+          entityId: fields.entityId ?? 'unknown',
+          filename: file?.filename ?? 'upload.bin',
+          mimeType,
+          size: file?.content.length ?? 0,
+          url: file ? `data:${mimeType};base64,${file.content.toString('base64')}` : '',
+          uploadedAt: '2026-06-24T00:00:00Z',
+        };
+      } else {
+        record = {
+          id: `file-${++mockFileSeq}`,
+          entityId: 'unknown',
+          filename: 'upload.bin',
+          mimeType: 'application/octet-stream',
+          size: raw.length,
+          url: '',
+          uploadedAt: '2026-06-24T00:00:00Z',
+        };
+      }
+      mockFiles.push(record);
+      sendJson(res, record);
+      return;
+    }
+
+    // File delete.
+    const fileDeleteMatch = /^\/api\/files\/([^/?]+)/.exec(url);
+    if (method === 'DELETE' && fileDeleteMatch) {
+      const idx = mockFiles.findIndex((f) => f.id === fileDeleteMatch[1]);
+      if (idx !== -1) mockFiles.splice(idx, 1);
+      sendJson(res, { success: true });
+      return;
+    }
+
+    // File list for an entity (FileViewer).
+    if (method === 'GET' && url.startsWith('/api/files')) {
+      const entityId = new URLSearchParams(url.split('?')[1] ?? '').get('entityId');
+      const list = entityId ? mockFiles.filter((f) => f.entityId === entityId) : mockFiles;
+      sendJson(res, list);
       return;
     }
 
