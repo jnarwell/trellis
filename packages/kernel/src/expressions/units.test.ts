@@ -177,4 +177,55 @@ describe('uncertainty propagation', () => {
     const r = (await evalVal('@self.a + @self.b', { a: num(2), b: num(3) })) as NumberValue;
     expect(r.uncertainty).toBeUndefined();
   });
+
+  // --- Regression fixes (workflow-confirmed bugs) ---
+
+  it('multiply keeps uncertainty even when the result is 0', async () => {
+    // (0 ± 2) * (10 ± 1): σ = sqrt((10·2)² + (0·1)²) = 20
+    const r = (await evalVal('@self.a * @self.b', { a: measured(0, 2), b: measured(10, 1) })) as NumberValue;
+    expect(r.value).toBe(0);
+    expect(r.uncertainty).toBeCloseTo(20, 9);
+  });
+
+  it('divide keeps uncertainty even when the numerator is 0', async () => {
+    // (0 ± 2) / (10 ± 0): σ = sqrt((2/10)² + 0) = 0.2
+    const r = (await evalVal('@self.a / @self.b', { a: measured(0, 2), b: num(10) })) as NumberValue;
+    expect(r.value).toBe(0);
+    expect(r.uncertainty).toBeCloseTo(0.2, 9);
+  });
+
+  it('divide uses the absolute-error form (4±1)/(2±0.5)', async () => {
+    // q=2; σ = sqrt((1/2)² + (4·0.5/4)²) = sqrt(0.25 + 0.25) = 0.7071
+    const r = (await evalVal('@self.a / @self.b', { a: measured(4, 1), b: measured(2, 0.5) })) as NumberValue;
+    expect(r.value).toBe(2);
+    expect(r.uncertainty).toBeCloseTo(Math.sqrt(0.25 + 0.25), 9);
+  });
+
+  it('unary negation preserves uncertainty', async () => {
+    const r = (await evalVal('-@self.a', { a: measured(5, 0.3, 'kg') })) as NumberValue;
+    expect(r.value).toBe(-5);
+    expect(r.uncertainty).toBeCloseTo(0.3, 9);
+    expect(r.unit).toBe('kg');
+  });
+
+  it('modulo forwards the left uncertainty', async () => {
+    const r = (await evalVal('@self.a % @self.b', { a: measured(7, 0.4), b: num(3) })) as NumberValue;
+    expect(r.value).toBe(1);
+    expect(r.uncertainty).toBeCloseTo(0.4, 9);
+  });
+});
+
+describe('dimensioned-but-unitless conversion (regression)', () => {
+  it('treats a dimension-only value as its SI base unit when adding a unit-bearing one', async () => {
+    // 1·length (= 1 m) + 900 mm = 1.9 (length base = metres)
+    const r = (await evalVal('@self.a + @self.b', { a: num(1, 'length'), b: num(900, undefined, 'mm') })) as NumberValue;
+    expect(r.value).toBeCloseTo(1.9, 9);
+    expect(r.dimension).toBe('length');
+  });
+
+  it('compares a dimension-only value against a unit-bearing one on a consistent scale', async () => {
+    // 1·length (1 m) > 900 mm  → true (was wrongly false when compared raw)
+    expect(await evalVal('@self.a > @self.b', { a: num(1, 'length'), b: num(900, undefined, 'mm') }))
+      .toEqual({ type: 'boolean', value: true });
+  });
 });

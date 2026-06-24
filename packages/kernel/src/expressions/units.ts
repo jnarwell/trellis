@@ -60,6 +60,24 @@ function unitInfo(unit?: string): UnitInfo | undefined {
   return unit ? UNIT_REGISTRY[unit] : undefined;
 }
 
+/** SI base unit for each registered base dimension (factor 1). */
+const BASE_UNIT: Partial<Record<DimensionType, string>> = {
+  length: 'm',
+  mass: 'kg',
+  time: 's',
+};
+
+/**
+ * The unit to use for conversion. A value with an explicit `unit` uses it; a
+ * value carrying only a `dimension` is taken to be in that dimension's SI base
+ * unit (so `1·length + 900·mm` converts as 1 m + 900 mm, not raw 1 + 900).
+ */
+export function effectiveUnit(v: NumberValue): string | undefined {
+  if (v.unit) return v.unit;
+  const dim = v.dimension;
+  return dim ? BASE_UNIT[dim] : undefined;
+}
+
 // =============================================================================
 // DIMENSION RESOLUTION
 // =============================================================================
@@ -125,13 +143,18 @@ export function alignAdditive(
   left: NumberValue,
   right: NumberValue
 ): { rightValue: number; rightUncertainty?: number; dimension?: DimensionType; unit?: string } {
-  const convert = Boolean(left.unit && right.unit);
-  const rightValue = convert ? convertValue(right.value, right.unit, left.unit) : right.value;
+  // Convert using EFFECTIVE units (explicit unit, else the dimension's base
+  // unit) so a dimensioned-but-unitless operand still scales correctly instead
+  // of being summed raw.
+  const lu = effectiveUnit(left);
+  const ru = effectiveUnit(right);
+  const convert = Boolean(lu && ru);
+  const rightValue = convert ? convertValue(right.value, ru, lu) : right.value;
   const rightUncertainty =
     right.uncertainty === undefined
       ? undefined
       : convert
-        ? convertValue(right.uncertainty, right.unit, left.unit)
+        ? convertValue(right.uncertainty, ru, lu)
         : right.uncertainty;
   const dimension = resolveDimension(left) ?? resolveDimension(right);
   const unit = left.unit ?? right.unit;
@@ -154,16 +177,36 @@ export function combineUncertaintyAddSub(left?: number, right?: number): number 
   return Math.sqrt(l * l + r * r);
 }
 
-/** Multiply/divide: relative uncertainties combine in quadrature. */
-export function combineUncertaintyMulDiv(
-  resultValue: number,
+/**
+ * Multiply q = l*r: absolute uncertainty σq = sqrt((r·σl)² + (l·σr)²).
+ * Uses the absolute-error form (not |q|·relative) so it stays correct when the
+ * result — or either operand — is exactly 0.
+ */
+export function combineUncertaintyMul(
   l: number,
   r: number,
   leftUnc?: number,
   rightUnc?: number
 ): number | undefined {
   if (leftUnc === undefined && rightUnc === undefined) return undefined;
-  const relL = l !== 0 && leftUnc !== undefined ? leftUnc / Math.abs(l) : 0;
-  const relR = r !== 0 && rightUnc !== undefined ? rightUnc / Math.abs(r) : 0;
-  return Math.abs(resultValue) * Math.sqrt(relL * relL + relR * relR);
+  const a = r * (leftUnc ?? 0);
+  const b = l * (rightUnc ?? 0);
+  return Math.sqrt(a * a + b * b);
+}
+
+/**
+ * Divide q = l/r: absolute uncertainty σq = sqrt((σl/r)² + (l·σr/r²)²).
+ * r is non-zero here (division-by-zero is guarded upstream), so this is robust
+ * even when l (and hence q) is 0.
+ */
+export function combineUncertaintyDiv(
+  l: number,
+  r: number,
+  leftUnc?: number,
+  rightUnc?: number
+): number | undefined {
+  if (leftUnc === undefined && rightUnc === undefined) return undefined;
+  const a = (leftUnc ?? 0) / r;
+  const b = (l * (rightUnc ?? 0)) / (r * r);
+  return Math.sqrt(a * a + b * b);
 }

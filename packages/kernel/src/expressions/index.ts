@@ -141,10 +141,12 @@ export {
   resolveDimension,
   dimensionsCompatible,
   convertValue,
+  effectiveUnit,
   numberWithUnit,
   alignAdditive,
   combineUncertaintyAddSub,
-  combineUncertaintyMulDiv,
+  combineUncertaintyMul,
+  combineUncertaintyDiv,
 } from './units.js';
 
 // =============================================================================
