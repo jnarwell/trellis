@@ -165,24 +165,35 @@ async function evaluateNode(
   ctx: EvaluationContext,
   accessedEntities: string[]
 ): Promise<RuntimeValue> {
-  switch (node.type) {
-    case 'Literal':
-      return evaluateLiteral(node);
+  // Bound recursion depth so a pathologically nested expression can't blow the
+  // stack. currentDepth is incremented on entry and restored on exit, so the
+  // limit reflects actual nesting (evaluation is sequential).
+  if (ctx.currentDepth >= ctx.maxDepth) {
+    throw maxDepthExceededError(ctx.maxDepth);
+  }
+  ctx.currentDepth++;
+  try {
+    switch (node.type) {
+      case 'Literal':
+        return evaluateLiteral(node);
 
-    case 'Identifier':
-      return evaluateIdentifier(node, ctx);
+      case 'Identifier':
+        return evaluateIdentifier(node, ctx);
 
-    case 'PropertyReference':
-      return evaluatePropertyReference(node, ctx, accessedEntities);
+      case 'PropertyReference':
+        return evaluatePropertyReference(node, ctx, accessedEntities);
 
-    case 'BinaryExpression':
-      return evaluateBinaryExpression(node, ctx, accessedEntities);
+      case 'BinaryExpression':
+        return evaluateBinaryExpression(node, ctx, accessedEntities);
 
-    case 'UnaryExpression':
-      return evaluateUnaryExpression(node, ctx, accessedEntities);
+      case 'UnaryExpression':
+        return evaluateUnaryExpression(node, ctx, accessedEntities);
 
-    case 'CallExpression':
-      return evaluateCallExpression(node, ctx, accessedEntities);
+      case 'CallExpression':
+        return evaluateCallExpression(node, ctx, accessedEntities);
+    }
+  } finally {
+    ctx.currentDepth--;
   }
 }
 

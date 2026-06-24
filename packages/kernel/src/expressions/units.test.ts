@@ -215,6 +215,23 @@ describe('uncertainty propagation', () => {
   });
 });
 
+describe('recursion depth guard (regression)', () => {
+  it('throws MAX_DEPTH_EXCEEDED for expressions nested past maxDepth', async () => {
+    const ctx = createContext(makeEntity({}), 'tenant' as TenantId, { maxDepth: 5 });
+    // 1+2+3+...+10 nests ~10 deep, well past the limit of 5.
+    const result = await evaluate(parse('1+2+3+4+5+6+7+8+9+10'), ctx);
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe('MAX_DEPTH_EXCEEDED');
+  });
+
+  it('allows expressions within the depth limit', async () => {
+    const ctx = createContext(makeEntity({}), 'tenant' as TenantId, { maxDepth: 50 });
+    const result = await evaluate(parse('1+2+3'), ctx);
+    expect(result.success).toBe(true);
+    expect(result.value).toEqual({ type: 'number', value: 6 });
+  });
+});
+
 describe('dimensioned-but-unitless conversion (regression)', () => {
   it('treats a dimension-only value as its SI base unit when adding a unit-bearing one', async () => {
     // 1·length (= 1 m) + 900 mm = 1.9 (length base = metres)
