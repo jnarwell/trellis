@@ -27,6 +27,7 @@ import { withTenantTransaction, type TenantScopedClient } from '../db/client.js'
 import { EntityRepository, type EntityRow } from '../repositories/entity-repository.js';
 import { EventFactory, type EventEmitter } from '../events/emitter.js';
 import { ComputationService } from '../evaluation/computation-service.js';
+import { resolveInheritance, type EntityLoader } from './inheritance-resolver.js';
 
 // =============================================================================
 // TYPES
@@ -388,10 +389,16 @@ export class EntityService {
       }
     }
 
-    // TODO: Implement resolve_inherited option
-    // This requires the inheritance resolver (future work)
+    // Resolve inherited properties at read time by following each
+    // from_entity/from_property pointer to the source's effective value.
     if (options.resolveInherited) {
-      // For now, return entity as-is
+      const loadEntity: EntityLoader = async (sourceId) =>
+        withTenantTransaction(this.pool, this.tenantId, async (client) => {
+          const row = await new EntityRepository(client).findById(sourceId);
+          return row ? rowToEntity(row) : null;
+        });
+      const resolved = await resolveInheritance(entity, loadEntity);
+      entity = resolved.entity;
     }
 
     return entity;
