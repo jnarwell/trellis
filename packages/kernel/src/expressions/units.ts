@@ -14,7 +14,7 @@
  * dimensioned and the dimensions differ.
  */
 
-import type { NumberValue, DimensionType } from '../types/value.js';
+import type { NumberValue, DimensionType, BaseDimension } from '../types/value.js';
 
 // =============================================================================
 // UNIT REGISTRY
@@ -112,6 +112,82 @@ export function convertValue(value: number, fromUnit?: string, toUnit?: string):
   const to = unitInfo(toUnit);
   if (!from || !to || from.dimension !== to.dimension) return value;
   return (value * from.toBase) / to.toBase;
+}
+
+/** A value's magnitude in its dimension's SI base unit (else its raw value). */
+export function toBaseMagnitude(v: NumberValue): number {
+  const eu = effectiveUnit(v);
+  const dim = resolveDimension(v);
+  const base = dim ? BASE_UNIT[dim] : undefined;
+  return eu && base ? convertValue(v.value, eu, base) : v.value;
+}
+
+// =============================================================================
+// DIMENSIONAL ALGEBRA  (multiply/divide produce derived dimensions)
+// =============================================================================
+
+type ExpVector = Partial<Record<BaseDimension, number>>;
+
+/** Each named dimension expressed as a vector of base-dimension exponents. */
+const DIMENSION_EXPONENTS: Readonly<Record<string, ExpVector>> = {
+  length: { length: 1 },
+  mass: { mass: 1 },
+  time: { time: 1 },
+  current: { current: 1 },
+  temperature: { temperature: 1 },
+  amount: { amount: 1 },
+  luminosity: { luminosity: 1 },
+  area: { length: 2 },
+  volume: { length: 3 },
+  velocity: { length: 1, time: -1 },
+  acceleration: { length: 1, time: -2 },
+  force: { mass: 1, length: 1, time: -2 },
+  energy: { mass: 1, length: 2, time: -2 },
+  power: { mass: 1, length: 2, time: -3 },
+  pressure: { mass: 1, length: -1, time: -2 },
+  frequency: { time: -1 },
+  voltage: { mass: 1, length: 2, time: -3, current: -1 },
+  resistance: { mass: 1, length: 2, time: -3, current: -2 },
+  dimensionless: {},
+};
+
+const BASE_DIMENSIONS: readonly BaseDimension[] = [
+  'length', 'mass', 'time', 'current', 'temperature', 'amount', 'luminosity',
+];
+
+function exponentsOf(dim?: DimensionType): ExpVector {
+  return (dim && DIMENSION_EXPONENTS[dim]) || {};
+}
+
+/** Find the named dimension matching an exponent vector (else undefined). */
+function nameFromExponents(vec: ExpVector): DimensionType | undefined {
+  const nonZero = BASE_DIMENSIONS.filter((b) => (vec[b] ?? 0) !== 0);
+  if (nonZero.length === 0) return 'dimensionless';
+  for (const [name, exps] of Object.entries(DIMENSION_EXPONENTS)) {
+    if (BASE_DIMENSIONS.every((b) => (exps[b] ?? 0) === (vec[b] ?? 0))) {
+      return name as DimensionType;
+    }
+  }
+  return undefined;
+}
+
+function combineExponents(a: ExpVector, b: ExpVector, sign: 1 | -1): ExpVector {
+  const out: ExpVector = {};
+  for (const base of BASE_DIMENSIONS) {
+    const v = (a[base] ?? 0) + sign * (b[base] ?? 0);
+    if (v !== 0) out[base] = v;
+  }
+  return out;
+}
+
+/** Result dimension of a*b (e.g. length*length → area), or undefined if unnamed. */
+export function multiplyDimensions(a?: DimensionType, b?: DimensionType): DimensionType | undefined {
+  return nameFromExponents(combineExponents(exponentsOf(a), exponentsOf(b), 1));
+}
+
+/** Result dimension of a/b (e.g. length/time → velocity), or undefined if unnamed. */
+export function divideDimensions(a?: DimensionType, b?: DimensionType): DimensionType | undefined {
+  return nameFromExponents(combineExponents(exponentsOf(a), exponentsOf(b), -1));
 }
 
 // =============================================================================

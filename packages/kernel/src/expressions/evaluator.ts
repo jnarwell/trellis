@@ -40,12 +40,27 @@ import {
   resolveDimension,
   convertValue,
   effectiveUnit,
+  toBaseMagnitude,
+  multiplyDimensions,
+  divideDimensions,
   numberWithUnit,
   alignAdditive,
   combineUncertaintyAddSub,
   combineUncertaintyMul,
   combineUncertaintyDiv,
 } from './units.js';
+import type { DimensionType } from '../types/value.js';
+
+/** Uncertainty converted into the value's base unit (same factor as the value). */
+function baseUncertainty(v: { value: number; unit?: string; dimension?: DimensionType; uncertainty?: number }): number | undefined {
+  if (v.uncertainty === undefined) return undefined;
+  return toBaseMagnitude({ type: 'number', value: v.uncertainty, ...(v.unit && { unit: v.unit }), ...(v.dimension && { dimension: v.dimension }) });
+}
+
+/** A derived-dimension result of 'dimensionless' (or none) means: attach no dimension. */
+function namedOrUndefined(dim?: DimensionType): DimensionType | undefined {
+  return dim === undefined || dim === 'dimensionless' ? undefined : dim;
+}
 import { invokeFunction } from './functions/index.js';
 import type { RuntimeValue } from './functions/index.js';
 
@@ -474,31 +489,37 @@ async function evaluateBinaryExpression(
         );
       }
       case '*': {
-        // Scaling: a dimensionless side leaves the other's dimension intact.
-        // Two dimensioned operands would form a derived dimension we don't
-        // track yet, so the result is treated as dimensionless.
-        const v = left.value * right.value;
+        // Scaling: a dimensionless side leaves the other's dimension/unit
+        // intact. Two dimensioned operands form a DERIVED dimension (length·
+        // length → area, mass·acceleration → force), computed in base units.
         const unc = combineUncertaintyMul(left.value, right.value, left.uncertainty, right.uncertainty);
-        if (dl && !dr) return numberWithUnit(v, dl, left.unit, unc);
-        if (!dl && dr) return numberWithUnit(v, dr, right.unit, unc);
-        return numberWithUnit(v, undefined, undefined, unc);
+        if (dl && !dr) return numberWithUnit(left.value * right.value, dl, left.unit, unc);
+        if (!dl && dr) return numberWithUnit(left.value * right.value, dr, right.unit, unc);
+        if (!dl && !dr) return numberWithUnit(left.value * right.value, undefined, undefined, unc);
+        const lb = toBaseMagnitude(left);
+        const rb = toBaseMagnitude(right);
+        const v = lb * rb;
+        const uncB = combineUncertaintyMul(lb, rb, baseUncertainty(left), baseUncertainty(right));
+        return numberWithUnit(v, namedOrUndefined(multiplyDimensions(dl, dr)), undefined, uncB);
       }
       case '/': {
         if (right.value === 0) throw divisionByZeroError(node.right.start);
-        // Same dimension divides out to a dimensionless ratio. Convert the
-        // right value AND its uncertainty into the left's unit so the error
-        // propagation operates on consistent magnitudes.
-        const convertRight = Boolean(dl && dr && dl === dr && left.unit && right.unit);
-        const rv = convertRight ? convertValue(right.value, right.unit, left.unit) : right.value;
-        const ru =
-          convertRight && right.uncertainty !== undefined
-            ? convertValue(right.uncertainty, right.unit, left.unit)
-            : right.uncertainty;
-        const v = left.value / rv;
-        const unc = combineUncertaintyDiv(left.value, rv, left.uncertainty, ru);
-        if (dl && dr && dl === dr) return numberWithUnit(v, undefined, undefined, unc);
-        if (dl && !dr) return numberWithUnit(v, dl, left.unit, unc);
-        return numberWithUnit(v, undefined, undefined, unc);
+        // Scaling by a dimensionless divisor keeps the left's dimension/unit.
+        if (dl && !dr) {
+          const unc = combineUncertaintyDiv(left.value, right.value, left.uncertainty, right.uncertainty);
+          return numberWithUnit(left.value / right.value, dl, left.unit, unc);
+        }
+        if (!dl && !dr) {
+          const unc = combineUncertaintyDiv(left.value, right.value, left.uncertainty, right.uncertainty);
+          return numberWithUnit(left.value / right.value, undefined, undefined, unc);
+        }
+        // A dimensioned divisor: divide in base units. Same dimension cancels to
+        // a dimensionless ratio; length/time → velocity; 1/time → frequency; etc.
+        const lb = toBaseMagnitude(left);
+        const rb = toBaseMagnitude(right);
+        const v = lb / rb;
+        const uncB = combineUncertaintyDiv(lb, rb, baseUncertainty(left), baseUncertainty(right));
+        return numberWithUnit(v, namedOrUndefined(divideDimensions(dl, dr)), undefined, uncB);
       }
     }
   }

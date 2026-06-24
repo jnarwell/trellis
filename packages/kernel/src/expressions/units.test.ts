@@ -215,6 +215,52 @@ describe('uncertainty propagation', () => {
   });
 });
 
+describe('derived-dimension algebra (multiply/divide)', () => {
+  it('length * length = area', async () => {
+    const r = (await evalVal('@self.a * @self.b', { a: num(2, undefined, 'm'), b: num(3, undefined, 'm') })) as NumberValue;
+    expect(r.value).toBe(6);
+    expect(r.dimension).toBe('area');
+  });
+
+  it('multiply converts to base units first (mm * m = area in m²)', async () => {
+    // 500 mm * 2 m = 0.5 m * 2 m = 1 m²
+    const r = (await evalVal('@self.a * @self.b', { a: num(500, undefined, 'mm'), b: num(2, undefined, 'm') })) as NumberValue;
+    expect(r.value).toBeCloseTo(1, 9);
+    expect(r.dimension).toBe('area');
+  });
+
+  it('length / time = velocity', async () => {
+    const r = (await evalVal('@self.a / @self.b', { a: num(10, undefined, 'm'), b: num(2, undefined, 's') })) as NumberValue;
+    expect(r.value).toBe(5);
+    expect(r.dimension).toBe('velocity');
+  });
+
+  it('mass * (length/time²) ... force via explicit dimensions', async () => {
+    // mass * acceleration = force
+    const r = (await evalVal('@self.m * @self.a', { m: num(2, 'mass'), a: num(3, 'acceleration') })) as NumberValue;
+    expect(r.value).toBe(6);
+    expect(r.dimension).toBe('force');
+  });
+
+  it('1 / time = frequency', async () => {
+    const r = (await evalVal('@self.one / @self.t', { one: num(1), t: num(4, undefined, 's') })) as NumberValue;
+    expect(r.value).toBe(0.25);
+    expect(r.dimension).toBe('frequency');
+  });
+
+  it('same-dimension division is a dimensionless ratio (no dimension attached)', async () => {
+    expect(await evalVal('@self.a / @self.b', { a: num(10, undefined, 'm'), b: num(2, undefined, 'm') }))
+      .toEqual({ type: 'number', value: 5 });
+  });
+
+  it('an unnamed derived dimension is dropped (no wrong label)', async () => {
+    // area * area = length^4 — not a named dimension → dimensionless result
+    const r = (await evalVal('@self.a * @self.b', { a: num(2, 'area'), b: num(3, 'area') })) as NumberValue;
+    expect(r.value).toBe(6);
+    expect(r.dimension).toBeUndefined();
+  });
+});
+
 describe('recursion depth guard (regression)', () => {
   it('throws MAX_DEPTH_EXCEEDED for expressions nested past maxDepth', async () => {
     const ctx = createContext(makeEntity({}), 'tenant' as TenantId, { maxDepth: 5 });
