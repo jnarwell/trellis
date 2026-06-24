@@ -39,6 +39,31 @@ views:
             title: Issues
             subtitle: Track bugs and features across the team
 
+        - type: trellis.stats
+          id: stats
+          props:
+            layout: grid
+            columns: 4
+            stats:
+              - label: Total
+                entityType: issue
+                aggregate: count
+              - label: In Progress
+                entityType: issue
+                aggregate: count
+                filter:
+                  status: in_progress
+              - label: Urgent
+                entityType: issue
+                aggregate: count
+                filter:
+                  priority: urgent
+              - label: Done
+                entityType: issue
+                aggregate: count
+                filter:
+                  status: done
+
         - type: grid
           columns: 2
           gap: 16px
@@ -92,30 +117,16 @@ views:
                           type: text
                           placeholder: Assignee...
                 - block:
-                    type: trellis.stats
-                    id: stats
+                    type: trellis.chart
+                    id: by-type
                     props:
-                      layout: grid
-                      columns: 2
-                      stats:
-                        - label: Total
-                          entityType: issue
-                          aggregate: count
-                        - label: In Progress
-                          entityType: issue
-                          aggregate: count
-                          filter:
-                            status: in_progress
-                        - label: Urgent
-                          entityType: issue
-                          aggregate: count
-                          filter:
-                            priority: urgent
-                        - label: Done
-                          entityType: issue
-                          aggregate: count
-                          filter:
-                            status: done
+                      type: doughnut
+                      entityType: issue
+                      labelProperty: type
+                      aggregate: count
+                      title: By Type
+                      height: 240
+                      showLegend: true
 
         - type: trellis.data-table
           id: issues-table
@@ -144,32 +155,15 @@ views:
                 confirm: true
                 permission: entity.delete
 
-        - type: grid
-          columns: 2
-          gap: 16px
-          rows:
-            - cells:
-                - block:
-                    type: trellis.chart
-                    id: by-priority
-                    props:
-                      type: bar
-                      entityType: issue
-                      labelProperty: priority
-                      aggregate: count
-                      title: By Priority
-                      height: 200
-                - block:
-                    type: trellis.chart
-                    id: by-type
-                    props:
-                      type: doughnut
-                      entityType: issue
-                      labelProperty: type
-                      aggregate: count
-                      title: By Type
-                      height: 200
-                      showLegend: true
+        - type: trellis.chart
+          id: by-priority
+          props:
+            type: bar
+            entityType: issue
+            labelProperty: priority
+            aggregate: count
+            title: By Priority
+            height: 220
 
         - type: trellis.kanban
           id: board

@@ -39,6 +39,31 @@ views:
             title: Parts Catalog
             subtitle: Manage parts through the engineering lifecycle
 
+        - type: trellis.stats
+          id: stats
+          props:
+            layout: grid
+            columns: 4
+            stats:
+              - label: Total Parts
+                entityType: part
+                aggregate: count
+              - label: Released
+                entityType: part
+                aggregate: count
+                filter:
+                  status: released
+              - label: In Review
+                entityType: part
+                aggregate: count
+                filter:
+                  status: review
+              - label: In Design
+                entityType: part
+                aggregate: count
+                filter:
+                  status: design
+
         - type: grid
           columns: 2
           gap: 16px
@@ -76,30 +101,16 @@ views:
                             - value: obsolete
                               label: Obsolete
                 - block:
-                    type: trellis.stats
-                    id: stats
+                    type: trellis.chart
+                    id: by-status
                     props:
-                      layout: grid
-                      columns: 2
-                      stats:
-                        - label: Total Parts
-                          entityType: part
-                          aggregate: count
-                        - label: Released
-                          entityType: part
-                          aggregate: count
-                          filter:
-                            status: released
-                        - label: In Review
-                          entityType: part
-                          aggregate: count
-                          filter:
-                            status: review
-                        - label: In Design
-                          entityType: part
-                          aggregate: count
-                          filter:
-                            status: design
+                      type: doughnut
+                      entityType: part
+                      labelProperty: status
+                      aggregate: count
+                      title: By Lifecycle
+                      height: 240
+                      showLegend: true
 
         - type: trellis.data-table
           id: parts-table
@@ -128,32 +139,15 @@ views:
                 confirm: true
                 permission: entity.delete
 
-        - type: grid
-          columns: 2
-          gap: 16px
-          rows:
-            - cells:
-                - block:
-                    type: trellis.chart
-                    id: by-status
-                    props:
-                      type: doughnut
-                      entityType: part
-                      labelProperty: status
-                      aggregate: count
-                      title: By Lifecycle
-                      height: 200
-                      showLegend: true
-                - block:
-                    type: trellis.chart
-                    id: by-material
-                    props:
-                      type: bar
-                      entityType: part
-                      labelProperty: material
-                      aggregate: count
-                      title: By Material
-                      height: 200
+        - type: trellis.chart
+          id: by-material
+          props:
+            type: bar
+            entityType: part
+            labelProperty: material
+            aggregate: count
+            title: By Material
+            height: 220
 
         - type: trellis.kanban
           id: lifecycle

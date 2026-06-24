@@ -39,6 +39,31 @@ views:
             title: Support Queue
             subtitle: Triage and resolve customer tickets
 
+        - type: trellis.stats
+          id: stats
+          props:
+            layout: grid
+            columns: 4
+            stats:
+              - label: All Tickets
+                entityType: ticket
+                aggregate: count
+              - label: Open
+                entityType: ticket
+                aggregate: count
+                filter:
+                  status: open
+              - label: Urgent
+                entityType: ticket
+                aggregate: count
+                filter:
+                  priority: urgent
+              - label: Resolved
+                entityType: ticket
+                aggregate: count
+                filter:
+                  status: resolved
+
         - type: grid
           columns: 2
           gap: 16px
@@ -90,30 +115,16 @@ views:
                             - value: closed
                               label: Closed
                 - block:
-                    type: trellis.stats
-                    id: stats
+                    type: trellis.chart
+                    id: by-channel
                     props:
-                      layout: grid
-                      columns: 2
-                      stats:
-                        - label: All Tickets
-                          entityType: ticket
-                          aggregate: count
-                        - label: Open
-                          entityType: ticket
-                          aggregate: count
-                          filter:
-                            status: open
-                        - label: Urgent
-                          entityType: ticket
-                          aggregate: count
-                          filter:
-                            priority: urgent
-                        - label: Resolved
-                          entityType: ticket
-                          aggregate: count
-                          filter:
-                            status: resolved
+                      type: doughnut
+                      entityType: ticket
+                      labelProperty: channel
+                      aggregate: count
+                      title: By Channel
+                      height: 240
+                      showLegend: true
 
         - type: trellis.data-table
           id: tickets-table
@@ -142,32 +153,15 @@ views:
                 confirm: true
                 permission: entity.delete
 
-        - type: grid
-          columns: 2
-          gap: 16px
-          rows:
-            - cells:
-                - block:
-                    type: trellis.chart
-                    id: by-priority
-                    props:
-                      type: bar
-                      entityType: ticket
-                      labelProperty: priority
-                      aggregate: count
-                      title: By Priority
-                      height: 200
-                - block:
-                    type: trellis.chart
-                    id: by-channel
-                    props:
-                      type: doughnut
-                      entityType: ticket
-                      labelProperty: channel
-                      aggregate: count
-                      title: By Channel
-                      height: 200
-                      showLegend: true
+        - type: trellis.chart
+          id: by-priority
+          props:
+            type: bar
+            entityType: ticket
+            labelProperty: priority
+            aggregate: count
+            title: By Priority
+            height: 220
 
         - type: trellis.kanban
           id: queue

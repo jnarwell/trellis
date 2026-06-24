@@ -38,6 +38,31 @@ views:
             title: Candidates
             subtitle: Move applicants through the hiring pipeline
 
+        - type: trellis.stats
+          id: stats
+          props:
+            layout: grid
+            columns: 4
+            stats:
+              - label: Total
+                entityType: candidate
+                aggregate: count
+              - label: Interviewing
+                entityType: candidate
+                aggregate: count
+                filter:
+                  stage: interview
+              - label: Offers Out
+                entityType: candidate
+                aggregate: count
+                filter:
+                  stage: offer
+              - label: Hired
+                entityType: candidate
+                aggregate: count
+                filter:
+                  stage: hired
+
         - type: grid
           columns: 2
           gap: 16px
@@ -76,30 +101,16 @@ views:
                           type: text
                           placeholder: Source...
                 - block:
-                    type: trellis.stats
-                    id: stats
+                    type: trellis.chart
+                    id: by-source
                     props:
-                      layout: grid
-                      columns: 2
-                      stats:
-                        - label: Total
-                          entityType: candidate
-                          aggregate: count
-                        - label: Interviewing
-                          entityType: candidate
-                          aggregate: count
-                          filter:
-                            stage: interview
-                        - label: Offers Out
-                          entityType: candidate
-                          aggregate: count
-                          filter:
-                            stage: offer
-                        - label: Hired
-                          entityType: candidate
-                          aggregate: count
-                          filter:
-                            stage: hired
+                      type: doughnut
+                      entityType: candidate
+                      labelProperty: source
+                      aggregate: count
+                      title: By Source
+                      height: 240
+                      showLegend: true
 
         - type: trellis.data-table
           id: candidates-table
@@ -128,32 +139,15 @@ views:
                 confirm: true
                 permission: entity.delete
 
-        - type: grid
-          columns: 2
-          gap: 16px
-          rows:
-            - cells:
-                - block:
-                    type: trellis.chart
-                    id: by-stage
-                    props:
-                      type: bar
-                      entityType: candidate
-                      labelProperty: stage
-                      aggregate: count
-                      title: Candidates by Stage
-                      height: 200
-                - block:
-                    type: trellis.chart
-                    id: by-source
-                    props:
-                      type: doughnut
-                      entityType: candidate
-                      labelProperty: source
-                      aggregate: count
-                      title: By Source
-                      height: 200
-                      showLegend: true
+        - type: trellis.chart
+          id: by-stage
+          props:
+            type: bar
+            entityType: candidate
+            labelProperty: stage
+            aggregate: count
+            title: Candidates by Stage
+            height: 220
 
         - type: trellis.kanban
           id: pipeline

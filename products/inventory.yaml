@@ -37,6 +37,31 @@ views:
             title: Inventory
             subtitle: Track stock levels across locations
 
+        - type: trellis.stats
+          id: stats
+          props:
+            layout: grid
+            columns: 4
+            stats:
+              - label: Total SKUs
+                entityType: item
+                aggregate: count
+              - label: In Stock
+                entityType: item
+                aggregate: count
+                filter:
+                  status: in_stock
+              - label: Low Stock
+                entityType: item
+                aggregate: count
+                filter:
+                  status: low_stock
+              - label: Out of Stock
+                entityType: item
+                aggregate: count
+                filter:
+                  status: out_of_stock
+
         - type: grid
           columns: 2
           gap: 16px
@@ -74,30 +99,16 @@ views:
                           type: text
                           placeholder: Location...
                 - block:
-                    type: trellis.stats
-                    id: stats
+                    type: trellis.chart
+                    id: by-status
                     props:
-                      layout: grid
-                      columns: 2
-                      stats:
-                        - label: Total SKUs
-                          entityType: item
-                          aggregate: count
-                        - label: In Stock
-                          entityType: item
-                          aggregate: count
-                          filter:
-                            status: in_stock
-                        - label: Low Stock
-                          entityType: item
-                          aggregate: count
-                          filter:
-                            status: low_stock
-                        - label: Out of Stock
-                          entityType: item
-                          aggregate: count
-                          filter:
-                            status: out_of_stock
+                      type: doughnut
+                      entityType: item
+                      labelProperty: status
+                      aggregate: count
+                      title: By Stock Status
+                      height: 240
+                      showLegend: true
 
         - type: trellis.data-table
           id: items-table
@@ -126,32 +137,15 @@ views:
                 confirm: true
                 permission: entity.delete
 
-        - type: grid
-          columns: 2
-          gap: 16px
-          rows:
-            - cells:
-                - block:
-                    type: trellis.chart
-                    id: by-status
-                    props:
-                      type: doughnut
-                      entityType: item
-                      labelProperty: status
-                      aggregate: count
-                      title: By Stock Status
-                      height: 200
-                      showLegend: true
-                - block:
-                    type: trellis.chart
-                    id: by-category
-                    props:
-                      type: bar
-                      entityType: item
-                      labelProperty: category
-                      aggregate: count
-                      title: By Category
-                      height: 200
+        - type: trellis.chart
+          id: by-category
+          props:
+            type: bar
+            entityType: item
+            labelProperty: category
+            aggregate: count
+            title: By Category
+            height: 220
 
         - type: trellis.kanban
           id: board
