@@ -61,6 +61,9 @@ export async function queryHandler(
     if (body.include_total) {
       queryOptions.includeTotal = body.include_total;
     }
+    if (body.resolve_inherited) {
+      queryOptions.resolveInherited = body.resolve_inherited;
+    }
 
     // Execute query
     const result = await queryService.queryEntities(tenantId, queryOptions);

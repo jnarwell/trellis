@@ -16,6 +16,7 @@ import type {
 import { withTenantClient } from '../db/client.js';
 import { buildSelectQuery, encodeCursor, type Cursor } from '../query/index.js';
 import { QUERY_DEFAULTS } from '../config/query.js';
+import { resolveInheritance, type EntityLoader } from './inheritance-resolver.js';
 
 /**
  * Query options for listing entities.
@@ -41,6 +42,9 @@ export interface QueryEntitiesOptions {
 
   /** Whether to include total count (expensive for large tables) */
   includeTotal?: boolean;
+
+  /** Resolve inherited properties for each returned entity (read-time). */
+  resolveInherited?: boolean;
 }
 
 /**
@@ -143,7 +147,28 @@ export class QueryService {
       const rows = hasMore ? result.rows.slice(0, limit) : result.rows;
 
       // Transform rows to entities
-      const entities = rows.map(rowToEntity);
+      let entities = rows.map(rowToEntity);
+
+      // Optionally resolve inherited properties across the page, sharing one
+      // memoized loader so a shared source entity is fetched at most once.
+      if (options.resolveInherited) {
+        const cache = new Map<string, Promise<Entity | null>>();
+        const load: EntityLoader = (id) => {
+          const cached = cache.get(id);
+          if (cached) return cached;
+          const p = client
+            .query<EntityRow>(
+              `SELECT * FROM entities WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL`,
+              [tenantId, id]
+            )
+            .then((r) => (r.rows[0] ? rowToEntity(r.rows[0]) : null));
+          cache.set(id, p);
+          return p;
+        };
+        entities = await Promise.all(
+          entities.map((e) => resolveInheritance(e, load).then((r) => r.entity))
+        );
+      }
 
       // Build next cursor if there are more results
       let nextCursor: string | undefined;

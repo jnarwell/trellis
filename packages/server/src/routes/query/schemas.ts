@@ -115,6 +115,9 @@ export const queryRequestSchema = z.object({
 
   /** Whether to include total count (expensive for large tables) */
   include_total: z.boolean().optional().default(false),
+
+  /** Resolve inherited properties on each returned entity (read-time) */
+  resolve_inherited: z.boolean().optional().default(false),
 });
 
 export type QueryRequest = z.infer<typeof queryRequestSchema>;
