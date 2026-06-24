@@ -17,6 +17,7 @@ import {
   type Property,
   type ComputedProperty,
   type Value,
+  detectCircularDependencies,
 } from '@trellis/kernel';
 import { withTenantTransaction } from '../db/client.js';
 import { EntityRepository, type EntityRow } from '../repositories/entity-repository.js';
@@ -125,6 +126,32 @@ export class ComputationService {
         }
         updatedProperties[result.propertyName] = updated;
       }
+    }
+
+    // Flag computed properties caught in a dependency cycle as `circular`
+    // instead of leaving them silently stale (topologicalSort only skips them).
+    const computedNames = Object.entries(entity.properties)
+      .filter(([, p]) => p.source === 'computed')
+      .map(([n]) => n);
+    const depMap = new Map<string, readonly string[]>(
+      computedNames.map((name) => {
+        const cp = entity.properties[name as PropertyName] as ComputedProperty;
+        const local = (cp.dependencies ?? [])
+          .map((d) => d.replace(/^@self\./, '').split('.')[0] as string)
+          .filter((d) => computedNames.includes(d));
+        return [name, local];
+      })
+    );
+    for (const name of detectCircularDependencies(computedNames, depMap)) {
+      const cp = entity.properties[name as PropertyName] as ComputedProperty;
+      updatedProperties[name as PropertyName] = {
+        source: 'computed',
+        name: cp.name,
+        expression: cp.expression,
+        dependencies: cp.dependencies,
+        computation_status: 'circular',
+        computation_error: 'Circular dependency detected',
+      };
     }
 
     return {

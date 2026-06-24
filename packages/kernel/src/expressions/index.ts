@@ -101,6 +101,7 @@ export {
   propagateStaleness,
   batchPropagateStaleness,
   topologicalSort,
+  detectCircularDependencies,
   createStalenessContext,
   withDeferredStaleness,
   recordPropertyChange,

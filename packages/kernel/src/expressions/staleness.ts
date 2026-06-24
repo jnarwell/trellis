@@ -289,6 +289,46 @@ export function topologicalSort(
   return result;
 }
 
+/**
+ * Return every node involved in a dependency cycle. `topologicalSort` only
+ * *skips* cyclic nodes to avoid looping; this names them so the caller can flag
+ * the offending computed properties as `circular` instead of leaving them
+ * silently stale. Pure DFS (white/grey/black) — no I/O.
+ */
+export function detectCircularDependencies(
+  nodes: readonly string[],
+  dependencies: Map<string, readonly string[]>
+): string[] {
+  const inCycle = new Set<string>();
+  const visited = new Set<string>();
+  const stack: string[] = [];
+  const onStack = new Set<string>();
+
+  function dfs(node: string): void {
+    visited.add(node);
+    stack.push(node);
+    onStack.add(node);
+
+    for (const dep of dependencies.get(node) ?? []) {
+      if (onStack.has(dep)) {
+        // Back edge → everything from `dep` up to the top of the stack cycles.
+        const idx = stack.indexOf(dep);
+        for (let i = idx; i < stack.length; i++) inCycle.add(stack[i]!);
+      } else if (!visited.has(dep)) {
+        dfs(dep);
+      }
+    }
+
+    stack.pop();
+    onStack.delete(node);
+  }
+
+  for (const node of nodes) {
+    if (!visited.has(node)) dfs(node);
+  }
+  return [...inCycle];
+}
+
 // =============================================================================
 // DEFERRED STALENESS
 // =============================================================================

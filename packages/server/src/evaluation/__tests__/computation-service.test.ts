@@ -88,6 +88,35 @@ describe('ComputationService', () => {
       expect(totalProp.cached_at).toBeDefined();
     });
 
+    it('flags computed properties in a dependency cycle as circular', async () => {
+      const service = new ComputationService(mockPool, tenantId, actorId);
+
+      const entity = createTestEntity({
+        a: {
+          source: 'computed',
+          name: 'a' as PropertyName,
+          expression: '#b + 1',
+          dependencies: ['b'],
+          computation_status: 'pending',
+        } as ComputedProperty,
+        b: {
+          source: 'computed',
+          name: 'b' as PropertyName,
+          expression: '#a + 1',
+          dependencies: ['a'],
+          computation_status: 'pending',
+        } as ComputedProperty,
+      });
+
+      const result = await service.computeProperties(entity);
+
+      const a = result.properties['a' as PropertyName] as ComputedProperty;
+      const b = result.properties['b' as PropertyName] as ComputedProperty;
+      expect(a.computation_status).toBe('circular');
+      expect(b.computation_status).toBe('circular');
+      expect(a.computation_error).toMatch(/circular/i);
+    });
+
     it('should set error status on computation failure', async () => {
       const service = new ComputationService(mockPool, tenantId, actorId);
 
