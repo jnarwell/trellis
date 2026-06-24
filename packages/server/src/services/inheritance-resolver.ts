@@ -40,7 +40,9 @@ export function effectiveValue(property: Property): Value | null {
       return property.value;
     }
     case 'computed':
-      return property.cached_value ?? null;
+      // Only a valid cache is a real value; stale/pending/error must not be
+      // silently inherited as if authoritative.
+      return property.computation_status === 'valid' ? property.cached_value ?? null : null;
     case 'inherited':
       return property.override ?? property.resolved_value ?? null;
     default:
@@ -55,8 +57,7 @@ export function effectiveValue(property: Property): Value | null {
  */
 export async function resolveInheritance(
   entity: Entity,
-  loadEntity: EntityLoader,
-  visited: Set<string> = new Set()
+  loadEntity: EntityLoader
 ): Promise<InheritanceResolveResult> {
   let changed = false;
   const nextProperties: Record<string, Property> = { ...entity.properties };
@@ -66,20 +67,12 @@ export async function resolveInheritance(
     // An explicit override wins and needs no source lookup.
     if (property.override !== undefined) continue;
 
-    const key = `${entity.id}:${name}`;
-    if (visited.has(key)) {
-      nextProperties[name] = {
-        ...property,
-        computation_status: 'circular',
-        computation_error: 'Inheritance cycle detected',
-      };
-      changed = true;
-      continue;
-    }
-    visited.add(key);
+    // A fresh path per property records only the chain we are actively
+    // descending, so two siblings inheriting from the same source (a diamond)
+    // do NOT see each other's keys and trigger a false cycle.
+    const path = new Set<string>([`${entity.id}:${name}`]);
+    const resolved = await resolveOne(property, loadEntity, path);
 
-    const resolved = await resolveOne(property, loadEntity, visited);
-    // Only mark changed if something actually differs.
     if (
       resolved.computation_status !== property.computation_status ||
       resolved.resolved_value !== property.resolved_value ||
@@ -97,65 +90,66 @@ export async function resolveInheritance(
   };
 }
 
+type ChainResult =
+  | { status: 'ok'; value: Value | null }
+  | { status: 'error'; error: string }
+  | { status: 'circular' };
+
 async function resolveOne(
   property: Extract<Property, { source: 'inherited' }>,
   loadEntity: EntityLoader,
-  visited: Set<string>
+  path: Set<string>
 ): Promise<Extract<Property, { source: 'inherited' }>> {
-  const source = await loadEntity(property.from_entity);
-  if (!source) {
-    return {
-      ...property,
-      computation_status: 'error',
-      computation_error: `Source entity '${property.from_entity}' not found`,
-    };
-  }
-
   const sourceName = (property.from_property ?? property.name) as PropertyName;
-  const sourceProp = source.properties[sourceName] as Property | undefined;
-  if (!sourceProp) {
-    return {
-      ...property,
-      computation_status: 'error',
-      computation_error: `Source property '${sourceName}' not found on entity '${property.from_entity}'`,
-    };
+  const r = await resolveChain(property.from_entity, sourceName, loadEntity, path);
+
+  if (r.status === 'error') {
+    return { ...property, computation_status: 'error', computation_error: r.error };
   }
-
-  // If the source itself inherits, resolve it first so we read a real value.
-  let resolvedSourceProp = sourceProp;
-  if (sourceProp.source === 'inherited' && sourceProp.override === undefined) {
-    const sourceResult = await resolveInheritance(source, loadEntity, visited);
-    resolvedSourceProp =
-      (sourceResult.entity.properties[sourceName] as Property | undefined) ?? sourceProp;
-
-    // Propagate an unresolvable source (cycle or error) up the chain instead of
-    // silently resolving to null.
-    if (
-      resolvedSourceProp.source === 'inherited' &&
-      (resolvedSourceProp.computation_status === 'circular' ||
-        resolvedSourceProp.computation_status === 'error')
-    ) {
-      return {
-        ...property,
-        computation_status: resolvedSourceProp.computation_status,
-        computation_error:
-          resolvedSourceProp.computation_error ??
-          (resolvedSourceProp.computation_status === 'circular'
-            ? 'Inheritance cycle detected'
-            : 'Source property could not be resolved'),
-      };
-    }
+  if (r.status === 'circular') {
+    return { ...property, computation_status: 'circular', computation_error: 'Inheritance cycle detected' };
   }
-
-  const value = effectiveValue(resolvedSourceProp);
-  const next: Extract<Property, { source: 'inherited' }> = {
-    ...property,
-    computation_status: 'valid',
-  };
-  // Drop a stale error message; attach the resolved value when present.
+  const next: Extract<Property, { source: 'inherited' }> = { ...property, computation_status: 'valid' };
   delete (next as { computation_error?: string }).computation_error;
-  if (value !== null) {
-    return { ...next, resolved_value: value };
+  return r.value !== null ? { ...next, resolved_value: r.value } : next;
+}
+
+/**
+ * Resolve the effective value of `propName` on `entityId`, following inherited
+ * chains. Only the single requested property is resolved (not the whole source
+ * entity), and `path` holds the active chain for cycle detection — keys are
+ * added before descending and removed after, so the set never bleeds across
+ * unrelated branches.
+ */
+async function resolveChain(
+  entityId: EntityId,
+  propName: PropertyName,
+  loadEntity: EntityLoader,
+  path: Set<string>
+): Promise<ChainResult> {
+  const source = await loadEntity(entityId);
+  if (!source) return { status: 'error', error: `Source entity '${entityId}' not found` };
+
+  const prop = source.properties[propName] as Property | undefined;
+  if (!prop) {
+    return { status: 'error', error: `Source property '${propName}' not found on entity '${entityId}'` };
   }
-  return next;
+
+  // A concrete (or overridden) property yields its effective value directly.
+  if (prop.source !== 'inherited' || prop.override !== undefined) {
+    return { status: 'ok', value: effectiveValue(prop) };
+  }
+
+  // Inherited with no override → descend, guarding against cycles.
+  const key = `${entityId}:${propName}`;
+  if (path.has(key)) return { status: 'circular' };
+  path.add(key);
+  const result = await resolveChain(
+    prop.from_entity,
+    (prop.from_property ?? propName) as PropertyName,
+    loadEntity,
+    path
+  );
+  path.delete(key);
+  return result;
 }

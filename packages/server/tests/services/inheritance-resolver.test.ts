@@ -71,16 +71,21 @@ describe('effectiveValue', () => {
     expect(effectiveValue(measured)).toEqual({ type: 'number', value: 10, unit: 'g', uncertainty: 0.5 });
   });
 
-  it('returns a computed property cached value (or null)', () => {
-    const computed = {
-      source: 'computed',
-      name: 'x',
-      expression: '1+1',
-      dependencies: [],
-      computation_status: 'valid',
-      cached_value: { type: 'number', value: 2 },
-    } as unknown as Property;
-    expect(effectiveValue(computed)).toEqual({ type: 'number', value: 2 });
+  it('returns a computed property cached value only when valid', () => {
+    const make = (status: string) =>
+      ({
+        source: 'computed',
+        name: 'x',
+        expression: '1+1',
+        dependencies: [],
+        computation_status: status,
+        cached_value: { type: 'number', value: 2 },
+      } as unknown as Property);
+    expect(effectiveValue(make('valid'))).toEqual({ type: 'number', value: 2 });
+    // Stale/pending/error caches must NOT be surfaced as authoritative values.
+    expect(effectiveValue(make('stale'))).toBeNull();
+    expect(effectiveValue(make('pending'))).toBeNull();
+    expect(effectiveValue(make('error'))).toBeNull();
   });
 });
 
@@ -150,6 +155,39 @@ describe('resolveInheritance', () => {
     const b = entity('b', { x: inherited('x', 'a') });
     const { entity: result } = await resolveInheritance(a, loaderFor(a, b));
     expect(prop(result, 'x').computation_status).toBe('circular');
+  });
+
+  it('REGRESSION: diamond inheritance does NOT trigger a false cycle', async () => {
+    // C.p and C.q both inherit through S.v (which itself inherits from G.v).
+    // The old shared visited-set flagged the second branch as circular.
+    const g = entity('g', { v: literal('v', text('gold')) });
+    const s = entity('s', { v: inherited('v', 'g') });
+    const c = entity('c', {
+      p: inherited('p', 's', { from_property: 'v' }),
+      q: inherited('q', 's', { from_property: 'v' }),
+    });
+    const { entity: result } = await resolveInheritance(c, loaderFor(g, s));
+    expect(prop(result, 'p').computation_status).toBe('valid');
+    expect(prop(result, 'q').computation_status).toBe('valid');
+    expect(prop(result, 'p').resolved_value).toEqual(text('gold'));
+    expect(prop(result, 'q').resolved_value).toEqual(text('gold'));
+  });
+
+  it('a stale computed source is inherited as null, not the stale cache', async () => {
+    const src = entity('src', {
+      total: {
+        source: 'computed',
+        name: 'total',
+        expression: 'x',
+        dependencies: [],
+        computation_status: 'stale',
+        cached_value: { type: 'number', value: 99 },
+      } as unknown as Property,
+    });
+    const child = entity('child', { total: inherited('total', 'src') });
+    const { entity: result } = await resolveInheritance(child, loaderFor(src));
+    expect(prop(result, 'total').computation_status).toBe('valid');
+    expect(prop(result, 'total').resolved_value).toBeUndefined();
   });
 
   it('leaves a non-inheriting entity untouched', async () => {

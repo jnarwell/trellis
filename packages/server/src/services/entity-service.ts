@@ -392,11 +392,20 @@ export class EntityService {
     // Resolve inherited properties at read time by following each
     // from_entity/from_property pointer to the source's effective value.
     if (options.resolveInherited) {
-      const loadEntity: EntityLoader = async (sourceId) =>
-        withTenantTransaction(this.pool, this.tenantId, async (client) => {
+      // Memoize so each distinct source entity is fetched at most once per
+      // resolution (a diamond/shared-source graph would otherwise reload the
+      // same entity repeatedly).
+      const cache = new Map<string, Promise<Entity | null>>();
+      const loadEntity: EntityLoader = (sourceId) => {
+        const cached = cache.get(sourceId);
+        if (cached) return cached;
+        const p = withTenantTransaction(this.pool, this.tenantId, async (client) => {
           const row = await new EntityRepository(client).findById(sourceId);
           return row ? rowToEntity(row) : null;
         });
+        cache.set(sourceId, p);
+        return p;
+      };
       const resolved = await resolveInheritance(entity, loadEntity);
       entity = resolved.entity;
     }
