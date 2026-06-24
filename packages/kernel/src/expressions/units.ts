@@ -100,35 +100,70 @@ export function convertValue(value: number, fromUnit?: string, toUnit?: string):
 // RESULT CONSTRUCTION
 // =============================================================================
 
-/** Build a number value, attaching dimension/unit only when defined. */
+/** Build a number value, attaching dimension/unit/uncertainty only when defined. */
 export function numberWithUnit(
   value: number,
   dimension?: DimensionType,
-  unit?: string
+  unit?: string,
+  uncertainty?: number
 ): NumberValue {
   return {
     type: 'number',
     value,
     ...(dimension !== undefined && { dimension }),
     ...(unit !== undefined && { unit }),
+    ...(uncertainty !== undefined && { uncertainty }),
   };
 }
 
 /**
  * For + / - / %: align `right` to `left`'s unit (when both convertible),
- * returning the aligned right-hand numeric value and the dimension/unit the
- * result should carry (the left's if defined, else the right's).
+ * returning the aligned right-hand numeric value and uncertainty plus the
+ * dimension/unit the result should carry (the left's if defined, else right's).
  */
 export function alignAdditive(
   left: NumberValue,
   right: NumberValue
-): { rightValue: number; dimension?: DimensionType; unit?: string } {
-  const rightValue =
-    left.unit && right.unit ? convertValue(right.value, right.unit, left.unit) : right.value;
+): { rightValue: number; rightUncertainty?: number; dimension?: DimensionType; unit?: string } {
+  const convert = Boolean(left.unit && right.unit);
+  const rightValue = convert ? convertValue(right.value, right.unit, left.unit) : right.value;
+  const rightUncertainty =
+    right.uncertainty === undefined
+      ? undefined
+      : convert
+        ? convertValue(right.uncertainty, right.unit, left.unit)
+        : right.uncertainty;
   const dimension = resolveDimension(left) ?? resolveDimension(right);
   const unit = left.unit ?? right.unit;
-  const out: { rightValue: number; dimension?: DimensionType; unit?: string } = { rightValue };
+  const out: { rightValue: number; rightUncertainty?: number; dimension?: DimensionType; unit?: string } = { rightValue };
+  if (rightUncertainty !== undefined) out.rightUncertainty = rightUncertainty;
   if (dimension !== undefined) out.dimension = dimension;
   if (unit !== undefined) out.unit = unit;
   return out;
+}
+
+// =============================================================================
+// UNCERTAINTY PROPAGATION  (https://en.wikipedia.org/wiki/Propagation_of_uncertainty)
+// =============================================================================
+
+/** Add/subtract: absolute uncertainties combine in quadrature. */
+export function combineUncertaintyAddSub(left?: number, right?: number): number | undefined {
+  if (left === undefined && right === undefined) return undefined;
+  const l = left ?? 0;
+  const r = right ?? 0;
+  return Math.sqrt(l * l + r * r);
+}
+
+/** Multiply/divide: relative uncertainties combine in quadrature. */
+export function combineUncertaintyMulDiv(
+  resultValue: number,
+  l: number,
+  r: number,
+  leftUnc?: number,
+  rightUnc?: number
+): number | undefined {
+  if (leftUnc === undefined && rightUnc === undefined) return undefined;
+  const relL = l !== 0 && leftUnc !== undefined ? leftUnc / Math.abs(l) : 0;
+  const relR = r !== 0 && rightUnc !== undefined ? rightUnc / Math.abs(r) : 0;
+  return Math.abs(resultValue) * Math.sqrt(relL * relL + relR * relR);
 }

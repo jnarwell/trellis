@@ -42,6 +42,12 @@ export interface NumberValue {
   readonly dimension?: DimensionType;
   /** Display unit (e.g., "mm", "kg", "s") */
   readonly unit?: string;
+  /**
+   * Measurement uncertainty (± in the same unit). Propagated through
+   * arithmetic by the expression engine via error propagation; populated
+   * when a `measured` property is resolved.
+   */
+  readonly uncertainty?: number;
 }
 
 /** Boolean value */

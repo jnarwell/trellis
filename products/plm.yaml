@@ -127,6 +127,7 @@ views:
                 label: Material
               - property: mass_g
                 label: Mass (g)
+                format: measured
               - property: status
                 label: Status
             onRowClick: navigate

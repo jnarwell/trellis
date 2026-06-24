@@ -137,6 +137,7 @@ export type CellFormat =
   | 'badge'
   | 'link'
   | 'image'
+  | 'measured'
   | 'actions';
 
 /**

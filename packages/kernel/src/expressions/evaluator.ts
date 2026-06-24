@@ -41,6 +41,8 @@ import {
   convertValue,
   numberWithUnit,
   alignAdditive,
+  combineUncertaintyAddSub,
+  combineUncertaintyMulDiv,
 } from './units.js';
 import { invokeFunction } from './functions/index.js';
 import type { RuntimeValue } from './functions/index.js';
@@ -440,7 +442,8 @@ async function evaluateBinaryExpression(
         const aligned = alignAdditive(left, right);
         const value =
           node.operator === '+' ? left.value + aligned.rightValue : left.value - aligned.rightValue;
-        return numberWithUnit(value, aligned.dimension, aligned.unit);
+        const unc = combineUncertaintyAddSub(left.uncertainty, aligned.rightUncertainty);
+        return numberWithUnit(value, aligned.dimension, aligned.unit, unc);
       }
       case '%': {
         if (right.value === 0) throw divisionByZeroError(node.right.start);
@@ -454,20 +457,23 @@ async function evaluateBinaryExpression(
         // Scaling: a dimensionless side leaves the other's dimension intact.
         // Two dimensioned operands would form a derived dimension we don't
         // track yet, so the result is treated as dimensionless.
-        if (!dl && !dr) return { type: 'number', value: left.value * right.value };
-        if (dl && !dr) return numberWithUnit(left.value * right.value, dl, left.unit);
-        if (!dl && dr) return numberWithUnit(left.value * right.value, dr, right.unit);
-        return { type: 'number', value: left.value * right.value };
+        const v = left.value * right.value;
+        const unc = combineUncertaintyMulDiv(v, left.value, right.value, left.uncertainty, right.uncertainty);
+        if (dl && !dr) return numberWithUnit(v, dl, left.unit, unc);
+        if (!dl && dr) return numberWithUnit(v, dr, right.unit, unc);
+        return numberWithUnit(v, undefined, undefined, unc);
       }
       case '/': {
         if (right.value === 0) throw divisionByZeroError(node.right.start);
         // Same dimension divides out to a dimensionless ratio.
-        if (dl && dr && dl === dr) {
-          const rv = left.unit && right.unit ? convertValue(right.value, right.unit, left.unit) : right.value;
-          return { type: 'number', value: left.value / rv };
-        }
-        if (dl && !dr) return numberWithUnit(left.value / right.value, dl, left.unit);
-        return { type: 'number', value: left.value / right.value };
+        const rv = dl && dr && dl === dr && left.unit && right.unit
+          ? convertValue(right.value, right.unit, left.unit)
+          : right.value;
+        const v = left.value / rv;
+        const unc = combineUncertaintyMulDiv(v, left.value, right.value, left.uncertainty, right.uncertainty);
+        if (dl && dr && dl === dr) return numberWithUnit(v, undefined, undefined, unc);
+        if (dl && !dr) return numberWithUnit(v, dl, left.unit, unc);
+        return numberWithUnit(v, undefined, undefined, unc);
       }
     }
   }
@@ -594,8 +600,15 @@ function resolveProperty(entity: Entity, propertyName: PropertyName): RuntimeVal
     case 'literal':
       return property.value ?? null;
 
-    case 'measured':
-      return property.value ?? null;
+    case 'measured': {
+      // Surface the sibling uncertainty onto the number value so the engine
+      // can propagate it through arithmetic (error propagation).
+      if (!property.value) return null;
+      if (property.uncertainty !== undefined && property.value.uncertainty === undefined) {
+        return { ...property.value, uncertainty: property.uncertainty };
+      }
+      return property.value;
+    }
 
     case 'inherited':
       // If there's an override, use it

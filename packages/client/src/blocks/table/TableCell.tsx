@@ -208,6 +208,28 @@ const BadgeCell: React.FC<CellProps> = ({ value }) => {
   );
 };
 
+/** Renders a measured value as "value ± uncertainty unit" (e.g. 84.5 ± 0.5 g). */
+const MeasuredCell: React.FC<CellProps> = ({ value, column, entity }) => {
+  const prop = entity?.properties?.[column.property as keyof typeof entity.properties] as
+    | { uncertainty?: number; value?: { value?: number; unit?: string; uncertainty?: number } }
+    | undefined;
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!isFinite(n)) {
+    return <span className={cell.text}>{value === null || value === undefined ? '' : String(value)}</span>;
+  }
+  const uncertainty = prop?.uncertainty ?? prop?.value?.uncertainty;
+  const unit = prop?.value?.unit;
+  return (
+    <span className={cell.number}>
+      {formatNumber(n)}
+      {uncertainty !== undefined && (
+        <span style={{ color: 'var(--trellis-text-muted)' }}> ± {formatNumber(uncertainty)}</span>
+      )}
+      {unit ? ` ${unit}` : ''}
+    </span>
+  );
+};
+
 const LinkCell: React.FC<CellProps> = ({ value, column }) => {
   const displayValue = String(value ?? '');
   const target = column.formatOptions?.linkTarget ?? '_self';
@@ -257,6 +279,7 @@ const CellRenderers: Record<CellFormat, React.FC<CellProps>> = {
   badge: BadgeCell,
   link: LinkCell,
   image: ImageCell,
+  measured: MeasuredCell,
   actions: TextCell, // Actions are handled separately
 };
 

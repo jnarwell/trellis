@@ -119,3 +119,62 @@ describe('dimension-aware arithmetic', () => {
       .toMatchObject({ value: 8, unit: 'kg' });
   });
 });
+
+describe('uncertainty propagation', () => {
+  const measured = (value: number, uncertainty: number, unit?: string): NumberValue => ({
+    type: 'number',
+    value,
+    uncertainty,
+    ...(unit ? { unit } : {}),
+  });
+
+  it('add/subtract combine uncertainties in quadrature', async () => {
+    // (10 ± 3) + (20 ± 4) = 30 ± 5   (sqrt(9+16) = 5)
+    const r = (await evalVal('@self.a + @self.b', {
+      a: measured(10, 3), b: measured(20, 4),
+    })) as NumberValue;
+    expect(r.value).toBe(30);
+    expect(r.uncertainty).toBeCloseTo(5, 9);
+  });
+
+  it('subtraction also adds uncertainty in quadrature', async () => {
+    const r = (await evalVal('@self.a - @self.b', {
+      a: measured(20, 3), b: measured(5, 4),
+    })) as NumberValue;
+    expect(r.value).toBe(15);
+    expect(r.uncertainty).toBeCloseTo(5, 9);
+  });
+
+  it('scaling by an exact constant scales the uncertainty', async () => {
+    // (10 ± 2) * 3 = 30 ± 6
+    const r = (await evalVal('@self.a * @self.k', {
+      a: measured(10, 2), k: num(3),
+    })) as NumberValue;
+    expect(r.value).toBe(30);
+    expect(r.uncertainty).toBeCloseTo(6, 9);
+  });
+
+  it('multiply combines relative uncertainties in quadrature', async () => {
+    // (4 ± 1) * (10 ± 2): rel = sqrt((0.25)^2 + (0.2)^2) = 0.32016; *40 = 12.806
+    const r = (await evalVal('@self.a * @self.b', {
+      a: measured(4, 1), b: measured(10, 2),
+    })) as NumberValue;
+    expect(r.value).toBe(40);
+    expect(r.uncertainty).toBeCloseTo(40 * Math.sqrt(0.25 * 0.25 + 0.2 * 0.2), 6);
+  });
+
+  it('propagates uncertainty across unit conversion in addition', async () => {
+    // (1 m ± 0.01 m) + (300 mm ± 20 mm) → in metres: 1.3 m ± sqrt(0.01^2 + 0.02^2)
+    const r = (await evalVal('@self.a + @self.b', {
+      a: measured(1, 0.01, 'm'), b: measured(300, 20, 'mm'),
+    })) as NumberValue;
+    expect(r.value).toBeCloseTo(1.3, 9);
+    expect(r.unit).toBe('m');
+    expect(r.uncertainty).toBeCloseTo(Math.sqrt(0.01 * 0.01 + 0.02 * 0.02), 9);
+  });
+
+  it('plain numbers carry no uncertainty', async () => {
+    const r = (await evalVal('@self.a + @self.b', { a: num(2), b: num(3) })) as NumberValue;
+    expect(r.uncertainty).toBeUndefined();
+  });
+});

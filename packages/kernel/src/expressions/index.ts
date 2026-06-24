@@ -135,7 +135,7 @@ export {
   invalidUuidError,
 } from './errors.js';
 
-// Dimensional analysis (units.ts)
+// Dimensional analysis + uncertainty propagation (units.ts)
 export {
   UNIT_REGISTRY,
   resolveDimension,
@@ -143,6 +143,8 @@ export {
   convertValue,
   numberWithUnit,
   alignAdditive,
+  combineUncertaintyAddSub,
+  combineUncertaintyMulDiv,
 } from './units.js';
 
 // =============================================================================
