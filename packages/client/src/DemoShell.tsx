@@ -12,8 +12,10 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { load as yamlLoad } from 'js-yaml';
 import { expandRoles, isRoleName, type RoleName } from '@trellis/kernel';
 import { DynamicProductApp } from './runtime/DynamicProductApp.js';
+import type { LoadedProductConfig } from './runtime/ProductConfigLoader.js';
 import type { UserContext } from './binding/scope.js';
 
 // =============================================================================
@@ -64,19 +66,38 @@ function buildUser(role: RoleName): UserContext {
 
 function ConfigPanel({
   productId,
+  initialSource,
+  isOverridden,
+  onApply,
+  onRevert,
   onClose,
 }: {
   productId: string;
+  initialSource: string | null;
+  isOverridden: boolean;
+  onApply: (config: LoadedProductConfig, source: string) => void;
+  onRevert: () => void;
   onClose: () => void;
 }): React.ReactElement {
-  const [source, setSource] = useState<string>('Loading…');
+  const [source, setSource] = useState<string>(initialSource ?? 'Loading…');
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
+    // Already have edited source in hand — don't refetch the file.
+    if (initialSource != null) {
+      setSource(initialSource);
+      return;
+    }
     let active = true;
     fetch(`/api/config/products/${productId}/source`)
       .then((r) => r.json())
       .then((j: { source?: string; error?: string }) => {
-        if (active) setSource(j.source ?? j.error ?? 'Not found');
+        if (active) {
+          setSource(j.source ?? j.error ?? 'Not found');
+          setDirty(false);
+          setParseError(null);
+        }
       })
       .catch((e: unknown) => {
         if (active) setSource(`Failed to load: ${e instanceof Error ? e.message : String(e)}`);
@@ -84,7 +105,25 @@ function ConfigPanel({
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, initialSource]);
+
+  const apply = useCallback(() => {
+    try {
+      const parsed = yamlLoad(source) as Record<string, unknown>;
+      if (!parsed || typeof parsed !== 'object') {
+        setParseError('Config must be a YAML object');
+        return;
+      }
+      if (!Array.isArray(parsed['views'])) {
+        setParseError("Config needs a 'views:' list");
+        return;
+      }
+      setParseError(null);
+      onApply(parsed as unknown as LoadedProductConfig, source);
+    } catch (e: unknown) {
+      setParseError(e instanceof Error ? e.message : String(e));
+    }
+  }, [source, onApply]);
 
   const lineCount = source.split('\n').length;
 
@@ -93,16 +132,44 @@ function ConfigPanel({
       <aside className="demo-config-panel" onClick={(e) => e.stopPropagation()}>
         <header className="demo-config-head">
           <div>
-            <div className="demo-config-title">{`products/${productId}.yaml`}</div>
+            <div className="demo-config-title">
+              {`products/${productId}.yaml`}
+              {isOverridden && <span className="demo-config-edited">edited</span>}
+            </div>
             <div className="demo-config-sub">
-              {lineCount} lines · the entire app above is generated from this file
+              {lineCount} lines · edit and Apply to re-render the app live
             </div>
           </div>
           <button className="demo-icon-btn" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </header>
-        <pre className="demo-config-code">{source}</pre>
+
+        <textarea
+          className="demo-config-editor"
+          spellCheck={false}
+          value={source}
+          onChange={(e) => {
+            setSource(e.target.value);
+            setDirty(true);
+          }}
+        />
+
+        {parseError && <div className="demo-config-error">⚠ {parseError}</div>}
+
+        <footer className="demo-config-foot">
+          <button className="demo-apply-btn" onClick={apply} disabled={!dirty}>
+            ▶ Apply changes
+          </button>
+          {isOverridden && (
+            <button className="demo-revert-btn" onClick={onRevert}>
+              ↺ Revert to file
+            </button>
+          )}
+          <span className="demo-config-foot-hint">
+            Try: change a column <code>label</code>, add a kanban column, or edit the header.
+          </span>
+        </footer>
       </aside>
     </div>
   );
@@ -177,6 +244,10 @@ export function DemoShell(): React.ReactElement {
   const [role, setRole] = useState<RoleName>(initial.role);
   const [products, setProducts] = useState<string[]>(PRODUCT_ORDER);
   const [showConfig, setShowConfig] = useState(false);
+  // Live-editor override: an edited config rendered instead of the file.
+  const [override, setOverride] = useState<LoadedProductConfig | null>(null);
+  const [editedSource, setEditedSource] = useState<string | null>(null);
+  const [configVersion, setConfigVersion] = useState(0);
 
   // Discover available products from the API; keep the curated order first.
   useEffect(() => {
@@ -207,10 +278,25 @@ export function DemoShell(): React.ReactElement {
     (id: string) => {
       setProduct(id);
       setShowConfig(false);
+      setOverride(null); // edits are per-product; drop them on switch
+      setEditedSource(null);
       syncUrl(id, role);
     },
     [role, syncUrl]
   );
+
+  const applyConfig = useCallback((config: LoadedProductConfig, source: string) => {
+    setOverride(config);
+    setEditedSource(source);
+    setConfigVersion((v) => v + 1);
+    setShowConfig(false);
+  }, []);
+
+  const revertConfig = useCallback(() => {
+    setOverride(null);
+    setEditedSource(null);
+    setConfigVersion((v) => v + 1);
+  }, []);
 
   const onRole = useCallback(
     (r: RoleName) => {
@@ -291,22 +377,38 @@ export function DemoShell(): React.ReactElement {
         <span className="demo-subbar-label">{meta.label}</span>
         <span className="demo-subbar-tag">{meta.tagline}</span>
         <span className="demo-subbar-spacer" />
-        <span className="demo-subbar-hint">
-          Same engine · only <code>products/{product}.yaml</code> differs
-        </span>
+        {override ? (
+          <span className="demo-subbar-hint demo-subbar-hint--edited">
+            ● Rendering your edited config (not the file)
+          </span>
+        ) : (
+          <span className="demo-subbar-hint">
+            Same engine · only <code>products/{product}.yaml</code> differs
+          </span>
+        )}
       </div>
 
       <main className="demo-stage">
-        {/* key remounts the app cleanly when product or role changes */}
+        {/* key remounts the app cleanly when product, role, or config changes */}
         <DynamicProductApp
-          key={`${product}:${role}`}
+          key={`${product}:${role}:${configVersion}`}
           productId={product}
           apiBaseUrl="/api"
           user={user}
+          configOverride={override}
         />
       </main>
 
-      {showConfig && <ConfigPanel productId={product} onClose={() => setShowConfig(false)} />}
+      {showConfig && (
+        <ConfigPanel
+          productId={product}
+          initialSource={editedSource}
+          isOverridden={override !== null}
+          onApply={applyConfig}
+          onRevert={revertConfig}
+          onClose={() => setShowConfig(false)}
+        />
+      )}
       <ToastHost />
     </div>
   );

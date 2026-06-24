@@ -122,6 +122,51 @@
   color: #c4cad6; white-space: pre; tab-size: 2;
 }
 
+/* Live editor */
+.demo-config-edited {
+  font-family: var(--trellis-font); font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: #f0a020; background: rgba(240, 160, 32, 0.15);
+  padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle;
+}
+.demo-config-editor {
+  flex: 1; margin: 0; padding: 18px; border: none; resize: none; outline: none;
+  background: #0f1117; color: #c4cad6;
+  font-family: var(--trellis-mono); font-size: 12.5px; line-height: 1.65;
+  white-space: pre; tab-size: 2; overflow: auto;
+}
+.demo-config-editor:focus { box-shadow: inset 2px 0 0 var(--trellis-primary); }
+.demo-config-error {
+  background: rgba(210, 59, 59, 0.15); color: #ff9b9b;
+  font-family: var(--trellis-mono); font-size: 12px; padding: 10px 18px;
+  border-top: 1px solid rgba(210, 59, 59, 0.3); white-space: pre-wrap;
+}
+.demo-config-foot {
+  display: flex; align-items: center; gap: 10px; padding: 12px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.demo-apply-btn {
+  font-family: var(--trellis-font); font-size: 13px; font-weight: 600;
+  color: #fff; background: var(--trellis-primary); border: none;
+  border-radius: var(--trellis-radius); padding: 8px 14px; cursor: pointer;
+  transition: background 0.15s;
+}
+.demo-apply-btn:hover:not(:disabled) { background: var(--trellis-primary-hover); }
+.demo-apply-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.demo-revert-btn {
+  font-family: var(--trellis-font); font-size: 13px; font-weight: 600;
+  color: #c4cad6; background: transparent; border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--trellis-radius); padding: 8px 12px; cursor: pointer;
+}
+.demo-revert-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.demo-config-foot-hint { font-size: 11px; color: #8b93a7; margin-left: auto; text-align: right; }
+.demo-config-foot-hint code {
+  font-family: var(--trellis-mono); color: #b9a6f8;
+  background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px;
+}
+
+.demo-subbar-hint--edited { color: #b06a06 !important; font-weight: 700; }
+
 /* =============================================================================
    SEMANTIC STATUS BADGES
    ============================================================================= */

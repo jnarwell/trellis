@@ -67,6 +67,12 @@ export interface DynamicProductAppProps {
    * permission gating). Defaults to a full-access demo user.
    */
   readonly user?: UserContext;
+
+  /**
+   * When set, render this config directly instead of fetching by productId.
+   * Powers the live config editor: edit YAML → parse → render, no server.
+   */
+  readonly configOverride?: LoadedProductConfig | null;
 }
 
 /** Default demo identity: full access, mirroring the dev server defaults. */
@@ -401,8 +407,14 @@ function DynamicProductAppInner({
   ErrorComponent = DefaultError,
   LayoutComponent = DefaultLayout,
   user,
+  configOverride,
 }: Omit<DynamicProductAppProps, 'configBaseUrl'>): React.ReactElement {
-  const { config, loading, error, reload } = useProductConfig(productId);
+  const fetched = useProductConfig(productId);
+  // An edited config (live editor) takes precedence over the fetched one.
+  const config = configOverride ?? fetched.config;
+  const loading = configOverride ? false : fetched.loading;
+  const error = configOverride ? null : fetched.error;
+  const reload = fetched.reload;
 
   // Create TrellisClient for the provider - must be before any conditional returns
   const client = useMemo(() => {
