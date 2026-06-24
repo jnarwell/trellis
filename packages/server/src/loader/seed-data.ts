@@ -4,8 +4,8 @@
  * Loads initial entity data from seed configuration files.
  */
 
-import { readFile } from 'node:fs/promises';
-import { resolve, dirname } from 'node:path';
+import { readFile, readdir } from 'node:fs/promises';
+import { resolve, dirname, join } from 'node:path';
 import { glob } from 'glob';
 import * as yaml from 'js-yaml';
 import type { TenantId, ActorId, EntityId } from '@trellis/kernel';
@@ -97,6 +97,98 @@ export async function loadSeedFiles(
   }
 
   return configs;
+}
+
+// =============================================================================
+// DIRECT ENTITY SEED LOADER
+// =============================================================================
+
+/**
+ * A pre-resolved seed entity as shipped in `<product>/seed/*.json` — the same
+ * full-entity shape the demo mock API consumes (id, type, fully-formed
+ * `properties` with source/value), so one seed format serves both the loader
+ * and the zero-dependency demo.
+ */
+export interface EntitySeedRecord {
+  readonly id?: string;
+  readonly type: string;
+  readonly properties: Record<string, unknown>;
+  readonly version?: number;
+  readonly created_by?: string;
+}
+
+/** A relationship as shipped in a seed JSON file. */
+export interface RelationshipSeedRecord {
+  readonly type: string;
+  readonly from_entity: string;
+  readonly to_entity: string;
+  readonly metadata?: Record<string, unknown>;
+}
+
+export interface EntitySeedBundle {
+  readonly entities: EntitySeedRecord[];
+  readonly relationships: RelationshipSeedRecord[];
+}
+
+/**
+ * Read pre-resolved seed entities/relationships from a product's `seed/`
+ * directory. Each `*.json` file is either an array of entity records, or an
+ * object with `entities` and/or `relationships` arrays. A missing directory
+ * yields an empty bundle (seeding is optional).
+ */
+export async function loadEntitySeedFiles(seedDir: string): Promise<EntitySeedBundle> {
+  let names: string[];
+  try {
+    names = await readdir(seedDir);
+  } catch {
+    return { entities: [], relationships: [] };
+  }
+
+  const files = names.filter((n) => n.toLowerCase().endsWith('.json')).sort();
+  const entities: EntitySeedRecord[] = [];
+  const relationships: RelationshipSeedRecord[] = [];
+
+  for (const name of files) {
+    const raw = await readFile(join(seedDir, name), 'utf-8');
+    const parsed: unknown = JSON.parse(raw);
+
+    if (Array.isArray(parsed)) {
+      for (const e of parsed) {
+        if (isEntitySeedRecord(e)) entities.push(e);
+      }
+    } else if (parsed && typeof parsed === 'object') {
+      const obj = parsed as { entities?: unknown; relationships?: unknown };
+      if (Array.isArray(obj.entities)) {
+        for (const e of obj.entities) if (isEntitySeedRecord(e)) entities.push(e);
+      }
+      if (Array.isArray(obj.relationships)) {
+        for (const r of obj.relationships) if (isRelationshipSeedRecord(r)) relationships.push(r);
+      }
+    }
+  }
+
+  return { entities, relationships };
+}
+
+function isEntitySeedRecord(v: unknown): v is EntitySeedRecord {
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    typeof (v as EntitySeedRecord).type === 'string' &&
+    !!(v as EntitySeedRecord).properties &&
+    typeof (v as EntitySeedRecord).properties === 'object'
+  );
+}
+
+function isRelationshipSeedRecord(v: unknown): v is RelationshipSeedRecord {
+  const r = v as RelationshipSeedRecord;
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    typeof r.type === 'string' &&
+    typeof r.from_entity === 'string' &&
+    typeof r.to_entity === 'string'
+  );
 }
 
 /**

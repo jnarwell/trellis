@@ -64,6 +64,9 @@ export interface LoadResult {
   /** Number of entities seeded */
   readonly entitiesSeeded: number;
 
+  /** Number of relationship instances seeded */
+  readonly relationshipsSeeded: number;
+
   /** Validation errors (if any) */
   readonly errors: readonly ProductValidationError[];
 

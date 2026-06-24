@@ -130,6 +130,7 @@ export async function executeServeCommand(
     console.log(`\nProduct loaded successfully!`);
     console.log(`  Entity types: ${result.entityTypesCreated}`);
     console.log(`  Entities seeded: ${result.entitiesSeeded}`);
+    console.log(`  Relationships seeded: ${result.relationshipsSeeded}`);
   }
 
   // Start the server

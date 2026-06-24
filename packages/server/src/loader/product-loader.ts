@@ -4,7 +4,7 @@
  * Loads a complete product definition from YAML into the database.
  */
 
-import { dirname, basename, resolve } from 'node:path';
+import { dirname, basename, resolve, join } from 'node:path';
 import type { TenantId, ActorId, BlockRegistry } from '@trellis/kernel';
 
 /**
@@ -53,13 +53,8 @@ import {
   type RelationshipTypeConfig,
 } from './relationship-loader.js';
 import {
-  loadSeedFiles,
-  mergeSeedConfigs,
-  resolveSeedEntities,
-  resolveSeedRelationships,
-  validateSeedData,
   generateEntityId,
-  type SeedFileConfig,
+  loadEntitySeedFiles,
 } from './seed-data.js';
 
 // =============================================================================
@@ -196,14 +191,16 @@ export class ProductLoader {
       const tenantId = options.tenantId ?? await this.ensureTenant(config.manifest.id);
       const actorId = options.actorId ?? await this.ensureSystemActor(tenantId);
 
-      // 5. Execute in transaction
+      // 5. Execute in transaction. The product directory holds the optional
+      // `seed/` folder (sibling of the product YAML).
       const result = await this.executeLoad(
         config,
         tenantId,
         actorId,
         options,
         validation.warnings,
-        startTime
+        startTime,
+        dirname(absolutePath)
       );
 
       this.emit({
@@ -255,7 +252,8 @@ export class ProductLoader {
     actorId: ActorId,
     options: ProductLoaderOptions,
     warnings: readonly ProductValidationWarning[],
-    startTime: number
+    startTime: number,
+    productDir: string
   ): Promise<LoadResult> {
     // Use transaction for atomic loading
     return this.db.$transaction(async (tx) => {
@@ -267,19 +265,15 @@ export class ProductLoader {
         options.force ?? false
       );
 
-      // 2. Create relationship schemas (if any)
-      // Note: Relationships might be defined separately or inferred
-      const relationshipTypesCreated = 0; // TODO: Load from config when relationships are defined
-
-      // 3. Load seed data
+      // 2. Load seed data (entities + relationships) from <productDir>/seed/.
+      // Relationship *type* schemas aren't generated from config yet, so that
+      // count stays 0; seeded relationship instances are reported separately.
       let entitiesSeeded = 0;
+      let relationshipsSeeded = 0;
       if (!options.skipSeed) {
-        entitiesSeeded = await this.loadSeedData(
-          tx,
-          config,
-          tenantId,
-          actorId
-        );
+        const seeded = await this.loadSeedData(tx, productDir, tenantId, actorId);
+        entitiesSeeded = seeded.entities;
+        relationshipsSeeded = seeded.relationships;
       }
 
       return this.buildResult(
@@ -287,11 +281,12 @@ export class ProductLoader {
         config.manifest.id,
         tenantId,
         entityTypesCreated,
-        relationshipTypesCreated,
+        0,
         entitiesSeeded,
         [],
         warnings,
-        startTime
+        startTime,
+        relationshipsSeeded
       );
     });
   }
@@ -369,80 +364,59 @@ export class ProductLoader {
   }
 
   /**
-   * Load seed data into entities.
+   * Load seed data (entities + relationships) from `<productDir>/seed/*.json`.
+   * These are pre-resolved full-entity records — the same files the demo mock
+   * API consumes — so a single seed format works for both. The seed directory
+   * is optional; a missing one simply seeds nothing.
+   *
+   * @returns counts of entities and relationships inserted.
    */
   private async loadSeedData(
     tx: ProductLoaderDbTx,
-    config: ProductConfig,
+    productDir: string,
     tenantId: TenantId,
     actorId: ActorId
-  ): Promise<number> {
-    // Check if product has seed configuration
-    // For now, look for seed files in the product directory
-    // This would be defined in ProductManifest.includes.seed
-    const seedConfig: SeedFileConfig = { entities: [], relationships: [] };
+  ): Promise<{ entities: number; relationships: number }> {
+    const seedDir = join(productDir, 'seed');
+    const bundle = await loadEntitySeedFiles(seedDir);
 
-    // TODO: Load from config.manifest.includes.seed when supported
-    // const seedFiles = await loadSeedFiles(productDir, config.manifest.includes?.seed);
-    // const seedConfig = mergeSeedConfigs(seedFiles);
-
-    if (!seedConfig.entities || seedConfig.entities.length === 0) {
-      return 0;
+    if (bundle.entities.length === 0 && bundle.relationships.length === 0) {
+      return { entities: 0, relationships: 0 };
     }
 
-    // Validate seed data
-    const errors = validateSeedData(seedConfig, config.entities);
-    if (errors.length > 0) {
-      throw new Error(`Invalid seed data:\n${errors.join('\n')}`);
-    }
-
-    // Resolve entities
-    const resolvedEntities = resolveSeedEntities(
-      seedConfig,
-      config.entities,
-      generateEntityId
-    );
-
-    // Insert entities
-    for (const entity of resolvedEntities) {
+    // Insert entities. The loaded tenant owns every seeded row, regardless of
+    // any tenant_id baked into the fixture file.
+    for (const entity of bundle.entities) {
+      const id = entity.id ?? generateEntityId();
       await tx.entities.create({
         data: {
-          id: entity.id,
+          id,
           tenant_id: tenantId,
           type_path: entity.type,
           properties: entity.properties,
-          version: 1,
+          version: entity.version ?? 1,
           created_by: actorId,
         },
       });
 
-      this.emit({
-        type: 'entity_seeded',
-        entityType: entity.type,
-        id: entity.id,
-      });
+      this.emit({ type: 'entity_seeded', entityType: entity.type, id });
     }
 
-    // Resolve and insert relationships
-    const resolvedRelationships = resolveSeedRelationships(
-      seedConfig,
-      resolvedEntities
-    );
-
-    for (const rel of resolvedRelationships) {
+    // Insert relationships.
+    for (const rel of bundle.relationships) {
       await tx.relationships.create({
         data: {
           tenant_id: tenantId,
           type: rel.type,
           from_entity: rel.from_entity,
           to_entity: rel.to_entity,
-          metadata: rel.metadata,
+          metadata: rel.metadata ?? {},
           created_by: actorId,
         },
       });
     }
 
-    return resolvedEntities.length;
+    return { entities: bundle.entities.length, relationships: bundle.relationships.length };
   }
 
   /**
@@ -511,7 +485,8 @@ export class ProductLoader {
     entitiesSeeded: number,
     errors: readonly ProductValidationError[],
     warnings: readonly ProductValidationWarning[],
-    startTime: number
+    startTime: number,
+    relationshipsSeeded = 0
   ): LoadResult {
     return {
       success,
@@ -520,6 +495,7 @@ export class ProductLoader {
       entityTypesCreated,
       relationshipTypesCreated,
       entitiesSeeded,
+      relationshipsSeeded,
       errors,
       warnings,
       durationMs: Date.now() - startTime,

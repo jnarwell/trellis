@@ -137,6 +137,7 @@ function printResult(result: LoadResult, options: LoadCommandOptions): void {
     console.log(`  Entity types:        ${result.entityTypesCreated}`);
     console.log(`  Relationship types:  ${result.relationshipTypesCreated}`);
     console.log(`  Entities seeded:     ${result.entitiesSeeded}`);
+    console.log(`  Relationships seeded:${result.relationshipsSeeded}`);
     console.log(`  Duration:            ${result.durationMs}ms`);
 
     if (result.warnings.length > 0) {
