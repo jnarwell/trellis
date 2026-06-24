@@ -15,6 +15,7 @@ import { registerTenantMiddleware } from './middleware/tenant.js';
 import { registerErrorHandler } from './middleware/error-handler.js';
 import { createEventEmitter } from './events/emitter.js';
 import { createEventStore } from './events/store.js';
+import { registerRecalculationHandler } from './evaluation/index.js';
 import { entityRoutes } from './routes/entities/index.js';
 import { relationshipRoutes } from './routes/relationships/index.js';
 import { queryRoutes } from './routes/query/index.js';
@@ -83,6 +84,11 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   // Shared event emitter backed by the event store: services emit through
   // this so every mutation lands in the immutable events table (audit log).
   app.decorate('events', createEventEmitter(createEventStore(app.pg)));
+
+  // Recompute computed properties when they go stale: a property_stale event
+  // (raised by staleness propagation) triggers recalculation + persistence.
+  // Without this, stale computed values were never refreshed automatically.
+  registerRecalculationHandler(app.events, app.pg);
 
   // Register CORS - allow dev server origin
   // Use 'onRequest' hook to handle preflight before route matching

@@ -12,7 +12,11 @@ import type {
   EventId,
   PropertyName,
 } from '@trellis/kernel';
-import { RecalculationHandler, createRecalculationHandler } from '../recalculation-handler.js';
+import {
+  RecalculationHandler,
+  createRecalculationHandler,
+  registerRecalculationHandler,
+} from '../recalculation-handler.js';
 
 describe('RecalculationHandler', () => {
   let mockPool: Pool;
@@ -112,6 +116,16 @@ describe('RecalculationHandler', () => {
       // Properties should be batched together for the same entity
       // This is verified by the fact that connect is only called once per batch
       expect(mockPool.connect).toHaveBeenCalled();
+    });
+  });
+
+  describe('registerRecalculationHandler', () => {
+    it('subscribes a property_stale handler on the emitter', () => {
+      const emitter = { on: vi.fn() };
+      registerRecalculationHandler(emitter as never, mockPool);
+      expect(emitter.on).toHaveBeenCalledTimes(1);
+      expect(emitter.on.mock.calls[0]![0]).toBe('property_stale');
+      expect(typeof emitter.on.mock.calls[0]![1]).toBe('function');
     });
   });
 

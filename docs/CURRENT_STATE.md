@@ -40,10 +40,26 @@ dropped uncertainty; dimensioned-but-unitless summed raw); seed loader
 (non-idempotent → PK clash; dropped timestamps); inheritance (diamond
 false-cycle; stale computed inherited as valid; N+1 loads); aggregation
 strips units; recursion depth guard never fired; plus measured values now
-render in the detail view. Larger items (relationship-type-schema config,
-CI wiring of DB-gated suites, RLS) are tracked but out of this pass.
+render in the detail view.
 
-**Tests:** 907 passing (kernel 183, server 449, client 275).
+A second pass then cleared the rest of the review docket:
+- **derived dimensions** — `*`/`/` now produce area/volume/velocity/force/etc.
+  via base-exponent vectors (was always dimensionless)
+- **collection traversal** — `SUM(@self.items[*].price)` collects real values
+  (was empty-record garbage)
+- **circular dependencies** — cyclic computed properties are flagged `circular`
+  instead of silently stale (`detectCircularDependencies` + wired into compute)
+- **relationship events** broadcast over WebSocket (were persisted but not emitted)
+- **query/list** can resolve inherited properties (`resolve_inherited`)
+- **relationship type schemas** are generated from `includes.relationships`
+- **recalculation handler** is registered so stale computed props auto-recompute
+- **file blocks** work in demo mode (in-memory store + multipart parsing)
+
+Genuinely infra-gated items (RLS productionization, ltree hierarchy, wiring the
+DB-gated suites into CI) are documented in [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md)
+(OQ-010) rather than changed blind.
+
+**Tests:** 930 passing (kernel 199, server 456, client 275).
 
 ---
 

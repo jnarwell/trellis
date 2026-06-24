@@ -8,6 +8,29 @@ This document tracks unresolved architectural and design questions. When a quest
 
 ## Open Questions
 
+### OQ-010: Infra-gated hardening items (deferred from the Phase 2.12 review)
+**Status:** Open
+**Priority:** Medium
+**Context:** The post-2.12 adversarial review surfaced three items that need a
+live Postgres / CI runner to implement and verify safely. They were left
+deliberately unfixed rather than changed blind (a wrong RLS policy or a CI job
+that can't be run locally is worse than a documented gap):
+
+1. **Tenant RLS productionization** — the tenant middleware sets a transaction-
+   local GUC outside a transaction, there's no `FORCE ROW LEVEL SECURITY`, the
+   app runs as the table owner, and some repo queries omit `tenant_id`. Needs a
+   non-owner role + policy tests against real Postgres.
+2. **Relationship ltree hierarchy** — `path` is stored but never auto-computed,
+   and there are no ancestor/descendant (`@>` / `<@`) query endpoints despite
+   the spec/ADR describing them.
+3. **CI coverage of DB-gated suites** — the `integration` job runs zero test
+   files (empty `tests/integration/`) and the ~180-test server e2e suite runs
+   in no CI job (`e2e` is `if: false`). Wiring them needs a Postgres service in
+   CI and a run to confirm they're green.
+
+**Considerations:** each is bounded but requires the DB/CI environment to verify;
+they should be done as their own PRs with the runner available.
+
 ### OQ-001: Expression Evaluation Location
 **Status:** Open
 **Priority:** High
