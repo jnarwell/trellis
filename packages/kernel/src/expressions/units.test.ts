@@ -215,6 +215,53 @@ describe('uncertainty propagation', () => {
   });
 });
 
+describe('collection traversal [*] (regression)', () => {
+  const TENANT = 'tenant' as TenantId;
+  function item(id: string, price: number): Entity {
+    return {
+      id,
+      tenant_id: '00000000-0000-7000-8000-0000000000aa',
+      type: 'item',
+      version: 1,
+      properties: { price: { source: 'literal', value: { type: 'number', value: price } } },
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      created_by: '00000000-0000-7000-8000-0000000000bb',
+    } as unknown as Entity;
+  }
+
+  function ctxWithItems(prices: number[]) {
+    const self = makeEntity({});
+    const items = prices.map((p, i) => item(`0000000${i}-0000-7000-8000-0000000000c${i}`, p));
+    const entityCache = new Map<string, Entity>(items.map((it) => [it.id, it]));
+    entityCache.set(self.id, self);
+    const relationshipCache = new Map([[self.id, new Map([['items', items.map((it) => it.id)]])]]);
+    return createContext(self, TENANT, { entityCache, relationshipCache });
+  }
+
+  it('SUM over rel[*].prop collects ALL related values (was garbage)', async () => {
+    const result = await evaluate(parse('SUM(@self.items[*].price)'), ctxWithItems([10, 20, 30]));
+    expect(result.success).toBe(true);
+    expect(result.value).toMatchObject({ type: 'number', value: 60 });
+  });
+
+  it('AVG over rel[*].prop', async () => {
+    const result = await evaluate(parse('AVG(@self.items[*].price)'), ctxWithItems([10, 20, 30]));
+    expect(result.value).toMatchObject({ type: 'number', value: 20 });
+  });
+
+  it('rel[*].prop evaluates to a real list of values', async () => {
+    const result = await evaluate(parse('@self.items[*].price'), ctxWithItems([5, 7]));
+    expect(result.value).toMatchObject({
+      type: 'list',
+      values: [
+        { type: 'number', value: 5 },
+        { type: 'number', value: 7 },
+      ],
+    });
+  });
+});
+
 describe('derived-dimension algebra (multiply/divide)', () => {
   it('length * length = area', async () => {
     const r = (await evalVal('@self.a * @self.b', { a: num(2, undefined, 'm'), b: num(3, undefined, 'm') })) as NumberValue;

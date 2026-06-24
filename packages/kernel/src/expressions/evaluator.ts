@@ -254,6 +254,9 @@ async function evaluatePropertyReference(
 ): Promise<RuntimeValue> {
   // Resolve base entity
   let entities: Entity[];
+  // Set once a [*] traversal fans out to multiple entities, so the final
+  // property access collects from ALL of them (a list) rather than just one.
+  let fannedOut = false;
 
   if (node.base.type === 'self') {
     entities = [ctx.currentEntity];
@@ -273,55 +276,10 @@ async function evaluatePropertyReference(
     const isLast = i === node.path.length - 1;
 
     if (segment.traversal?.type === 'all') {
-      // Collection traversal [*]
-      const allValues: RuntimeValue[] = [];
-
-      for (const entity of entities) {
-        // Get related entities for this relationship
-        const relatedIds = getRelatedEntities(
-          entity.id,
-          segment.property,
-          ctx.relationshipCache
-        );
-
-        for (const relId of relatedIds) {
-          const relEntity = ctx.entityCache.get(relId);
-          if (!relEntity) continue;
-          accessedEntities.push(relId);
-
-          if (isLast) {
-            // We're at the leaf - this segment IS the property
-            // But with [*], we need the next segment for the property
-            allValues.push({ type: 'record', fields: {} }); // Placeholder - needs proper handling
-          } else {
-            // Continue traversal from this entity
-            entities = [relEntity];
-          }
-        }
-      }
-
-      if (isLast) {
-        // Return list of values from the related entities
-        // In this case, segment.property is actually a relationship, not the final property
-        // The final property would be the NEXT segment
-        // Filter out null values for the list
-        const nonNullValues = allValues.filter((v): v is Value => v !== null);
-        return {
-          type: 'list',
-          element_type: 'record',
-          values: nonNullValues,
-        };
-      }
-
-      // Get the entities for next iteration
+      // Collection traversal [*] — fan out to every related entity.
       const nextEntities: Entity[] = [];
       for (const entity of entities) {
-        const relatedIds = getRelatedEntities(
-          entity.id,
-          segment.property,
-          ctx.relationshipCache
-        );
-        for (const relId of relatedIds) {
+        for (const relId of getRelatedEntities(entity.id, segment.property, ctx.relationshipCache)) {
           const relEntity = ctx.entityCache.get(relId);
           if (relEntity) {
             nextEntities.push(relEntity);
@@ -329,7 +287,18 @@ async function evaluatePropertyReference(
           }
         }
       }
+
+      if (isLast) {
+        // Terminal `rel[*]` → a list of references to the related entities.
+        return {
+          type: 'list',
+          element_type: 'reference',
+          values: nextEntities.map((e) => ({ type: 'reference', entity_id: e.id as EntityId })),
+        };
+      }
+
       entities = nextEntities;
+      fannedOut = true;
     } else if (segment.traversal?.type === 'index') {
       // Indexed access [n]
       const index = segment.traversal.index;
@@ -354,6 +323,15 @@ async function evaluatePropertyReference(
     } else {
       // Simple property access or single relationship
       if (isLast) {
+        if (fannedOut) {
+          // Collect the leaf property from every fanned-out entity into a list
+          // so SUM/AVG/etc. over `rel[*].prop` see real values.
+          const values = entities
+            .map((e) => resolveProperty(e, segment.property as PropertyName))
+            .filter((v): v is Value => v !== null);
+          const elementType = values[0]?.type ?? 'number';
+          return { type: 'list', element_type: elementType, values };
+        }
         // It's a property on the current entity
         const currentEntity = entities[0];
         if (!currentEntity) return null;
