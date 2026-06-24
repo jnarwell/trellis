@@ -48,16 +48,17 @@ views:
               - label: Total Parts
                 entityType: part
                 aggregate: count
+              - label: Total Mass
+                entityType: part
+                aggregate: sum
+                property: mass_g
+                format: number
+                suffix: " g"
               - label: Released
                 entityType: part
                 aggregate: count
                 filter:
                   status: released
-              - label: In Review
-                entityType: part
-                aggregate: count
-                filter:
-                  status: review
               - label: In Design
                 entityType: part
                 aggregate: count

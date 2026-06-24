@@ -46,11 +46,11 @@ views:
               - label: Total SKUs
                 entityType: item
                 aggregate: count
-              - label: In Stock
+              - label: Units on Hand
                 entityType: item
-                aggregate: count
-                filter:
-                  status: in_stock
+                aggregate: sum
+                property: quantity
+                format: number
               - label: Low Stock
                 entityType: item
                 aggregate: count

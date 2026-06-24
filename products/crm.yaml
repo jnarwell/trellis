@@ -44,24 +44,26 @@ views:
             layout: grid
             columns: 4
             stats:
+              - label: Pipeline Value
+                entityType: deal
+                aggregate: sum
+                property: amount
+                format: currency
+              - label: Won Value
+                entityType: deal
+                aggregate: sum
+                property: amount
+                format: currency
+                filter:
+                  stage: won
               - label: Total Deals
                 entityType: deal
                 aggregate: count
-              - label: Won
-                entityType: deal
-                aggregate: count
-                filter:
-                  stage: won
               - label: In Proposal
                 entityType: deal
                 aggregate: count
                 filter:
                   stage: proposal
-              - label: Lost
-                entityType: deal
-                aggregate: count
-                filter:
-                  stage: lost
 
         - type: grid
           columns: 2
@@ -127,6 +129,7 @@ views:
                 label: Stage
               - property: amount
                 label: Amount
+                format: currency
               - property: owner
                 label: Owner
             onRowClick: navigate
