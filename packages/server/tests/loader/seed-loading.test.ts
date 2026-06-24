@@ -122,14 +122,22 @@ function makeFakeDb() {
   const typeSchemas: Array<Record<string, unknown>> = [];
   let idSeq = 0;
 
+  const matches = (row: Record<string, unknown>, where: Record<string, unknown>) =>
+    Object.entries(where).every(([k, v]) => row[k] === v);
+
   const table = (sink: Array<Record<string, unknown>>) => ({
-    findFirst: async () => null,
+    findFirst: async ({ where }: { where: Record<string, unknown> }) =>
+      (sink.find((r) => matches(r, where)) as { id: string } | undefined) ?? null,
     create: async ({ data }: { data: Record<string, unknown> }) => {
       sink.push(data);
       const id = (data.id as string) ?? `gen-${++idSeq}`;
       return { id };
     },
-    update: async ({ where }: { where: { id: string } }) => ({ id: where.id }),
+    update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+      const row = sink.find((r) => r.id === where.id);
+      if (row) Object.assign(row, data);
+      return { id: where.id };
+    },
   });
 
   const tenants = { _id: 'tenant-1' };
@@ -203,7 +211,13 @@ describe('ProductLoader.load() seeds the database', () => {
     await writeFile(
       join(dir, 'seed', 'widgets.json'),
       JSON.stringify([
-        { id: 'widget-1', type: 'widget', properties: { title: { source: 'literal', value: { type: 'text', value: 'One' } } } },
+        {
+          id: 'widget-1',
+          type: 'widget',
+          created_at: '2026-01-15T00:00:00Z',
+          updated_at: '2026-02-20T00:00:00Z',
+          properties: { title: { source: 'literal', value: { type: 'text', value: 'One' } } },
+        },
         { id: 'widget-2', type: 'widget', properties: { title: { source: 'literal', value: { type: 'text', value: 'Two' } } } },
       ])
     );
@@ -241,5 +255,35 @@ describe('ProductLoader.load() seeds the database', () => {
       to_entity: 'widget-1',
       tenant_id: 'tenant-1',
     });
+  });
+
+  it('preserves fixture created_at / updated_at', async () => {
+    const { db, entities } = makeFakeDb();
+    const loader = new ProductLoader(db as never, makeTestRegistry());
+    await loader.load(join(dir, 'product.yaml'), { force: true });
+
+    const w1 = entities.find((e) => e.id === 'widget-1') as unknown as { created_at: Date; updated_at: Date };
+    expect(w1.created_at).toBeInstanceOf(Date);
+    expect((w1.created_at as Date).toISOString()).toBe('2026-01-15T00:00:00.000Z');
+    expect((w1.updated_at as Date).toISOString()).toBe('2026-02-20T00:00:00.000Z');
+    // A record without timestamps does not get a forced fixture date.
+    const w2 = entities.find((e) => e.id === 'widget-2') as unknown as { created_at?: Date };
+    expect(w2.created_at).toBeUndefined();
+  });
+
+  it('is idempotent: re-loading inserts nothing new (no primary-key clash)', async () => {
+    const { db, entities, relationships } = makeFakeDb();
+    const loader = new ProductLoader(db as never, makeTestRegistry());
+
+    const first = await loader.load(join(dir, 'product.yaml'), { force: true });
+    expect(first.entitiesSeeded).toBe(2);
+    expect(first.relationshipsSeeded).toBe(1);
+
+    const second = await loader.load(join(dir, 'product.yaml'), { force: true });
+    expect(second.entitiesSeeded).toBe(0); // all already present → updated, not inserted
+    expect(second.relationshipsSeeded).toBe(0);
+    // No duplicate rows accumulated.
+    expect(entities).toHaveLength(2);
+    expect(relationships).toHaveLength(1);
   });
 });

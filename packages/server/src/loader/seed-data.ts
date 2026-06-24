@@ -115,6 +115,9 @@ export interface EntitySeedRecord {
   readonly properties: Record<string, unknown>;
   readonly version?: number;
   readonly created_by?: string;
+  /** Preserved verbatim from the fixture so seeded history keeps its dates. */
+  readonly created_at?: string;
+  readonly updated_at?: string;
 }
 
 /** A relationship as shipped in a seed JSON file. */

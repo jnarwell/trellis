@@ -4,7 +4,7 @@
  * Loads a complete product definition from YAML into the database.
  */
 
-import { dirname, basename, resolve, join } from 'node:path';
+import { dirname, basename, resolve, join, extname } from 'node:path';
 import type { TenantId, ActorId, BlockRegistry } from '@trellis/kernel';
 
 /**
@@ -191,8 +191,12 @@ export class ProductLoader {
       const tenantId = options.tenantId ?? await this.ensureTenant(config.manifest.id);
       const actorId = options.actorId ?? await this.ensureSystemActor(tenantId);
 
-      // 5. Execute in transaction. The product directory holds the optional
-      // `seed/` folder (sibling of the product YAML).
+      // 5. Execute in transaction. The optional `seed/` folder may live beside
+      // the product YAML (directory products: `<dir>/seed`) or under a sibling
+      // folder named for a flat product file (`<dir>/<file-stem>/seed`).
+      const productDir = dirname(absolutePath);
+      const fileStem = basename(absolutePath, extname(absolutePath));
+      const seedDirs = [join(productDir, 'seed'), join(productDir, fileStem, 'seed')];
       const result = await this.executeLoad(
         config,
         tenantId,
@@ -200,7 +204,7 @@ export class ProductLoader {
         options,
         validation.warnings,
         startTime,
-        dirname(absolutePath)
+        seedDirs
       );
 
       this.emit({
@@ -253,7 +257,7 @@ export class ProductLoader {
     options: ProductLoaderOptions,
     warnings: readonly ProductValidationWarning[],
     startTime: number,
-    productDir: string
+    seedDirs: readonly string[]
   ): Promise<LoadResult> {
     // Use transaction for atomic loading
     return this.db.$transaction(async (tx) => {
@@ -265,13 +269,13 @@ export class ProductLoader {
         options.force ?? false
       );
 
-      // 2. Load seed data (entities + relationships) from <productDir>/seed/.
+      // 2. Load seed data (entities + relationships) from the seed dir.
       // Relationship *type* schemas aren't generated from config yet, so that
       // count stays 0; seeded relationship instances are reported separately.
       let entitiesSeeded = 0;
       let relationshipsSeeded = 0;
       if (!options.skipSeed) {
-        const seeded = await this.loadSeedData(tx, productDir, tenantId, actorId);
+        const seeded = await this.loadSeedData(tx, seedDirs, tenantId, actorId, options.force ?? false);
         entitiesSeeded = seeded.entities;
         relationshipsSeeded = seeded.relationships;
       }
@@ -364,21 +368,34 @@ export class ProductLoader {
   }
 
   /**
-   * Load seed data (entities + relationships) from `<productDir>/seed/*.json`.
+   * Load seed data (entities + relationships) from a product's `seed/*.json`.
    * These are pre-resolved full-entity records — the same files the demo mock
-   * API consumes — so a single seed format works for both. The seed directory
-   * is optional; a missing one simply seeds nothing.
+   * API consumes — so a single seed format works for both.
    *
-   * @returns counts of entities and relationships inserted.
+   * Idempotent: an existing entity/relationship is skipped (or updated when
+   * `force`), so re-running `serve`/`load` never hits a primary-key violation.
+   * Fixture `created_at`/`updated_at` are preserved so seeded history keeps its
+   * dates. Seeding is optional; an absent directory seeds nothing.
+   *
+   * @returns counts of entities and relationships actually inserted.
    */
   private async loadSeedData(
     tx: ProductLoaderDbTx,
-    productDir: string,
+    seedDirs: readonly string[],
     tenantId: TenantId,
-    actorId: ActorId
+    actorId: ActorId,
+    force: boolean
   ): Promise<{ entities: number; relationships: number }> {
-    const seedDir = join(productDir, 'seed');
-    const bundle = await loadEntitySeedFiles(seedDir);
+    // Try each candidate seed directory; the first non-empty one wins (handles
+    // both directory products `<dir>/seed` and flat products `<dir>/<id>/seed`).
+    let bundle = { entities: [] as Awaited<ReturnType<typeof loadEntitySeedFiles>>['entities'], relationships: [] as Awaited<ReturnType<typeof loadEntitySeedFiles>>['relationships'] };
+    for (const dir of seedDirs) {
+      const found = await loadEntitySeedFiles(dir);
+      if (found.entities.length > 0 || found.relationships.length > 0) {
+        bundle = found;
+        break;
+      }
+    }
 
     if (bundle.entities.length === 0 && bundle.relationships.length === 0) {
       return { entities: 0, relationships: 0 };
@@ -386,24 +403,45 @@ export class ProductLoader {
 
     // Insert entities. The loaded tenant owns every seeded row, regardless of
     // any tenant_id baked into the fixture file.
+    let entitiesInserted = 0;
     for (const entity of bundle.entities) {
       const id = entity.id ?? generateEntityId();
-      await tx.entities.create({
-        data: {
-          id,
-          tenant_id: tenantId,
-          type_path: entity.type,
-          properties: entity.properties,
-          version: entity.version ?? 1,
-          created_by: actorId,
-        },
-      });
+      const data: Record<string, unknown> = {
+        id,
+        tenant_id: tenantId,
+        type_path: entity.type,
+        properties: entity.properties,
+        version: entity.version ?? 1,
+        created_by: actorId,
+        ...(entity.created_at ? { created_at: new Date(entity.created_at) } : {}),
+        ...(entity.updated_at ? { updated_at: new Date(entity.updated_at) } : {}),
+      };
 
+      const existing = await tx.entities.findFirst({ where: { id, tenant_id: tenantId } });
+      if (existing) {
+        if (!force) continue; // already seeded — idempotent skip
+        await tx.entities.update({ where: { id: existing.id }, data });
+        continue;
+      }
+
+      await tx.entities.create({ data });
+      entitiesInserted++;
       this.emit({ type: 'entity_seeded', entityType: entity.type, id });
     }
 
-    // Insert relationships.
+    // Insert relationships (natural key: tenant + type + endpoints).
+    let relationshipsInserted = 0;
     for (const rel of bundle.relationships) {
+      const existing = await tx.relationships.findFirst({
+        where: {
+          tenant_id: tenantId,
+          type: rel.type,
+          from_entity: rel.from_entity,
+          to_entity: rel.to_entity,
+        },
+      });
+      if (existing) continue;
+
       await tx.relationships.create({
         data: {
           tenant_id: tenantId,
@@ -414,9 +452,10 @@ export class ProductLoader {
           created_by: actorId,
         },
       });
+      relationshipsInserted++;
     }
 
-    return { entities: bundle.entities.length, relationships: bundle.relationships.length };
+    return { entities: entitiesInserted, relationships: relationshipsInserted };
   }
 
   /**
