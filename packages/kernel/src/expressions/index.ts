@@ -123,6 +123,7 @@ export {
   entityNotFoundError,
   relationshipNotFoundError,
   typeMismatchError,
+  dimensionMismatchError,
   circularDependencyError,
   maxDepthExceededError,
   invalidFunctionError,
@@ -133,6 +134,16 @@ export {
   indexOutOfBoundsError,
   invalidUuidError,
 } from './errors.js';
+
+// Dimensional analysis (units.ts)
+export {
+  UNIT_REGISTRY,
+  resolveDimension,
+  dimensionsCompatible,
+  convertValue,
+  numberWithUnit,
+  alignAdditive,
+} from './units.js';
 
 // =============================================================================
 // CONVENIENCE FUNCTIONS

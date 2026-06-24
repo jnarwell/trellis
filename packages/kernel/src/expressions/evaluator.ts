@@ -29,12 +29,19 @@ import type {
 import {
   ExpressionError,
   typeMismatchError,
+  dimensionMismatchError,
   divisionByZeroError,
   circularDependencyError,
   maxDepthExceededError,
   propertyNotFoundError,
   entityNotFoundError,
 } from './errors.js';
+import {
+  resolveDimension,
+  convertValue,
+  numberWithUnit,
+  alignAdditive,
+} from './units.js';
 import { invokeFunction } from './functions/index.js';
 import type { RuntimeValue } from './functions/index.js';
 
@@ -409,7 +416,7 @@ async function evaluateBinaryExpression(
     return null;
   }
 
-  // Arithmetic operators
+  // Arithmetic operators (dimension-aware — see units.ts)
   if (['+', '-', '*', '/', '%'].includes(node.operator)) {
     if (left.type !== 'number' || right.type !== 'number') {
       throw typeMismatchError(
@@ -420,26 +427,52 @@ async function evaluateBinaryExpression(
       );
     }
 
-    const l = left.value;
-    const r = right.value;
+    const dl = resolveDimension(left);
+    const dr = resolveDimension(right);
 
     switch (node.operator) {
       case '+':
-        return { type: 'number', value: l + r };
-      case '-':
-        return { type: 'number', value: l - r };
-      case '*':
-        return { type: 'number', value: l * r };
-      case '/':
-        if (r === 0) throw divisionByZeroError(node.right.start);
-        return { type: 'number', value: l / r };
-      case '%':
-        if (r === 0) throw divisionByZeroError(node.right.start);
-        return { type: 'number', value: l % r };
+      case '-': {
+        // Same physical kind required; convert to the left's unit then operate.
+        if (dl && dr && dl !== dr) {
+          throw dimensionMismatchError(`Operator ${node.operator}`, dl, dr, node.start);
+        }
+        const aligned = alignAdditive(left, right);
+        const value =
+          node.operator === '+' ? left.value + aligned.rightValue : left.value - aligned.rightValue;
+        return numberWithUnit(value, aligned.dimension, aligned.unit);
+      }
+      case '%': {
+        if (right.value === 0) throw divisionByZeroError(node.right.start);
+        if (dl && dr && dl !== dr) {
+          throw dimensionMismatchError('Operator %', dl, dr, node.start);
+        }
+        const aligned = alignAdditive(left, right);
+        return numberWithUnit(left.value % aligned.rightValue, aligned.dimension, aligned.unit);
+      }
+      case '*': {
+        // Scaling: a dimensionless side leaves the other's dimension intact.
+        // Two dimensioned operands would form a derived dimension we don't
+        // track yet, so the result is treated as dimensionless.
+        if (!dl && !dr) return { type: 'number', value: left.value * right.value };
+        if (dl && !dr) return numberWithUnit(left.value * right.value, dl, left.unit);
+        if (!dl && dr) return numberWithUnit(left.value * right.value, dr, right.unit);
+        return { type: 'number', value: left.value * right.value };
+      }
+      case '/': {
+        if (right.value === 0) throw divisionByZeroError(node.right.start);
+        // Same dimension divides out to a dimensionless ratio.
+        if (dl && dr && dl === dr) {
+          const rv = left.unit && right.unit ? convertValue(right.value, right.unit, left.unit) : right.value;
+          return { type: 'number', value: left.value / rv };
+        }
+        if (dl && !dr) return numberWithUnit(left.value / right.value, dl, left.unit);
+        return { type: 'number', value: left.value / right.value };
+      }
     }
   }
 
-  // Comparison operators
+  // Comparison operators (dimension-aware)
   if (['<', '>', '<=', '>='].includes(node.operator)) {
     if (left.type !== 'number' || right.type !== 'number') {
       throw typeMismatchError(
@@ -450,8 +483,14 @@ async function evaluateBinaryExpression(
       );
     }
 
+    const dl = resolveDimension(left);
+    const dr = resolveDimension(right);
+    if (dl && dr && dl !== dr) {
+      throw dimensionMismatchError(`Operator ${node.operator}`, dl, dr, node.start);
+    }
+
     const l = left.value;
-    const r = right.value;
+    const r = left.unit && right.unit ? convertValue(right.value, right.unit, left.unit) : right.value;
 
     switch (node.operator) {
       case '<':
@@ -498,7 +537,8 @@ async function evaluateUnaryExpression(
     if (operand.type !== 'number') {
       throw typeMismatchError('Negation', 'number', operand.type, node.argument.start);
     }
-    return { type: 'number', value: -operand.value };
+    // Negation preserves the quantity's dimension/unit.
+    return numberWithUnit(-operand.value, operand.dimension, operand.unit);
   }
 
   throw new Error(`Unknown unary operator: ${node.operator}`);

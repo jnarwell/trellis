@@ -22,6 +22,7 @@ export type ExpressionErrorCode =
   | 'ENTITY_NOT_FOUND'
   | 'RELATIONSHIP_NOT_FOUND'
   | 'TYPE_MISMATCH'
+  | 'DIMENSION_MISMATCH'
   | 'CIRCULAR_DEPENDENCY'
   | 'MAX_DEPTH_EXCEEDED'
   | 'INVALID_FUNCTION'
@@ -271,6 +272,29 @@ export function typeMismatchError(
   } = {
     code: 'TYPE_MISMATCH',
     message: `${operation}: expected ${expected}, got ${got}`,
+  };
+  if (position !== undefined) {
+    opts.position = position;
+  }
+  return new ExpressionError(opts);
+}
+
+/**
+ * Create dimension mismatch error (e.g. adding length to time).
+ */
+export function dimensionMismatchError(
+  operation: string,
+  left: string,
+  right: string,
+  position?: number
+): ExpressionError {
+  const opts: {
+    code: ExpressionErrorCode;
+    message: string;
+    position?: number;
+  } = {
+    code: 'DIMENSION_MISMATCH',
+    message: `${operation}: incompatible dimensions '${left}' and '${right}'`,
   };
   if (position !== undefined) {
     opts.position = position;
