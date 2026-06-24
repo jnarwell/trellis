@@ -723,7 +723,7 @@ function normalizeBlock(block: Record<string, unknown>): BlockPlacement {
 const appContainerStyle: React.CSSProperties = {
   display: 'flex',
   minHeight: '100vh',
-  backgroundColor: '#f9fafb',
+  backgroundColor: 'var(--trellis-bg, #f9fafb)',
 };
 
 const sidebarStyle: React.CSSProperties = {
@@ -790,7 +790,7 @@ const mainStyle: React.CSSProperties = {
 };
 
 const viewContainerStyle: React.CSSProperties = {
-  backgroundColor: '#ffffff',
+  backgroundColor: 'var(--trellis-surface, #ffffff)',
   borderRadius: '0.5rem',
   padding: '1.5rem',
   minHeight: '400px',
@@ -813,7 +813,7 @@ const loadingContainerStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   minHeight: '100vh',
-  backgroundColor: '#f9fafb',
+  backgroundColor: 'var(--trellis-bg, #f9fafb)',
 };
 
 const loadingSpinnerStyle: React.CSSProperties = {

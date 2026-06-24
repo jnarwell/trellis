@@ -280,8 +280,37 @@ function readParams(): { product: string; role: RoleName } {
   return { product, role };
 }
 
+// =============================================================================
+// THEME MODE — light/dark toggle, persisted, system-default on first visit
+// =============================================================================
+
+type ThemeMode = 'light' | 'dark';
+const THEME_KEY = 'trellis-theme';
+
+function readInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'light';
+  const stored = window.localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function useThemeMode(): [ThemeMode, () => void] {
+  const [mode, setMode] = useState<ThemeMode>(readInitialTheme);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', mode);
+    try {
+      window.localStorage.setItem(THEME_KEY, mode);
+    } catch {
+      /* private mode / storage disabled — ignore */
+    }
+  }, [mode]);
+  const toggle = useCallback(() => setMode((m) => (m === 'dark' ? 'light' : 'dark')), []);
+  return [mode, toggle];
+}
+
 export function DemoShell(): React.ReactElement {
   const initial = readParams();
+  const [themeMode, toggleTheme] = useThemeMode();
   const [product, setProduct] = useState(initial.product);
   const [role, setRole] = useState<RoleName>(initial.role);
   const [products, setProducts] = useState<string[]>(PRODUCT_ORDER);
@@ -396,6 +425,15 @@ export function DemoShell(): React.ReactElement {
 
           <button className="demo-config-btn" onClick={() => setShowConfig(true)}>
             {'</>'}&nbsp; View config
+          </button>
+
+          <button
+            className="demo-theme-btn"
+            onClick={toggleTheme}
+            aria-label={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {themeMode === 'dark' ? '☀' : '☾'}
           </button>
 
           <div className="demo-live">

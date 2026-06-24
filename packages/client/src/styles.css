@@ -37,6 +37,38 @@
   --tone-warning-bg:  #fff3df;   --tone-warning-fg:  #b06a06;
   --tone-danger-bg:   #fdeaea;   --tone-danger-fg:   #c0392b;
   --tone-neutral-bg:  #eef0f3;   --tone-neutral-fg:  #586072;
+
+  color-scheme: light;
+}
+
+/* Dark theme — same token names, re-pointed. Every surface/text/border in the
+   app reads these vars, so flipping data-theme recolors the whole UI. */
+:root[data-theme='dark'] {
+  --trellis-bg: #0e1014;
+  --trellis-surface: #171a21;
+  --trellis-surface-alt: #1e222b;
+  --trellis-border: #2a2f3a;
+  --trellis-border-strong: #3a414f;
+  --trellis-text: #e6e8ec;
+  --trellis-text-muted: #9aa3b2;
+  --trellis-primary: #8579f7;
+  --trellis-primary-hover: #9b90f9;
+  --trellis-primary-soft: #232035;
+  --trellis-danger: #f07a7a;
+  --trellis-danger-bg: #2a1619;
+  --trellis-danger-border: #4a2327;
+  --trellis-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --trellis-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --trellis-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Badge tones: deeper backgrounds, lighter foregrounds for contrast on dark */
+  --tone-positive-bg: #11332344;   --tone-positive-fg: #4ed18f;
+  --tone-progress-bg: #16294a44;   --tone-progress-fg: #7aa7f5;
+  --tone-warning-bg:  #3a2a0e44;   --tone-warning-fg:  #f0b75c;
+  --tone-danger-bg:   #3a161944;   --tone-danger-fg:   #f08a8a;
+  --tone-neutral-bg:  #252a3344;   --tone-neutral-fg:  #aab2c2;
+
+  color-scheme: dark;
 }
 
 html, body {
@@ -345,7 +377,7 @@ html, body {
 }
 
 .kanban-card {
-  background: white;
+  background: var(--trellis-surface);
   border: 1px solid var(--trellis-border);
   border-radius: 6px;
   padding: 12px;

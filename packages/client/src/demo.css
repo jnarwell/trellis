@@ -53,6 +53,7 @@
 .demo-select:focus { outline: none; border-color: var(--trellis-primary); box-shadow: 0 0 0 3px var(--trellis-primary-soft); }
 
 .demo-config-btn {
+  appearance: none; -webkit-appearance: none;
   font-family: var(--trellis-mono); font-size: 12px; font-weight: 600; color: var(--trellis-text);
   background: var(--trellis-surface); border: 1px solid var(--trellis-border-strong);
   border-radius: var(--trellis-radius); padding: 7px 12px; cursor: pointer; white-space: nowrap;
@@ -60,7 +61,16 @@
 }
 .demo-config-btn:hover { border-color: var(--trellis-primary); color: var(--trellis-primary); background: var(--trellis-primary-soft); }
 
-.demo-live { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #137a47; }
+.demo-theme-btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; font-size: 15px; line-height: 1; color: var(--trellis-text);
+  background: var(--trellis-surface); border: 1px solid var(--trellis-border-strong);
+  border-radius: var(--trellis-radius); cursor: pointer; transition: all 0.15s;
+}
+.demo-theme-btn:hover { border-color: var(--trellis-primary); color: var(--trellis-primary); background: var(--trellis-primary-soft); }
+
+.demo-live { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--tone-positive-fg); }
 .demo-live-dot {
   width: 8px; height: 8px; border-radius: 50%; background: #1ec27a;
   box-shadow: 0 0 0 0 rgba(30, 194, 122, 0.5); animation: demo-pulse 2s infinite;

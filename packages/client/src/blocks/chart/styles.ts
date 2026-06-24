@@ -13,13 +13,14 @@ import type React from 'react';
 /**
  * CSS custom properties for theming.
  */
+// Bridged to the global Trellis tokens so charts follow light/dark mode.
 export const chartTheme: React.CSSProperties = {
-  '--chart-bg': '#ffffff',
-  '--chart-border': '#e5e7eb',
-  '--chart-text': '#111827',
-  '--chart-text-muted': '#6b7280',
-  '--chart-grid': '#e5e7eb',
-  '--chart-axis': '#9ca3af',
+  '--chart-bg': 'var(--trellis-surface, #ffffff)',
+  '--chart-border': 'var(--trellis-border, #e5e7eb)',
+  '--chart-text': 'var(--trellis-text, #111827)',
+  '--chart-text-muted': 'var(--trellis-text-muted, #6b7280)',
+  '--chart-grid': 'var(--trellis-border, #e5e7eb)',
+  '--chart-axis': 'var(--trellis-text-muted, #9ca3af)',
 } as React.CSSProperties;
 
 /**

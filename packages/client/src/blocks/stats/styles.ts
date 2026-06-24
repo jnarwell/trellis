@@ -13,13 +13,16 @@ import type React from 'react';
 /**
  * CSS custom properties for theming.
  */
+// Bridge the block-level vars to the global Trellis theme tokens so the block
+// follows light/dark mode. CSS custom properties resolve at use-time, so these
+// re-resolve whenever the active theme changes the --trellis-* tokens.
 export const statsTheme: React.CSSProperties = {
-  '--stats-bg': '#ffffff',
-  '--stats-border': '#e5e7eb',
-  '--stats-text': '#111827',
-  '--stats-text-muted': '#6b7280',
-  '--stats-accent': '#3b82f6',
-  '--stats-error': '#ef4444',
+  '--stats-bg': 'var(--trellis-surface, #ffffff)',
+  '--stats-border': 'var(--trellis-border, #e5e7eb)',
+  '--stats-text': 'var(--trellis-text, #111827)',
+  '--stats-text-muted': 'var(--trellis-text-muted, #6b7280)',
+  '--stats-accent': 'var(--trellis-primary, #3b82f6)',
+  '--stats-error': 'var(--trellis-danger, #ef4444)',
   '--stats-success': '#10b981',
   '--stats-warning': '#f59e0b',
 } as React.CSSProperties;

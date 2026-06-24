@@ -124,7 +124,7 @@ export const styles = {
     padding: '0 6px',
     fontSize: '12px',
     fontWeight: 500,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'var(--trellis-surface-alt, #f3f4f6)',
     borderRadius: '12px',
     color: 'var(--kanban-text-muted)',
   } as React.CSSProperties,
@@ -156,7 +156,7 @@ export const styles = {
 
   // Card
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'var(--trellis-surface, #ffffff)',
     borderRadius: '6px',
     border: '1px solid var(--kanban-border)',
     padding: '12px',
