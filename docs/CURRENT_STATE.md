@@ -31,7 +31,19 @@ made them real, each with tests:
   detection). The `resolveInherited` read option was previously a no-op.
   (server +10 tests)
 
-**Tests:** 883 passing (kernel 168, server 445, client 270).
+### Adversarial review pass (post-2.12)
+
+A multi-agent adversarial review of the four rounds found 16 verified bugs
+(many in the just-shipped code). The correctness ones are fixed:
+dimensional/uncertainty (mul/div uncertainty lost at 0; negation/modulo
+dropped uncertainty; dimensioned-but-unitless summed raw); seed loader
+(non-idempotent → PK clash; dropped timestamps); inheritance (diamond
+false-cycle; stale computed inherited as valid; N+1 loads); aggregation
+strips units; recursion depth guard never fired; plus measured values now
+render in the detail view. Larger items (relationship-type-schema config,
+CI wiring of DB-gated suites, RLS) are tracked but out of this pass.
+
+**Tests:** 907 passing (kernel 183, server 449, client 275).
 
 ---
 

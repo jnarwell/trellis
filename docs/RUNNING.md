@@ -118,11 +118,18 @@ The server loads a product definition (YAML) and serves the API:
 ```bash
 cd packages/server
 
+# The server loader takes a DIRECTORY product (manifest + entities/views in
+# their own files, seed data under ./seed/). kitchen-sink is the canonical one:
 DATABASE_URL=postgres://postgres:trellis@localhost:5432/trellis \
-  pnpm cli serve ../../products/plm-demo/product.yaml
+  pnpm cli serve ../../products/kitchen-sink/product.yaml
 ```
 
-The server starts on http://localhost:3000
+The server starts on http://localhost:3000 and seeds the product's data on
+load (idempotent — safe to re-run).
+
+> The flat `products/<id>.yaml` files (crm, plm, …) are **client** configs
+> served by the demo mock API / the `GET /config/products/:id` route — they are
+> not directory products and are not loaded by `serve`.
 
 ### Client (proxied to the real server)
 
