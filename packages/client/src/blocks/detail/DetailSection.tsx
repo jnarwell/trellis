@@ -9,6 +9,7 @@ import type { Entity, PropertyName } from '@trellis/kernel';
 import type { DetailSectionProps } from './types.js';
 import { styles } from './styles.js';
 import { DetailField } from './DetailField.js';
+import { measuredMetaOf } from '../measured.js';
 
 /**
  * Extract property value from entity.
@@ -110,6 +111,9 @@ export const DetailSection: React.FC<DetailSectionProps & { isLast?: boolean }> 
           const handleClick = fieldConfig.onClick
             ? () => onFieldClick?.(fieldConfig.property)
             : undefined;
+          // A measured property renders as "value ± uncertainty unit" without
+          // needing an explicit format in config.
+          const measured = measuredMetaOf(entity, String(fieldConfig.property));
 
           return (
             <DetailField
@@ -117,6 +121,7 @@ export const DetailSection: React.FC<DetailSectionProps & { isLast?: boolean }> 
               config={fieldConfig}
               value={value}
               isLast={isLastField}
+              measured={measured}
               {...(handleClick ? { onClick: handleClick } : {})}
             />
           );

@@ -8,6 +8,7 @@ import type { CellProps, ColumnConfig } from './types.js';
 import type { CellFormat } from '../types.js';
 import { cell } from './styles.js';
 import { statusTone, statusLabel, STATUS_LIKE_PROPERTIES } from '../status-tone.js';
+import { measuredMetaOf } from '../measured.js';
 
 // =============================================================================
 // CELL VALUE EXTRACTION
@@ -210,22 +211,18 @@ const BadgeCell: React.FC<CellProps> = ({ value }) => {
 
 /** Renders a measured value as "value ± uncertainty unit" (e.g. 84.5 ± 0.5 g). */
 const MeasuredCell: React.FC<CellProps> = ({ value, column, entity }) => {
-  const prop = entity?.properties?.[column.property as keyof typeof entity.properties] as
-    | { uncertainty?: number; value?: { value?: number; unit?: string; uncertainty?: number } }
-    | undefined;
   const n = typeof value === 'number' ? value : Number(value);
   if (!isFinite(n)) {
     return <span className={cell.text}>{value === null || value === undefined ? '' : String(value)}</span>;
   }
-  const uncertainty = prop?.uncertainty ?? prop?.value?.uncertainty;
-  const unit = prop?.value?.unit;
+  const meta = measuredMetaOf(entity, String(column.property)) ?? {};
   return (
     <span className={cell.number}>
       {formatNumber(n)}
-      {uncertainty !== undefined && (
-        <span style={{ color: 'var(--trellis-text-muted)' }}> ± {formatNumber(uncertainty)}</span>
+      {meta.uncertainty !== undefined && (
+        <span style={{ color: 'var(--trellis-text-muted)' }}> ± {formatNumber(meta.uncertainty)}</span>
       )}
-      {unit ? ` ${unit}` : ''}
+      {meta.unit ? ` ${meta.unit}` : ''}
     </span>
   );
 };

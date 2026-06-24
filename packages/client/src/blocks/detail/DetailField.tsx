@@ -7,6 +7,7 @@
 import React from 'react';
 import type { DetailFieldProps, FieldFormat } from './types.js';
 import { styles, getBadgeStyle } from './styles.js';
+import { formatMeasuredValue, type MeasuredMeta } from '../measured.js';
 
 /**
  * Format a value based on the specified format.
@@ -106,11 +107,12 @@ function propertyToLabel(property: string): string {
 /**
  * DetailField component displays a single field with label and value.
  */
-export const DetailField: React.FC<DetailFieldProps & { isLast?: boolean }> = ({
+export const DetailField: React.FC<DetailFieldProps & { isLast?: boolean; measured?: MeasuredMeta | null }> = ({
   config,
   value,
   onClick,
   isLast = false,
+  measured = null,
 }) => {
   const { property, label, format = 'text', emptyText = '—', className } = config;
   const displayLabel = label ?? propertyToLabel(property);
@@ -156,7 +158,7 @@ export const DetailField: React.FC<DetailFieldProps & { isLast?: boolean }> = ({
         {displayLabel}
       </span>
       <span className={`detail-field-value trellis-detail-field-value${isEmpty ? ' empty' : ''}`} style={valueStyle}>
-        {isEmpty ? emptyText : formatValue(value, format)}
+        {isEmpty ? emptyText : measured ? formatMeasuredValue(value, measured) : formatValue(value, format)}
       </span>
     </div>
   );
