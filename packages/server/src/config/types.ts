@@ -12,6 +12,8 @@ import type {
   BlockConfig,
   PropValue,
 } from '@trellis/kernel';
+// Type-only import (erased at runtime, so no module cycle with the loader).
+import type { RelationshipTypeConfig } from '../loader/relationship-loader.js';
 
 // =============================================================================
 // BRANDED TYPES
@@ -1279,6 +1281,9 @@ export interface ProductConfig {
 
   /** View configurations */
   readonly views: Readonly<Record<ViewId, ViewConfig>>;
+
+  /** Relationship type configurations (loaded from includes.relationships) */
+  readonly relationships?: readonly RelationshipTypeConfig[];
 
   /** Navigation configuration */
   readonly navigation?: NavigationConfig;

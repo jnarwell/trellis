@@ -48,6 +48,7 @@ function createDbAdapter(pool: Pool): ProductLoaderDb {
 
 interface ProductLoaderDbTx {
   type_schemas: DbTable;
+  relationship_schemas: DbTable;
   entities: DbTable;
   relationships: DbTable;
 }
@@ -61,6 +62,7 @@ interface DbTable {
 function createTxAdapter(client: PoolClient): ProductLoaderDbTx {
   return {
     type_schemas: createClientTableAdapter(client, 'type_schemas'),
+    relationship_schemas: createClientTableAdapter(client, 'relationship_schemas'),
     entities: createClientTableAdapter(client, 'entities'),
     relationships: createClientTableAdapter(client, 'relationships'),
   };

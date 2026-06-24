@@ -120,6 +120,7 @@ function makeFakeDb() {
   const entities: CapturedEntity[] = [];
   const relationships: Array<Record<string, unknown>> = [];
   const typeSchemas: Array<Record<string, unknown>> = [];
+  const relationshipSchemas: Array<Record<string, unknown>> = [];
   let idSeq = 0;
 
   const matches = (row: Record<string, unknown>, where: Record<string, unknown>) =>
@@ -147,6 +148,7 @@ function makeFakeDb() {
     async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {
       return fn({
         type_schemas: table(typeSchemas),
+        relationship_schemas: table(relationshipSchemas),
         entities: table(entities as unknown as Array<Record<string, unknown>>),
         relationships: table(relationships),
       });
@@ -163,7 +165,7 @@ function makeFakeDb() {
     },
   };
 
-  return { db, entities, relationships, typeSchemas };
+  return { db, entities, relationships, typeSchemas, relationshipSchemas };
 }
 
 describe('ProductLoader.load() seeds the database', () => {
@@ -183,12 +185,24 @@ describe('ProductLoader.load() seeds the database', () => {
         'includes:',
         '  entities: entities/*.yaml',
         '  views: views/*.yaml',
+        '  relationships: relationships/*.yaml',
       ].join('\n')
     );
     await mkdir(join(dir, 'entities'), { recursive: true });
     await writeFile(
       join(dir, 'entities', 'widget.yaml'),
       ['id: widget', 'name: Widget', 'properties:', '  - name: title', '    type: text'].join('\n')
+    );
+    await mkdir(join(dir, 'relationships'), { recursive: true });
+    await writeFile(
+      join(dir, 'relationships', 'depends.yaml'),
+      [
+        'id: depends_on',
+        'name: Depends On',
+        'from_types: [widget]',
+        'to_types: [widget]',
+        'cardinality: many_to_many',
+      ].join('\n')
     );
     await mkdir(join(dir, 'views'), { recursive: true });
     await writeFile(
@@ -233,7 +247,7 @@ describe('ProductLoader.load() seeds the database', () => {
   });
 
   it('inserts seeded entities + relationships owned by the loaded tenant', async () => {
-    const { db, entities, relationships } = makeFakeDb();
+    const { db, entities, relationships, relationshipSchemas } = makeFakeDb();
     const loader = new ProductLoader(db as never, makeTestRegistry());
 
     const result = await loader.load(join(dir, 'product.yaml'), { force: true });
@@ -241,6 +255,10 @@ describe('ProductLoader.load() seeds the database', () => {
     expect(result.success).toBe(true);
     expect(result.entitiesSeeded).toBe(2);
     expect(result.relationshipsSeeded).toBe(1);
+    // Relationship TYPE schema generated from includes.relationships.
+    expect(result.relationshipTypesCreated).toBe(1);
+    expect(relationshipSchemas).toHaveLength(1);
+    expect(relationshipSchemas[0]).toMatchObject({ type: 'depends_on', cardinality: 'many_to_many' });
     expect(entities).toHaveLength(2);
     // The loaded tenant owns every row, regardless of any baked-in tenant_id.
     expect(entities.every((e) => e.tenant_id === 'tenant-1')).toBe(true);

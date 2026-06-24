@@ -18,6 +18,7 @@ import type {
   ProductConfig,
   ViewId,
 } from './types.js';
+import type { RelationshipTypeConfig } from '../loader/relationship-loader.js';
 
 // =============================================================================
 // YAML PARSING
@@ -193,6 +194,14 @@ export async function loadProduct(options: LoadOptions): Promise<ProductConfig> 
     views[result.content.id] = result.content;
   }
 
+  // Load relationship type definitions
+  const relationships: RelationshipTypeConfig[] = [];
+  const relationshipFiles = await resolveIncludes(productDir, includes.relationships);
+  for (const file of relationshipFiles) {
+    const result = await loadYamlFile<RelationshipTypeConfig>(file);
+    relationships.push(result.content);
+  }
+
   // Load navigation (could be in product.yaml or separate file)
   let navigation: NavigationConfig | undefined;
   const navKey = 'navigation' as keyof ProductManifest;
@@ -212,6 +221,7 @@ export async function loadProduct(options: LoadOptions): Promise<ProductConfig> 
     manifest,
     entities,
     views,
+    ...(relationships.length > 0 ? { relationships } : {}),
   };
 
   if (navigation) {

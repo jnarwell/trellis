@@ -26,6 +26,7 @@ interface DbTable {
 /** Transaction context */
 type ProductLoaderDbTx = {
   type_schemas: DbTable;
+  relationship_schemas: DbTable;
   entities: DbTable;
   relationships: DbTable;
 };
@@ -269,9 +270,15 @@ export class ProductLoader {
         options.force ?? false
       );
 
-      // 2. Load seed data (entities + relationships) from the seed dir.
-      // Relationship *type* schemas aren't generated from config yet, so that
-      // count stays 0; seeded relationship instances are reported separately.
+      // 2. Create relationship type schemas from config.relationships.
+      const relationshipTypesCreated = await this.createRelationshipTypes(
+        tx,
+        config,
+        tenantId,
+        options.force ?? false
+      );
+
+      // 3. Load seed data (entities + relationships) from the seed dir.
       let entitiesSeeded = 0;
       let relationshipsSeeded = 0;
       if (!options.skipSeed) {
@@ -285,7 +292,7 @@ export class ProductLoader {
         config.manifest.id,
         tenantId,
         entityTypesCreated,
-        0,
+        relationshipTypesCreated,
         entitiesSeeded,
         [],
         warnings,
@@ -362,6 +369,58 @@ export class ProductLoader {
 
         created++;
       }
+    }
+
+    return created;
+  }
+
+  /**
+   * Create relationship type schemas from `config.relationships`.
+   */
+  private async createRelationshipTypes(
+    tx: ProductLoaderDbTx,
+    config: ProductConfig,
+    tenantId: TenantId,
+    force: boolean
+  ): Promise<number> {
+    const relConfigs = config.relationships ?? [];
+    if (relConfigs.length === 0) return 0;
+
+    const schemas = generateAllRelationshipSchemas(relConfigs as RelationshipTypeConfig[], tenantId);
+    let created = 0;
+
+    for (const schema of schemas) {
+      const existing = await tx.relationship_schemas.findFirst({
+        where: { tenant_id: tenantId, type: schema.type },
+      });
+
+      const data = {
+        tenant_id: tenantId,
+        type: schema.type,
+        name: schema.name,
+        description: schema.description,
+        from_types: schema.from_types,
+        to_types: schema.to_types,
+        cardinality: schema.cardinality,
+        bidirectional: schema.bidirectional,
+        inverse_type: schema.inverse_type,
+        metadata_schema: JSON.parse(JSON.stringify(schema.metadata_schema)),
+      };
+
+      if (existing) {
+        if (!force) {
+          throw new Error(
+            `Relationship type '${schema.type}' already exists. Use --force to overwrite.`
+          );
+        }
+        await tx.relationship_schemas.update({ where: { id: existing.id }, data });
+        this.emit({ type: 'relationship_type_created', relType: schema.type, name: schema.name });
+        continue;
+      }
+
+      await tx.relationship_schemas.create({ data });
+      this.emit({ type: 'relationship_type_created', relType: schema.type, name: schema.name });
+      created++;
     }
 
     return created;
