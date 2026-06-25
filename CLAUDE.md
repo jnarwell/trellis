@@ -8,7 +8,7 @@ A universal enterprise data platform for product and process data. Event-sourced
 
 - **Phase**: 2.12 — differentiator hardening (dimensional analysis, measured uncertainty, real seed loading, read-time inheritance) — see [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md)
 - **Implemented**: kernel (expression engine, block runtime, RBAC roles/permissions), Fastify API (entities/relationships/queries/events with route-level permission guards, JWT, WebSockets), client SDK + React blocks (14 block types, `$can()`/`showWhen`/action gating), product loader CLI, config-driven runtime (`DynamicProductApp`), demo products, Docker deployment config
-- **Tests**: 931 passing (kernel 199, server 457, client 275)
+- **Tests**: 944 passing (kernel 206, server 457, client 281)
 - **Run the demo** (zero dependencies): `pnpm --filter @trellis/client dev` → http://localhost:5173 — see [docs/RUNNING.md](docs/RUNNING.md)
 - **Tech Stack**: TypeScript + Fastify + Prisma + React + PostgreSQL
 

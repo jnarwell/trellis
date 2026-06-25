@@ -66,7 +66,18 @@ memoized entity loader into single shared helpers. (`products/plm-demo` was
 investigated for removal but kept — it validates clean and is wired into
 `seed-demo.sql` + the auth fallback identity.)
 
-**Tests:** 931 passing (kernel 199, server 457, client 275).
+A refinement pass then improved the product across three more dimensions:
+- **New capability** — more expression functions (`CONTAINS`/`STARTS_WITH`/
+  `ENDS_WITH`/`REPLACE`/`MOD`/`CLAMP`) and config-driven **conditional cell
+  formatting** (a column's `colorRules` tint cells by their value — e.g. low
+  stock → amber, out of stock → red).
+- **Accessibility** — a keyboard `:focus-visible` ring on every interactive
+  element and `prefers-reduced-motion` support.
+- **Performance** — the data-binding parser memoizes its AST, so static
+  template/`$can`/`showWhen` strings are parsed once instead of on every
+  block/row/cell render.
+
+**Tests:** 944 passing (kernel 206, server 457, client 281).
 
 ---
 
