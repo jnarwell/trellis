@@ -191,7 +191,9 @@ export const TableRow: React.FC<TableRowProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    // Activate on Enter or Space (Space also scrolls the page by default).
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
       onClick?.();
     }
   };
