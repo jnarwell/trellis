@@ -15,6 +15,23 @@ import type { Entity, EntityId, Property, PropertyName, Value, NumberValue } fro
 /** Loads another entity in the same tenant, or null if it does not exist. */
 export type EntityLoader = (id: EntityId) => Promise<Entity | null>;
 
+/**
+ * Wrap an entity-loading function so each distinct id is fetched at most once
+ * per resolution (a diamond / shared-source graph would otherwise reload the
+ * same source repeatedly). The promise — not the value — is cached, so
+ * concurrent requests for the same id share one in-flight load.
+ */
+export function memoizeEntityLoader(load: EntityLoader): EntityLoader {
+  const cache = new Map<string, Promise<Entity | null>>();
+  return (id) => {
+    const cached = cache.get(id);
+    if (cached) return cached;
+    const pending = load(id);
+    cache.set(id, pending);
+    return pending;
+  };
+}
+
 export interface InheritanceResolveResult {
   readonly entity: Entity;
   /** True if any inherited property's resolved_value changed. */

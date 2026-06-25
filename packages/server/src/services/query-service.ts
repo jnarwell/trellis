@@ -16,7 +16,8 @@ import type {
 import { withTenantClient } from '../db/client.js';
 import { buildSelectQuery, encodeCursor, type Cursor } from '../query/index.js';
 import { QUERY_DEFAULTS } from '../config/query.js';
-import { resolveInheritance, type EntityLoader } from './inheritance-resolver.js';
+import { resolveInheritance, memoizeEntityLoader } from './inheritance-resolver.js';
+import { rowToEntity, type EntityRow } from '../repositories/entity-repository.js';
 
 /**
  * Query options for listing entities.
@@ -47,36 +48,6 @@ export interface QueryEntitiesOptions {
   resolveInherited?: boolean;
 }
 
-/**
- * Database row for an entity.
- */
-interface EntityRow {
-  id: string;
-  tenant_id: string;
-  type_path: string;
-  properties: Record<string, unknown>;
-  created_at: Date;
-  updated_at: Date;
-  created_by: string;
-  version: number;
-  deleted_at: Date | null;
-}
-
-/**
- * Transform a database row to an Entity.
- */
-function rowToEntity(row: EntityRow): Entity {
-  return {
-    id: row.id as EntityId,
-    tenant_id: row.tenant_id as TenantId,
-    type: row.type_path as Entity['type'],
-    properties: row.properties as Entity['properties'],
-    created_at: row.created_at.toISOString(),
-    updated_at: row.updated_at.toISOString(),
-    created_by: row.created_by as Entity['created_by'],
-    version: row.version,
-  };
-}
 
 /**
  * Query service for executing entity queries.
@@ -152,19 +123,14 @@ export class QueryService {
       // Optionally resolve inherited properties across the page, sharing one
       // memoized loader so a shared source entity is fetched at most once.
       if (options.resolveInherited) {
-        const cache = new Map<string, Promise<Entity | null>>();
-        const load: EntityLoader = (id) => {
-          const cached = cache.get(id);
-          if (cached) return cached;
-          const p = client
+        const load = memoizeEntityLoader((id) =>
+          client
             .query<EntityRow>(
               `SELECT * FROM entities WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL`,
               [tenantId, id]
             )
-            .then((r) => (r.rows[0] ? rowToEntity(r.rows[0]) : null));
-          cache.set(id, p);
-          return p;
-        };
+            .then((r) => (r.rows[0] ? rowToEntity(r.rows[0]) : null))
+        );
         entities = await Promise.all(
           entities.map((e) => resolveInheritance(e, load).then((r) => r.entity))
         );

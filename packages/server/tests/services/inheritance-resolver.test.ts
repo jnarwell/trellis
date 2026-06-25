@@ -11,8 +11,10 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveInheritance,
   effectiveValue,
+  memoizeEntityLoader,
   type EntityLoader,
 } from '../../src/services/inheritance-resolver.js';
+import { vi } from 'vitest';
 import type { Entity, Property, Value } from '@trellis/kernel';
 
 function entity(id: string, properties: Record<string, Property>): Entity {
@@ -86,6 +88,21 @@ describe('effectiveValue', () => {
     expect(effectiveValue(make('stale'))).toBeNull();
     expect(effectiveValue(make('pending'))).toBeNull();
     expect(effectiveValue(make('error'))).toBeNull();
+  });
+});
+
+describe('memoizeEntityLoader', () => {
+  it('fetches each id at most once and caches the result', async () => {
+    const e = entity('x', {});
+    const raw = vi.fn(async (_id: string) => e);
+    const load = memoizeEntityLoader(raw as unknown as EntityLoader);
+
+    const [a, b, c] = await Promise.all([load('x' as never), load('x' as never), load('y' as never)]);
+    expect(a).toBe(e);
+    expect(b).toBe(e);
+    expect(c).toBe(e);
+    // 'x' loaded once (deduped), 'y' once.
+    expect(raw).toHaveBeenCalledTimes(2);
   });
 });
 

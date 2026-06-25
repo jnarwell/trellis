@@ -7,7 +7,9 @@
 
 import type { TenantScopedClient } from '../db/client.js';
 import type {
+  Entity,
   EntityId,
+  TenantId,
   ActorId,
   TypePath,
   Property,
@@ -32,6 +34,23 @@ export interface EntityRow {
   created_by: string;
   deleted_at: Date | null;
   deleted_by: string | null;
+}
+
+/**
+ * Map a database row to a kernel Entity. Shared by every read path so the
+ * row→entity shape is defined once.
+ */
+export function rowToEntity(row: EntityRow): Entity {
+  return {
+    id: row.id as EntityId,
+    tenant_id: row.tenant_id as TenantId,
+    type: row.type_path as TypePath,
+    properties: row.properties as Record<PropertyName, Property>,
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
+    created_by: row.created_by as ActorId,
+    version: row.version,
+  };
 }
 
 /**

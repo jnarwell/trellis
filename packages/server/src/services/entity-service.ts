@@ -24,10 +24,10 @@ import {
   type KernelError,
 } from '@trellis/kernel';
 import { withTenantTransaction, type TenantScopedClient } from '../db/client.js';
-import { EntityRepository, type EntityRow } from '../repositories/entity-repository.js';
+import { EntityRepository, rowToEntity } from '../repositories/entity-repository.js';
 import { EventFactory, type EventEmitter } from '../events/emitter.js';
 import { ComputationService } from '../evaluation/computation-service.js';
-import { resolveInheritance, type EntityLoader } from './inheritance-resolver.js';
+import { resolveInheritance, memoizeEntityLoader } from './inheritance-resolver.js';
 
 // =============================================================================
 // TYPES
@@ -140,22 +140,6 @@ function transformProperties(
     result[name as PropertyName] = transformPropertyInput(name, input);
   }
   return result;
-}
-
-/**
- * Convert EntityRow to Entity.
- */
-function rowToEntity(row: EntityRow): Entity {
-  return {
-    id: row.id as EntityId,
-    tenant_id: row.tenant_id as TenantId,
-    type: row.type_path as TypePath,
-    properties: row.properties as Record<PropertyName, Property>,
-    created_at: row.created_at.toISOString(),
-    updated_at: row.updated_at.toISOString(),
-    created_by: row.created_by as ActorId,
-    version: row.version,
-  };
 }
 
 /**
@@ -392,20 +376,12 @@ export class EntityService {
     // Resolve inherited properties at read time by following each
     // from_entity/from_property pointer to the source's effective value.
     if (options.resolveInherited) {
-      // Memoize so each distinct source entity is fetched at most once per
-      // resolution (a diamond/shared-source graph would otherwise reload the
-      // same entity repeatedly).
-      const cache = new Map<string, Promise<Entity | null>>();
-      const loadEntity: EntityLoader = (sourceId) => {
-        const cached = cache.get(sourceId);
-        if (cached) return cached;
-        const p = withTenantTransaction(this.pool, this.tenantId, async (client) => {
+      const loadEntity = memoizeEntityLoader((sourceId) =>
+        withTenantTransaction(this.pool, this.tenantId, async (client) => {
           const row = await new EntityRepository(client).findById(sourceId);
           return row ? rowToEntity(row) : null;
-        });
-        cache.set(sourceId, p);
-        return p;
-      };
+        })
+      );
       const resolved = await resolveInheritance(entity, loadEntity);
       entity = resolved.entity;
     }
