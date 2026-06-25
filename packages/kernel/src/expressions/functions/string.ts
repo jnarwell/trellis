@@ -4,7 +4,7 @@
  * CONCAT, UPPER, LOWER, LENGTH, SUBSTRING, TRIM
  */
 
-import type { TextValue, NumberValue } from '../../types/index.js';
+import type { TextValue, NumberValue, BooleanValue } from '../../types/index.js';
 import type { FunctionDefinition, RuntimeValue } from './index.js';
 import { typeMismatchError } from '../errors.js';
 
@@ -38,6 +38,13 @@ function textValue(s: string): TextValue {
  */
 function numberValue(n: number): NumberValue {
   return { type: 'number', value: n };
+}
+
+/**
+ * Create boolean value.
+ */
+function booleanValue(b: boolean): BooleanValue {
+  return { type: 'boolean', value: b };
 }
 
 /**
@@ -197,6 +204,80 @@ const TRIM: FunctionDefinition = {
 };
 
 /**
+ * CONTAINS - Whether the first string contains the second. Null-safe.
+ */
+const CONTAINS: FunctionDefinition = {
+  name: 'CONTAINS',
+  minArgs: 2,
+  maxArgs: 2,
+  argTypes: ['text', 'text'],
+  returnType: 'boolean',
+  description: 'Whether the first string contains the second',
+  impl: (args) => {
+    const s = toString(args[0]);
+    const needle = toString(args[1]);
+    if (s === null || needle === null) return null;
+    return booleanValue(s.includes(needle));
+  },
+};
+
+/**
+ * STARTS_WITH - Whether a string starts with a prefix. Null-safe.
+ */
+const STARTS_WITH: FunctionDefinition = {
+  name: 'STARTS_WITH',
+  minArgs: 2,
+  maxArgs: 2,
+  argTypes: ['text', 'text'],
+  returnType: 'boolean',
+  description: 'Whether a string starts with a prefix',
+  impl: (args) => {
+    const s = toString(args[0]);
+    const prefix = toString(args[1]);
+    if (s === null || prefix === null) return null;
+    return booleanValue(s.startsWith(prefix));
+  },
+};
+
+/**
+ * ENDS_WITH - Whether a string ends with a suffix. Null-safe.
+ */
+const ENDS_WITH: FunctionDefinition = {
+  name: 'ENDS_WITH',
+  minArgs: 2,
+  maxArgs: 2,
+  argTypes: ['text', 'text'],
+  returnType: 'boolean',
+  description: 'Whether a string ends with a suffix',
+  impl: (args) => {
+    const s = toString(args[0]);
+    const suffix = toString(args[1]);
+    if (s === null || suffix === null) return null;
+    return booleanValue(s.endsWith(suffix));
+  },
+};
+
+/**
+ * REPLACE - Replace ALL occurrences of a substring. Null-safe.
+ */
+const REPLACE: FunctionDefinition = {
+  name: 'REPLACE',
+  minArgs: 3,
+  maxArgs: 3,
+  argTypes: ['text', 'text', 'text'],
+  returnType: 'text',
+  description: 'Replace all occurrences of a substring',
+  impl: (args) => {
+    const s = toString(args[0]);
+    const search = toString(args[1]);
+    const replacement = toString(args[2]);
+    if (s === null || search === null || replacement === null) return null;
+    // split/join replaces all occurrences without regex-escaping surprises.
+    return textValue(search === '' ? s : s.split(search).join(replacement));
+  },
+};
+
+/**
  * All string functions.
  */
 export const stringFunctions: readonly FunctionDefinition[] = [
@@ -206,4 +287,8 @@ export const stringFunctions: readonly FunctionDefinition[] = [
   LENGTH,
   SUBSTRING,
   TRIM,
+  CONTAINS,
+  STARTS_WITH,
+  ENDS_WITH,
+  REPLACE,
 ];

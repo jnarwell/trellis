@@ -84,9 +84,14 @@ LOWER(str)
 SUBSTRING(str, start, len)
 TRIM(str)
 LENGTH(str)
+CONTAINS(str, substr)      # → boolean
+STARTS_WITH(str, prefix)   # → boolean
+ENDS_WITH(str, suffix)     # → boolean
+REPLACE(str, search, repl) # replace ALL occurrences
 
 # Example
 CONCAT(#part_number, ' - ', #name)
+STARTS_WITH(#part_number, 'PN-')
 ```
 
 ### Math Functions
@@ -96,6 +101,9 @@ ABS(num)
 FLOOR(num)
 CEIL(num)
 SQRT(num)
+POW(base, exp)
+MOD(a, b)                  # remainder (null if b = 0)
+CLAMP(num, min, max)       # constrain to [min, max]
 ```
 
 ### Date Functions

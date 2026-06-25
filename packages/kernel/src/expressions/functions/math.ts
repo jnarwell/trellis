@@ -140,6 +140,43 @@ const SQRT: FunctionDefinition = {
 };
 
 /**
+ * MOD - Remainder of a / b. Returns null when b is 0.
+ */
+const MOD: FunctionDefinition = {
+  name: 'MOD',
+  minArgs: 2,
+  maxArgs: 2,
+  argTypes: ['number', 'number'],
+  returnType: 'number',
+  description: 'Remainder of a divided by b',
+  impl: (args) => {
+    const a = toNumber(args[0]);
+    const b = toNumber(args[1]);
+    if (a === null || b === null || b === 0) return null;
+    return numberValue(a % b);
+  },
+};
+
+/**
+ * CLAMP - Constrain a value to the [min, max] range.
+ */
+const CLAMP: FunctionDefinition = {
+  name: 'CLAMP',
+  minArgs: 3,
+  maxArgs: 3,
+  argTypes: ['number', 'number', 'number'],
+  returnType: 'number',
+  description: 'Constrain a value to the [min, max] range',
+  impl: (args) => {
+    const n = toNumber(args[0]);
+    const min = toNumber(args[1]);
+    const max = toNumber(args[2]);
+    if (n === null || min === null || max === null) return null;
+    return numberValue(Math.min(Math.max(n, min), max));
+  },
+};
+
+/**
  * All math functions.
  */
 export const mathFunctions: readonly FunctionDefinition[] = [
@@ -149,4 +186,6 @@ export const mathFunctions: readonly FunctionDefinition[] = [
   ABS,
   POW,
   SQRT,
+  MOD,
+  CLAMP,
 ];
