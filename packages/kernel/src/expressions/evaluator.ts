@@ -31,7 +31,6 @@ import {
   typeMismatchError,
   dimensionMismatchError,
   divisionByZeroError,
-  circularDependencyError,
   maxDepthExceededError,
   propertyNotFoundError,
   entityNotFoundError,
@@ -50,6 +49,8 @@ import {
   combineUncertaintyDiv,
 } from './units.js';
 import type { DimensionType } from '../types/value.js';
+import { invokeFunction } from './functions/index.js';
+import type { RuntimeValue } from './functions/index.js';
 
 /** Uncertainty converted into the value's base unit (same factor as the value). */
 function baseUncertainty(v: { value: number; unit?: string; dimension?: DimensionType; uncertainty?: number }): number | undefined {
@@ -61,8 +62,6 @@ function baseUncertainty(v: { value: number; unit?: string; dimension?: Dimensio
 function namedOrUndefined(dim?: DimensionType): DimensionType | undefined {
   return dim === undefined || dim === 'dimensionless' ? undefined : dim;
 }
-import { invokeFunction } from './functions/index.js';
-import type { RuntimeValue } from './functions/index.js';
 
 // =============================================================================
 // EVALUATION CONTEXT
@@ -80,9 +79,12 @@ export interface EvaluationContext {
   readonly entityCache: Map<string, Entity>;
   /** Pre-loaded relationships */
   readonly relationshipCache: Map<string, Map<string, readonly string[]>>;
-  /** Stack for circular detection - tracks "entityId.propertyName" */
-  readonly evaluationStack: Set<string>;
-  /** Maximum evaluation depth */
+  /**
+   * Maximum evaluation depth (guards against pathologically nested expressions).
+   * Circular *dependency* detection is graph-based and lives in staleness.ts
+   * (detectCircularDependencies) — the evaluator reads cached computed values
+   * rather than recursing into their expressions, so it cannot itself cycle.
+   */
   readonly maxDepth: number;
   /** Current depth */
   currentDepth: number;
@@ -105,7 +107,6 @@ export function createContext(
     currentEntity,
     entityCache: options.entityCache ?? new Map(),
     relationshipCache: options.relationshipCache ?? new Map(),
-    evaluationStack: new Set(),
     maxDepth: options.maxDepth ?? 50,
     currentDepth: 0,
   };
