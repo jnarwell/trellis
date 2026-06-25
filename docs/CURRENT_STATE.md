@@ -59,7 +59,14 @@ Genuinely infra-gated items (RLS productionization, ltree hierarchy, wiring the
 DB-gated suites into CI) are documented in [OPEN_QUESTIONS.md](./OPEN_QUESTIONS.md)
 (OQ-010) rather than changed blind.
 
-**Tests:** 930 passing (kernel 199, server 456, client 275).
+A final code-health pass then paid down debt from the rapid hardening:
+removed the evaluator's dead `evaluationStack` + an unused import, and
+consolidated the two duplicated `rowToEntity` mappers and the hand-rolled
+memoized entity loader into single shared helpers. (`products/plm-demo` was
+investigated for removal but kept — it validates clean and is wired into
+`seed-demo.sql` + the auth fallback identity.)
+
+**Tests:** 931 passing (kernel 199, server 457, client 275).
 
 ---
 
