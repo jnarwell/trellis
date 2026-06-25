@@ -9,6 +9,7 @@ import type { CellFormat } from '../types.js';
 import { cell } from './styles.js';
 import { statusTone, statusLabel, STATUS_LIKE_PROPERTIES } from '../status-tone.js';
 import { measuredMetaOf } from '../measured.js';
+import { matchColorTone } from './color-rules.js';
 
 // =============================================================================
 // CELL VALUE EXTRACTION
@@ -318,7 +319,7 @@ export const TableCell: React.FC<TableCellProps> = ({
   // Get renderer
   const Renderer = CellRenderers[format] ?? TextCell;
 
-  return (
+  const cell = (
     <Renderer
       value={value}
       column={column}
@@ -326,6 +327,18 @@ export const TableCell: React.FC<TableCellProps> = ({
       rowIndex={rowIndex}
     />
   );
+
+  // Conditional formatting: tint the cell when a color rule matches the value.
+  const tone = matchColorTone(value, column.colorRules);
+  if (tone) {
+    return (
+      <span style={{ color: `var(--tone-${tone}-fg)`, fontWeight: 600 }} data-tone={tone}>
+        {cell}
+      </span>
+    );
+  }
+
+  return cell;
 };
 
 // Export individual cell components for customization

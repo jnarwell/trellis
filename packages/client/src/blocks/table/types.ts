@@ -54,6 +54,25 @@ export interface ColumnConfig {
 
   /** Custom cell renderer name */
   readonly renderer?: string;
+
+  /**
+   * Conditional formatting: the first rule whose condition matches the cell
+   * value tints the cell with its semantic tone (e.g. low stock → danger).
+   */
+  readonly colorRules?: readonly ColorRule[];
+}
+
+/** Semantic tone applied to a cell when a color rule matches. */
+export type ColorTone = 'positive' | 'progress' | 'warning' | 'danger' | 'neutral';
+
+/** A conditional-formatting rule for a table cell. */
+export interface ColorRule {
+  /** Comparison operator. */
+  readonly op: 'lt' | 'lte' | 'gt' | 'gte' | 'eq' | 'ne' | 'contains';
+  /** Value to compare the cell against. */
+  readonly value: string | number;
+  /** Tone to apply when the comparison holds. */
+  readonly tone: ColorTone;
 }
 
 // =============================================================================
