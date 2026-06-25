@@ -462,10 +462,30 @@ export interface ParseResult {
 }
 
 /**
- * Convenience function to parse an expression.
+ * Parsed-AST cache. Binding expressions (templates, $can(...), showWhen) are
+ * static config strings re-evaluated on every block/row render, so parsing the
+ * same string repeatedly is pure waste. ASTs are treated as immutable by the
+ * evaluator, so caching them is safe. Bounded to avoid unbounded growth.
+ */
+const PARSE_CACHE = new Map<string, BindingExpr>();
+const PARSE_CACHE_MAX = 1000;
+
+/**
+ * Convenience function to parse an expression (memoized).
  */
 export function parse(input: string): BindingExpr {
-  return new DataBindingParser().parse(input);
+  const cached = PARSE_CACHE.get(input);
+  if (cached) return cached;
+
+  const ast = new DataBindingParser().parse(input);
+
+  if (PARSE_CACHE.size >= PARSE_CACHE_MAX) {
+    // Simple eviction: drop the oldest entry (Map preserves insertion order).
+    const oldest = PARSE_CACHE.keys().next().value;
+    if (oldest !== undefined) PARSE_CACHE.delete(oldest);
+  }
+  PARSE_CACHE.set(input, ast);
+  return ast;
 }
 
 /**

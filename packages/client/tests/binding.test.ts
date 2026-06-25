@@ -222,6 +222,19 @@ describe('DataBindingParser', () => {
   });
 });
 
+describe('parse memoization', () => {
+  it('returns the same cached AST for a repeated expression', () => {
+    const a = parse('$can("entity.update")');
+    const b = parse('$can("entity.update")');
+    // Same reference → the second call hit the cache (no re-parse).
+    expect(a).toBe(b);
+  });
+
+  it('distinct expressions get distinct ASTs', () => {
+    expect(parse('$scope.a')).not.toBe(parse('$scope.b'));
+  });
+});
+
 describe('parseTemplate', () => {
   it('parses simple template', () => {
     const ast = parseTemplate('${$part.name}');
